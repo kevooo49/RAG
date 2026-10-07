@@ -28,7 +28,7 @@ import sys
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-
+from dotenv import load_dotenv
 import yaml
 
 # ==========================================
@@ -608,12 +608,23 @@ def zapisz_manifest(manifest):
 # ==========================================
 # OPENAI + CHROMA (importy leniwe: --podglad i --dry-run działają bez nich)
 # ==========================================
+load_dotenv()
 def utworz_klienta_openai():
-    if not os.environ.get("OPENAI_API_KEY"):
-        sys.exit("Brak zmiennej środowiskowej OPENAI_API_KEY (nie wpisuj klucza do kodu!).\n"
-                 "  PowerShell:  $env:OPENAI_API_KEY='sk-...'      bash:  export OPENAI_API_KEY='sk-...'")
+    api_key = os.getenv("OPENAI_API_KEY")
+
+    if not api_key:
+        sys.exit(
+            "Brak zmiennej OPENAI_API_KEY w pliku .env.\n"
+            "Dodaj w .env:\n"
+            "OPENAI_API_KEY=sk-..."
+        )
+
     from openai import OpenAI
-    return OpenAI(max_retries=6)           # SDK sam robi exponential backoff na 429/5xx
+
+    return OpenAI(
+        api_key=api_key,
+        max_retries=6
+    )
 
 
 def embedduj(klient, teksty):
