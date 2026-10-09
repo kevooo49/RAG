@@ -31,6 +31,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 import yaml
 
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+
 # ==========================================
 # USTAWIENIA
 # ==========================================
@@ -672,7 +675,29 @@ def usun_id(kol, ids):
     ids = list(ids)
     for i in range(0, len(ids), 500):
         kol.delete(ids=ids[i:i + 500])
+    akcje_es = [{"_op_type": "delete", "_index": NAZWA_KOLEKCJI, "_id": i} for i in ids]
+    try:
+        bulk(es, akcje_es, ignore_status=[404])
+    except Exception:
+        pass
 
+
+es = Elasticsearch("http://localhost:9200")
+try:
+    es.indices.get(index=NAZWA_KOLEKCJI)
+except Exception:
+    es.indices.create(
+        index=NAZWA_KOLEKCJI, 
+        settings={
+            "analysis": {
+                "analyzer": {
+                    "default": {
+                        "type": "polish"
+                    }
+                }
+            }
+        }
+    )
 
 # ==========================================
 # INDEKSOWANIE (przyrostowe)
@@ -716,10 +741,28 @@ def indeksuj(dry_run=False, przebuduj=False):
             wektory = embedduj(klient, [c.tekst_emb for _, c, _ in do_emb])
             for i in range(0, len(do_emb), 256):
                 czesc = do_emb[i:i + 256]
+                wektory_czesc = wektory[i:i + 256]
                 kol.upsert(ids=[cid for cid, _, _ in czesc],
-                           embeddings=wektory[i:i + 256],
+                           embeddings=wektory_czesc,
                            documents=[c.tekst for _, c, _ in czesc],
                            metadatas=[md for _, _, md in czesc])
+
+                akcje_es = []
+                for (cid, c, md) in czesc:
+                    akcje_es.append({
+                        "_op_type": "index",
+                        "_index": NAZWA_KOLEKCJI,
+                        "_id": cid,
+                        "_source": {
+                            "tekst": c.tekst,
+                            "tytul": md.get("tytul", ""),
+                            "zrodlo": md.get("zrodlo", ""),
+                            "sekcja": md.get("sekcja", ""),
+                            "url": md.get("url") or md.get("plik")
+                        }
+                    })
+                bulk(es, akcje_es)
+
         for rel, sygn, wszystkie_ids, stare_ids, _, zachowane in bufor:
             for i in range(0, len(zachowane), 256):      # niezmienione chunki: tylko odświeżenie metadanych (bez embeddingu)
                 kol.update(ids=[c for c, _ in zachowane[i:i + 256]], metadatas=[m for _, m in zachowane[i:i + 256]])

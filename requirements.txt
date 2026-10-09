@@ -1,0 +1,32 @@
+# ==========================================
+# 1. SCRAPOWANIE I PARSOWANIE HTML
+# ==========================================
+requests          # Obsługa zapytań HTTP (pobieranie stron)
+beautifulsoup4    # Analiza i nawigacja po drzewie HTML
+lxml              # Szybki silnik do parsowania HTML (wymagany przez bs4 do polskich znaków)
+markdownify       # Konwersja czystego HTML na format Markdown
+
+# ==========================================
+# 2. PRZETWARZANIE DOKUMENTÓW (PDF / DOCX)
+# ==========================================
+PyMuPDF           # Szybka ekstrakcja tekstu z prostych PDF-ów lokalnie (w kodzie używane jako 'fitz')
+llama-parse       # Zaawansowany OCR i parsowanie tabel w chmurze (LlamaParse)
+nest-asyncio      # Wymagane przez LlamaParse do poprawnego działania asynchronicznego
+docx2pdf          # Konwersja plików Worda do PDF w locie
+
+# ==========================================
+# 3. CHUNKING, WEKTORY I LLM
+# ==========================================
+PyYAML            # Odczyt i zapis metadanych Frontmatter (tagi na górze plików .md)
+tiktoken          # Biblioteka od OpenAI do precyzyjnego liczenia tokenów przed cięciem
+openai            # Oficjalny klient API OpenAI (do generowania wektorów/embeddingów)
+chromadb          # Lokalna wektorowa baza danych
+
+# ==========================================
+# 4. WYSZUKIWANIE PEŁNOTEKSTOWE
+# ==========================================
+elasticsearch<9.0.0     # Klient do połączenia z lokalnym kontenerem Elasticsearch
+# ==========================================
+# 5. Interfejs użytkownika
+streamlit
+# ==========================================
