@@ -1,8 +1,5 @@
 .venv/
-.env
-stare/
-outerHTML/
-Baza_Wiedzy_AGH/
+backend/.env
+data/
 __pycache__/
-sylabusy_statystyki.txt
-Baza_Wektorowa_Chroma/
+backend/__pycache__/

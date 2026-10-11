@@ -1,0 +1,148 @@
+/* GŁÓWNY KONTENER APLIKACJI */
+#app {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  height: 100vh;           /* Zajmuje równe 100% wysokości okna przeglądarki */
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+/* NAGŁÓWEK (Header) */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.5rem;
+  background-color: var(--bg-chat);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+  border-left: 5px solid var(--agh-red); /* Charakterystyczny bordowy akcent */
+}
+
+/* Styl zastępczy, gdyby brakowało pliku logo_agh.png */
+.logo-fallback {
+  background-color: var(--agh-red);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-sm);
+  text-align: center;
+  user-select: none;
+}
+
+.logo-fallback h2 {
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.logo-fallback p {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.logo {
+  width: 50px;
+  height: auto;
+  border-radius: var(--border-radius-sm);
+  object-fit: cover;
+}
+
+.header-titles h1 {
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  margin-bottom: 0.1rem;
+}
+
+.header-titles span {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* OBSZAR CZATU (Główne okno) */
+.chat-container {
+  flex: 1;                 /* Wypełnia całą wolną przestrzeń pod nagłówkiem */
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-chat);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+/* Sekcja z listą dymków */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;        /* Pasek przewijania tylko w środku czatu */
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  scroll-behavior: smooth;
+}
+
+/* FORMULARZ WYSYŁANIA WIADOMOŚCI */
+.input-area {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background-color: var(--bg-chat);
+  border-top: 1px solid var(--border-color);
+}
+
+#message-input {
+  flex: 1;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+#message-input:focus {
+  border-color: var(--agh-red);
+  box-shadow: 0 0 0 3px rgba(166, 25, 46, 0.1); /* Delikatna bordowa poświata przy pisaniu */
+}
+
+/* Przycisk wyślij */
+#send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: var(--agh-red);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+#send-button:hover:not(:disabled) {
+  background-color: var(--agh-dark-red);
+  transform: scale(1.05);
+}
+
+#send-button:disabled {
+  background-color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Responsywność dla ekranów telefonów */
+@media (max-width: 600px) {
+  #app {
+    padding: 0;
+  }
+  .app-header, .chat-container {
+    border-radius: 0;
+  }
+}

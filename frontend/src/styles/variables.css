@@ -1,0 +1,44 @@
+:root {
+  /* Oficjalne barwy AGH (zgodnie z systemem Pantone) */
+  --agh-red: #A6192E;        /* Pantone PMS 187 */
+  --agh-green: #006A3A;      /* Pantone PMS 349 */
+  --agh-black: #27251F;      /* Process Black */
+  --agh-white: #FFFFFF;      /* Opaque White */
+  
+  /* Kolory tła i interfejsu */
+  --bg-main: #f3f4f6;
+  --bg-chat: var(--agh-white);
+  --bg-user-msg: #e8f3ec;    /* Bardzo jasny odcień zieleni AGH dla dymku usera */
+  --bg-bot-msg: var(--agh-white);
+  --border-color: #e9ecef;
+  
+  /* Typografia */
+  --text-primary: var(--agh-black);
+  --text-secondary: #6c757d;
+  --font-family: system-ui, -apple-system, sans-serif;
+  
+  /* Wymiary i cienie */
+  --max-width: 950px;
+  --border-radius-lg: 12px;
+  --border-radius-sm: 8px;
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  
+  /* Animacje */
+  --transition-fast: 0.2s ease-in-out;
+}
+
+/* Globalny reset podstawowych stylów */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}

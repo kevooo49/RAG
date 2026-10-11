@@ -1,0 +1,113 @@
+/* Rozwijany panel ze źródłami */
+.sources-container {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.sources-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.sources-toggle:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.sources-toggle svg {
+  transition: transform var(--transition-fast);
+}
+
+.sources-toggle.open svg {
+  transform: rotate(180deg);
+}
+
+/* Kontener na listę kart - domyślnie ukryty */
+.sources-list {
+  display: none;
+  margin-top: 0.5rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sources-list.open {
+  display: flex;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pojedyncza karta źródła */
+.source-card {
+  background-color: var(--bg-main);
+  border-left: 4px solid var(--agh-red);
+  padding: 12px 16px;
+  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+  border-top: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.source-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+  gap: 10px;
+}
+
+.source-title {
+  font-weight: 600;
+  color: var(--agh-dark-red);
+  font-size: 0.9rem;
+}
+
+.rrf-badge {
+  background-color: var(--agh-black);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.source-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.source-meta a {
+  color: var(--agh-red);
+  text-decoration: none;
+}
+
+.source-meta a:hover {
+  text-decoration: underline;
+}
+
+.source-text {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* Ograniczenie długości tekstu */
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

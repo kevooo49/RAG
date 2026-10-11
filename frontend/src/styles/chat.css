@@ -1,0 +1,92 @@
+/* Stylizacja dymków wiadomości */
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.message.user {
+  align-self: flex-end;
+  background-color: var(--bg-user-msg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 1rem 1.25rem;
+  border-radius: 18px 18px 0 18px;
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background-color: var(--bg-bot-msg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 1rem 1.25rem;
+  border-radius: 18px 18px 18px 0;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Animacja wejścia wiadomości */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Formatowanie tekstu w dymkach (np. pogrubienia markdown) */
+.message-content strong {
+  color: var(--agh-dark-red);
+}
+
+.message-content p {
+  margin-bottom: 0.5rem;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* KONTENER ŁADOWANIA (PULSUJĄCE KROPKI) */
+.loading-indicator {
+  align-self: flex-start;
+  margin-bottom: 1rem;
+}
+
+.loading-indicator.hidden {
+  display: none;
+}
+
+.loader-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--bg-bot-msg);
+  border-radius: 18px 18px 18px 0;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  width: fit-content;
+}
+
+.loader-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-left: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--agh-red);
+  border-radius: 50%;
+  display: inline-block;
+  animation: typing-bounce 1.3s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) { animation-delay: -0.32s; }
+.dot:nth-child(2) { animation-delay: -0.16s; }
+.dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+  40% { transform: translateY(-7px); opacity: 1; }
+}
