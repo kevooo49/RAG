@@ -3,8 +3,8 @@ import { createSourcesComponent } from './components/sources';
 import type { Message, ChatRequestPayload } from './types';
 
 
-const DEV_MODE_SOURCES = false;   // Wyświetla listę źródeł (karty RRF) pod odpowiedzią
-const DEV_MODE_SWITCHER = false;  // Wyświetla przełącznik modeli w nagłówku
+const DEV_MODE_SOURCES = true;   // Wyświetla listę źródeł (karty RRF) pod odpowiedzią
+const DEV_MODE_SWITCHER = true;  // Wyświetla przełącznik modeli w nagłówku
 
 const form = document.getElementById('chat-form') as HTMLFormElement;
 const input = document.getElementById('message-input') as HTMLInputElement;
@@ -13,21 +13,32 @@ const messagesArea = document.getElementById('chat-messages') as HTMLDivElement;
 const loadingIndicator = document.getElementById('loading-indicator') as HTMLDivElement;
 const loadingText = document.getElementById('loading-text') as HTMLSpanElement;
 
-let selectedModel = 'gpt-4o-mini'; // model domyślny
 if (DEV_MODE_SWITCHER) {
   const header = document.querySelector('.header-titles') as HTMLDivElement;
   const switcherHtml = `
     <select id="model-switcher" style="margin-top: 8px; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.8rem; background: var(--bg-main); color: var(--text-primary); outline: none;">
       <option value="gpt-4o">GPT-4o</option>
       <option value="gpt-4o-mini">GPT-4o-mini</option>
+      <option value="bielik">Bielik 11B</option>
     </select>
   `;
   header.insertAdjacentHTML('beforeend', switcherHtml);
   
-  const switcherEl = document.getElementById('model-switcher') as HTMLSelectElement;
-  switcherEl.addEventListener('change', (e) => {
-    selectedModel = (e.target as HTMLSelectElement).value;
-  });
+  const modelSwitcher = document.getElementById('model-switcher') as HTMLSelectElement;
+  if (modelSwitcher) {
+    // 1. ODCZYT: Podczas ładowania strony sprawdź, czy mamy już zapisany model
+    const savedModel = localStorage.getItem('rag_selected_model');
+    if (savedModel) {
+        modelSwitcher.value = savedModel;
+    }
+
+    // 2. ZAPIS: Gdy użytkownik zmieni model, zapisz to w pamięci przeglądarki
+    modelSwitcher.addEventListener('change', (event) => {
+        const target = event.target as HTMLSelectElement;
+        localStorage.setItem('rag_selected_model', target.value);
+        console.log("Zapisano model:", target.value); // Opcjonalnie do debugowania
+    });
+}
 }
 
 const savedHistory = sessionStorage.getItem('chatHistory');
@@ -83,7 +94,7 @@ form.addEventListener('submit', async (e) => {
 
   const payload: ChatRequestPayload = {
     query: query,
-    model: selectedModel,
+    model: (document.getElementById('model-switcher') as HTMLSelectElement)?.value || 'gpt-4o-mini',
     history: chatHistory.slice(0, -1).map(m => ({ role: m.role, content: m.content }))
   };
 

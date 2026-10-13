@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-
+from langchain_ollama import ChatOllama
 from app.core.config import settings
 from app.models.schemas import ChatRequestPayload, MessageHistory
 from app.services.rag_service import wyszukaj_hybrydowo
@@ -60,12 +60,21 @@ async def generuj_odpowiedz_stream(payload: ChatRequestPayload) -> AsyncGenerato
     yield f"data: {json.dumps({'type': 'sources', 'content': zrodla_json})}\n\n"
     
     # 4. Inicjalizacja modelu z zachowaniem ustawień wybranych przez użytkownika na frontendzie
-    llm = ChatOpenAI(
-        model=payload.model, 
-        temperature=0.1, 
-        streaming=True,
-        openai_api_key=settings.OPENAI_API_KEY
-    )
+    if payload.model == "bielik":
+        # Model lokalny przez Ollamę
+        llm = ChatOllama(
+            model="SpeakLeash/bielik-11b-v3.0-instruct:Q4_K_M",
+            temperature=0.1,
+            # Ollama domyślnie działa na http://localhost:11434
+        )
+    else:
+        # Model chmurowy OpenAI
+        llm = ChatOpenAI(
+            model=payload.model, 
+            temperature=0.1, 
+            streaming=True,
+            openai_api_key=settings.OPENAI_API_KEY
+        )
 
     dzisiejsza_data = datetime.datetime.now().strftime("%Y-%m-%d")
     prompt_template = ChatPromptTemplate.from_messages([
@@ -73,11 +82,14 @@ async def generuj_odpowiedz_stream(payload: ChatRequestPayload) -> AsyncGenerato
             "Jesteś profesjonalnym asystentem uczelni AGH. Odpowiadasz na pytania "
             "opierając się WYŁĄCZNIE na dostarczonym poniżej kontekście z bazy wiedzy.\n\n"
             f"Dzisiejsza data to: {dzisiejsza_data}. Masz pełne prawo wykonywać na podstawie kontekstu "
-            "proste obliczenia matematyczne (np. wiek uczelni) oraz wyciągać logiczne wnioski (jeśli coś nie jest powiedziane wprost), "
-            "pod warunkiem, że dane wejściowe do tych obliczeń pochodzą z poniższego kontekstu.\n\n"
-            "ZASADA BEZWZGLĘDNA: Jeśli odpowiedź wymaga faktu (np. definicji, daty, nazwiska), "
-            "którego w ogóle nie ma w kontekście, nie używaj wiedzy ogólnej. "
-            "Odpowiedz dokładnie: 'Przepraszam, ale nie potrafię odpowiedzieć na to pytanie w oparciu o udostępnioną mi bazę wiedzy AGH.'\n\n"
+            "proste obliczenia matematyczne oraz wyciągać logiczne wnioski, "
+            "pod warunkiem, że dane wejściowe pochodzą z poniższego kontekstu.\n\n"
+            "ZASADA BEZWZGLĘDNA: Jeśli odpowiedź wymaga faktu, którego nie ma w kontekście, "
+            "odpowiedz dokładnie: 'Przepraszam, ale nie potrafię odpowiedzieć na to pytanie w oparciu o udostępnioną mi bazę wiedzy AGH.'\n\n"
+            "FORMAT ODPOWIEDZI:\n"
+            "Zwróć OD RAZU gotową odpowiedź w języku polskim. NIE analizuj pytania na głos, "
+            "NIE dodawaj angielskich wtrąceń (np. 'Got it', 'Let's see'), NIE tłumacz swojego toku myślenia. "
+            "Twoja odpowiedź musi być bezpośrednia i gotowa do pokazania użytkownikowi.\n\n"
             "KONTEKST BAZY WIEDZY:\n{kontekst}"
         )),
         ("user", "{pytanie}")

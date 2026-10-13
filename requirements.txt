@@ -18,4 +18,6 @@ elasticsearch<9.0.0
 
 fastapi
 uvicorn
-pydantic
+
+
+langchain-ollama

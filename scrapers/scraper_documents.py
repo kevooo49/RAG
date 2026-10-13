@@ -143,7 +143,7 @@ def main():
     wejscie = os.path.join(meta, "pdf_linki.txt")
     if not os.path.exists(wejscie):
         sys.exit(f"Brak {wejscie}\nNajpierw uruchom crawler HTML:  python scraper_html.py {a.profil}")
-    folder = cfg.get("folder_dokumentow") or (cfg["folder"] + "_dokumenty_surowe")
+    folder = cfg.get("folder_dokumentow") or (cfg["folder"] + "_Dokumenty_Surowe")
     os.makedirs(folder, exist_ok=True)
     sciezka_manifestu = os.path.join(meta, "dokumenty_manifest.jsonl")
 

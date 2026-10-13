@@ -37,7 +37,7 @@ from elasticsearch.helpers import bulk
 # ==========================================
 # USTAWIENIA
 # ==========================================
-KATALOG_BAZY = "Baza_Wektorowa_Chroma"
+KATALOG_BAZY = "../../data/Baza_Wektorowa_Chroma"
 NAZWA_KOLEKCJI = "agh_wiedza"
 MANIFEST = os.path.join(KATALOG_BAZY, "_manifest_indeksu.json")
 
@@ -60,11 +60,25 @@ MAX_BATCH_TOKENOW = 200_000        # limit API to 300k tokenów na żądanie
 # "naglowki_prawne": traktuj "§ 5", "Art. 12", "Rozdział II" jako nagłówki (regulaminy, uchwały, zarządzenia).
 # "pogrubienia_jako_naglowki" (domyślnie True): samotna pogrubiona linia (**1. Kto może...?**) = nagłówek.
 KOLEKCJE = [
-    {"sciezka": "Baza_Wiedzy_AGH/Rekrutacja_Strony",     "zrodlo": "Rekrutacja AGH",                "typ": "strona"},
-    {"sciezka": "Baza_Wiedzy_AGH/Biblioteka_Strony",     "zrodlo": "Biblioteka Główna AGH",         "typ": "strona"},
-    {"sciezka": "Baza_Wiedzy_AGH/CSS_Strony",            "zrodlo": "Centrum Spraw Studenckich AGH", "typ": "strona"},
-    {"sciezka": "Baza_Wiedzy_AGH/Miasteczko_Strony",     "zrodlo": "Miasteczko Studenckie AGH",     "typ": "strona"},
-    {"sciezka": "Baza_Wiedzy_AGH/Centrum_Karier_Strony", "zrodlo": "Centrum Karier AGH",            "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony", "zrodlo": "Rekrutacja AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Dokumenty_Przetworzone", "zrodlo": "Rekrutacja AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony", "zrodlo": "Biblioteka Główna AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Biblioteka_Dokumenty_Przetworzone", "zrodlo": "Biblioteka Główna AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/CSS_Strony", "zrodlo": "Centrum Spraw Studenckich AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone", "zrodlo": "Centrum Spraw Studenckich AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony", "zrodlo": "Miasteczko Studenckie AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Miasteczko_Dokumenty_Przetworzone", "zrodlo": "Miasteczko Studenckie AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony", "zrodlo": "Centrum Karier AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Dokumenty_Przetworzone", "zrodlo": "Centrum Karier AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Strony", "zrodlo": "Centrum Spraw Międzynarodowych AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone", "zrodlo": "Centrum Spraw Międzynarodowych AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/SWFiS_Strony", "zrodlo": "SWFiS AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone", "zrodlo": "SWFiS AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony", "zrodlo": "Cyfronet AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Cyfronet_Dokumenty_Przetworzone", "zrodlo": "Cyfronet AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/SJO_Strony", "zrodlo": "SJO AGH", "typ": "strona"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone", "zrodlo": "SJO AGH", "typ": "dokument", "naglowki_prawne": True},
     # {"sciezka": "Baza_Wiedzy_AGH/Dokumenty_Przetworzone",   "zrodlo": "Dokumenty AGH",                 "typ": "dokument",
     #  "naglowki_prawne": True},
     # {"sciezka": "Baza_Wiedzy_AGH/Sylabusy_Markdown",        "zrodlo": "Sylabusy AGH",                  "typ": "sylabus"},

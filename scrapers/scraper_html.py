@@ -85,7 +85,7 @@ KONFIG_DOMYSLNY = {
 PROFILE = {
     "bg": {
         "start_url": "https://bg.agh.edu.pl/",
-        "folder": os.path.join("Baza_Wiedzy_AGH", "Biblioteka_Strony"),
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Biblioteka_Strony"),
         
         # Pusta lista wymusza wczytanie całego tagu <body> zamiast fałszywego #mainContent
         "selektory_tresci": [], 
@@ -104,7 +104,7 @@ PROFILE = {
     },
     "css": {
         "start_url": "https://css.agh.edu.pl/",
-        "folder": os.path.join("Baza_Wiedzy_AGH", "CSS_Strony"),
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "CSS_Strony"),
         "selektory_tresci": [],
         "selektory_stopki": ["#pageFooter"],
         "selektory_smieci_dodatkowe": ["#mainMenuNav", "#pageFooter", ".skip-to-content"],
@@ -114,7 +114,7 @@ PROFILE = {
     },
     "ms": {
         "start_url": "https://www.miasteczko.agh.edu.pl/",
-        "folder": os.path.join("Baza_Wiedzy_AGH", "Miasteczko_Strony"),
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Miasteczko_Strony"),
         
         "selektory_tresci": ["#maincontent"],
         
@@ -129,7 +129,7 @@ PROFILE = {
     },
     "ck": {
         "start_url": "https://www.ck.agh.edu.pl/",
-        "folder": os.path.join("Baza_Wiedzy_AGH", "Centrum_Karier_Strony"),
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Centrum_Karier_Strony"),
         
         "selektory_tresci": [],
         
@@ -148,23 +148,23 @@ PROFILE = {
     },
     "rekrutacja": {
         "start_url": "https://rekrutacja.agh.edu.pl/",
-        "folder": os.path.join("Baza_Wiedzy_AGH", "Rekrutacja_Strony"),
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Rekrutacja_Strony"),
         
         "selektory_tresci": ["#tabs-content-wrapper", ".menu-content-result__option", ".site-main", "#content"],
         
         "selektory_stopki": ["#colophon", "#pageFooter"],
         
         "selektory_smieci_dodatkowe": [
-            ".cr-counter-wrapper",          # Odliczanie do rekrutacji zimowej (zmienia się co sekunda)
-            ".navbar-row", ".menu-vertical",# Górne i boczne menu
-            ".socialmedia-logos", ".social-section", # Loga Facebook/TikTok
-            ".dontforget-wrapper",          # Pływający baner "nie przegap"
-            ".menuslider-wrapper",          # Kafelki graficzne na stronie głównej
-            ".faq-wrapper",                 # Suwak z FAQ (zostawiamy go, bo FAQ jest też pod osobnym URL)
-            ".sticky-icons",                # Przycisk "przewiń do góry"
-            "#cai-user-widget",             # Pływający widget chatbota
-            "iframe", "script", "style", "noscript", # Pozostałe śmieci techniczne
-            ".owl-carousel", ".owl-stage"   # Dynamiczne suwaki obrazkowe
+            ".cr-counter-wrapper",
+            ".navbar-row", ".menu-vertical",
+            ".socialmedia-logos", ".social-section",
+            ".dontforget-wrapper",
+            ".menuslider-wrapper",
+            ".faq-wrapper",
+            ".sticky-icons",
+            "#cai-user-widget",
+            "iframe", "script", "style", "noscript",
+            ".owl-carousel", ".owl-stage"
         ],
         
         "wykluczone_sciezki": [
@@ -173,13 +173,82 @@ PROFILE = {
             "/rejestracja"
         ],
     },
-    # Przykład kolejnego serwisu – zwykle wystarczy zmienić start_url i ewentualnie selektory:
-    # "agh": {
-    #     "start_url": "https://www.agh.edu.pl/",
-    #     "folder": os.path.join("Baza_Wiedzy_AGH", "AGH_Strony"),
-    #     "selektory_tresci": ["#content", "main"],
-    #     "wykluczone_sciezki": ["/aktualnosci"],
-    # },
+    "csm": {
+        "start_url": "https://csm.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Centrum_Spraw_Miedzynarodowych_Strony"),
+        "selektory_tresci": [], 
+        
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "#unitMenu", 
+            "#mainMenuNav", 
+            ".skip-to-content", 
+            "#cookieconsent", 
+            "#scroller",
+            ".carousel-indicators",
+            ".carousel-control"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/szukaj", 
+            "/login"
+        ],
+    },
+    "cyfronet": {
+        "start_url": "https://www.cyfronet.pl/pl",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Cyfronet_Strony"),
+        "selektory_tresci": ["main"],
+        "selektory_stopki": ["footer"],
+        "selektory_smieci_dodatkowe": [
+            "header",
+            ".searchbox-wrapper",
+            "#skip-link",
+            "#sitemap",
+            "#return-to-top",
+            "noscript", "script", "style"
+        ],
+        "wykluczone_sciezki": [
+            "/search/query",
+            "/login",
+            "/newsletter"
+        ],
+    },
+    "swfis": {
+        "start_url": "https://swfis.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "SWFiS_Strony"),
+        "selektory_tresci": [], 
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "#unitMenu",
+            "#mainMenuNav",
+            ".skip-to-content",
+            "#cookieconsent",
+            "#scroller",
+            ".carousel-indicators",
+            ".carousel-control"
+        ],
+        "wykluczone_sciezki": [
+            "/szukaj", 
+            "/login"
+        ],
+    },
+    "sjo": {
+        "start_url": "https://www.sjo.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "SJO_Strony"),
+        "selektory_tresci": ["#main"],
+        "selektory_stopki": ["footer"],
+        "selektory_smieci_dodatkowe": [
+            "header",
+            ".header",
+            "#cookieconsent",
+            ".mobile-menu-head",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/"
+        ],
+    },
 }
 
 # ==========================================
