@@ -22,12 +22,14 @@ from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
-
+from playwright.sync_api import sync_playwright
 import requests
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 from requests.adapters import HTTPAdapter
+import urllib3
 from urllib3.util.retry import Retry
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ==========================================
 # USTAWIENIA GLOBALNE
@@ -80,6 +82,7 @@ KONFIG_DOMYSLNY = {
     "jezyki_dozwolone": ("pl",),   # None = nie filtruj po <html lang>
     "min_znakow": 300,             # krótsze strony nie trafiają do bazy (linki z nich nadal śledzimy)
     "max_glebokosc": 12,
+    "wymaga_js": False
 }
 
 PROFILE = {
@@ -149,7 +152,7 @@ PROFILE = {
     "rekrutacja": {
         "start_url": "https://rekrutacja.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Rekrutacja_Strony"),
-        
+        "wymaga_js": True,
         "selektory_tresci": ["#tabs-content-wrapper", ".menu-content-result__option", ".site-main", "#content"],
         
         "selektory_stopki": ["#colophon", "#pageFooter"],
@@ -249,6 +252,699 @@ PROFILE = {
             "/category/"
         ],
     },
+    "ckim": {
+        "start_url": "https://ckim.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "CKiM_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/"
+        ]
+    },
+    "cok": {
+        "start_url": "https://cok.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "COK_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/"
+        ]
+    },
+    "cri": {
+        "start_url": "https://cri.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "CRI_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            "#ai",
+            ".skip-to-content",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/en"
+        ]
+    },
+    "ka": {
+        "start_url": "https://ka.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "KA_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/app/"
+        ]
+    },
+    "sd": {
+        "start_url": "https://sd.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "SD_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "podyplomowe": {
+        "start_url": "https://www.podyplomowe.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Podyplomowe_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/en"
+        ]
+    },
+    "samorzad": {
+        "start_url": "https://samorzad.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Samorzad_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["footer.footer"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "header.header",
+            "#cookieconsent",
+            "[data-popup-wrapper]",
+            "[data-search]",
+            ".wp-block-aktualnosci",
+            ".wp-block-gallery",
+            ".swiper",
+            ".skip-to-content",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/en"
+        ]
+    },
+    "fundacja": {
+        "start_url": "https://fundacja.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Fundacja_Strony"),
+        "selektory_tresci": ["main", ".entry-content", ".wp-block-kadence-rowlayout"],
+        "selektory_stopki": ["#colophon"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "header",
+            "#cookieconsent",
+            "#search-drawer",
+            "#mobile-drawer",
+            ".g-recaptcha-bubble-arrow",
+            ".skip-link",
+            ".screen-reader-text",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/tag/"
+        ]
+    },
+    "eaiiib": {
+        "start_url": "https://eaiib.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "EAIIB_Strony"),
+        "selektory_tresci": ["main#jupiterx-main"],
+        "selektory_stopki": ["footer.jupiterx-footer"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "header.jupiterx-header",
+            "#cookie-notice",
+            "#search-drawer",
+            "#mobile-drawer",
+            ".g-recaptcha-bubble-arrow",
+            ".skip-link",
+            ".screen-reader-text",
+            ".jupiterx-corner-buttons",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/tag/",
+            "/doktorant"
+        ]
+    },
+    "wh": {
+        "start_url": "https://wh.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WH_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "odlewnictwo": {
+        "start_url": "https://odlewnictwo.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Odlewnictwo_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": [
+            "[data-elementor-type='footer']",
+            "footer"
+        ],
+        "selektory_smieci_dodatkowe": [
+            "[data-elementor-type='header']",
+            ".elementor-widget-nav-menu",
+            ".elementor-widget-search-form",
+            "#cookie-notice",
+            ".elementor-widget-image-carousel",
+            ".elementor-widget-posts",
+            ".swiper",
+            ".dialog-lightbox-close-button",
+            ".skip-link",
+            ".screen-reader-text",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/category/",
+            "/tag/",
+            "/author/"
+        ]
+    },
+    "wnig": {
+        "start_url": "https://wnig.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WNIG_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "zarz": {
+        "start_url": "https://zarz.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Zarz_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "wimic": {
+        "start_url": "https://wimic.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WIMIC_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en",
+            "/nauka/osiagniecia/detail",
+            "/wydzial/odeszli",
+        ]
+    },
+    "wilgz": {
+        "start_url": "https://wilgz.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WILGZ_Strony"),
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "metal": {
+        "start_url": "https://www.metal.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Metal_Strony"),
+        "wymaga_js": True,
+        "selektory_tresci": ["main", "article", ".page-content"],
+        "selektory_stopki": ["footer"],
+        "selektory_smieci_dodatkowe": [
+            "header",
+            "#news-section",
+            ".search-wrapper",
+            "[class*='_sliderContainer_']",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/news/",
+            "/category/",
+            "/en"
+        ]
+    },
+    "iet": {
+        "start_url": "https://iet.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "IET_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["footer.jupiterx-footer"],
+        "selektory_smieci_dodatkowe": [
+            "header.jupiterx-header",
+            "#cmplz-cookiebanner-container",
+            "#iet-search-overlay",
+            ".jupiterx-corner-buttons",
+            ".jet-mobile-menu",
+            ".elementor-widget-jet-custom-menu",
+            ".slick-slider",
+            ".swiper",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/wydarzenia-wydzialowe",
+            "/category/",
+            "/tag/",
+            "/en"
+        ]
+    },
+    "rps": {
+        "start_url": "https://rps.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "RPS_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#unitMenu",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/formularz",
+            "/en"
+        ]
+    },
+    "wggiis": {
+        "start_url": "https://wggiis.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WGGIIS_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".formularz", 
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "wggiis-studiuj": {
+        "start_url": "https://studiuj.wggiis.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WGGIIS_Studiuj_Strony"),
+        "wymaga_js": False,
+        "jezyki_dozwolone": None,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#footer", "footer"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#header",
+            ".back-to-top",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/"
+        ]
+    },
+    "informatyka": {
+        "start_url": "https://www.informatyka.agh.edu.pl/pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Informatyka_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["footer"],
+        "selektory_smieci_dodatkowe": [
+            "header",
+            ".pre-header",
+            "#CookieInfoBanner",
+            "#inner-headline",
+            ".slider-section",
+            ".news-section",
+            ".event-section",
+            ".media-section",
+            ".scrollup",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/pl/blog",
+            "/en",
+            "/search"
+        ]
+    },
+    "spacetech": {
+        "start_url": "https://spacetech.agh.edu.pl/pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Spacetech_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/pl/aktualnosci",
+            "/pl/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "wms": {
+        "start_url": "https://www.wms.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WMS_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en",
+            "/detail",
+            "/detail-1"
+        ]
+    },
+    "fis": {
+        "start_url": "https://www.fis.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "FIS_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "weip": {
+        "start_url": "https://weip.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WEIP_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".formularz",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/news-pl",
+            "/wydarzenia",
+            "/event-pl",
+            "/category/",
+            "/en"
+        ]
+    },
+    "wmn": {
+        "start_url": "https://wmn.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WMN_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "wggios": {
+        "start_url": "https://www.wggios.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WGGIOS_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [],
+        "selektory_stopki": ["#pageFooter"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mainMenuNav",
+            "#cookieconsent",
+            "#scroller",
+            ".skip-to-content",
+            ".formularz",
+            ".carousel",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en",
+            "/wydzial/postepowania-awansowe"
+        ]
+    },
+    "historia": {
+        "start_url": "https://historia.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Historia_Strony"),
+        "wymaga_js": False,
+        "max_glebokosc": 1,
+        "selektory_tresci": [".mw-parser-output"],
+        "selektory_stopki": ["#footer", ".mw-footer"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "#mw-navigation",
+            "#mw-panel",
+            "#left-navigation",
+            "#right-navigation",
+            ".vector-header-container",
+            ".vector-column-start",
+            ".vector-column-end",
+            ".mw-footer-container",
+            "#catlinks",
+            ".printfooter",
+            ".mw-indicators",
+            "script", "style", "noscript", "iframe",
+            ".mw-references-wrap"
+        ],
+        "wykluczone_sciezki": [
+            "/wiki/Specjalna:",
+            "/wiki/Dyskusja:",
+            "/wiki/Plik:",
+            "/wiki/Kategoria:",
+            "/wiki/Szablon:",
+            "/wiki/Pomoc:",
+            "/wiki/Historia_AGH:",
+            "/mediawiki/index.php",
+        ]
+    },
+    "imir": {
+        "start_url": "https://imir.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "IMIR_Strony"),
+        "wymaga_js": True,
+        "selektory_tresci": ["#page-detail-content", "main", "#root"],
+        "selektory_stopki": ["footer"],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            "header",
+            ".element-breadcrumbs",
+            ".element-breadcrumbs-last",
+            ".carousel-root",
+            ".slider--main",
+            ".slider--news-list",
+            ".hamburger-react",
+            "#cookieyes-banner",
+            ".cky-consent-container",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/aktualnosci",
+            "/wydarzenia",
+            "/category/",
+            "/en"
+        ]
+    },
+    "azs": {
+        "start_url": "https://azs.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "AZS_Strony"),
+        "wymaga_js": False,
+        "selektory_tresci": [
+            "[data-elementor-type='single-page']", 
+            "[data-elementor-type='wp-post']", 
+            "[data-elementor-type='wp-page']",
+            "main"
+        ],
+        "selektory_stopki": [
+            "[data-elementor-type='footer']",
+            "footer"
+        ],
+        "selektory_smieci_dodatkowe": [
+            "[data-elementor-type='header']",
+            "nav",
+            "#cookieyes-banner",
+            ".cky-consent-container",
+            "#sb_instagram",               # Widget Instagrama
+            ".fb_iframe_widget",           # Widget Facebooka
+            ".elementor-widget-video",     # Filmy (czysty iframe)
+            ".elementor-widget-icon-list", # Listy ikonek social media
+            ".dialog-lightbox-close-button",
+            "script", "style", "noscript", "iframe"
+        ],
+        "wykluczone_sciezki": [
+            "/category/",
+            "/tag/",
+            "/author/",
+            "/feed/",
+            "/imprezy-azs/",
+            "/aktualnosci/"
+        ]
+    },
 }
 
 # ==========================================
@@ -256,6 +952,7 @@ PROFILE = {
 # ==========================================
 def utworz_sesje():
     s = requests.Session()
+    s.verify = False
     s.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "pl,en;q=0.5"})
     retry = Retry(
         total=3,
@@ -305,8 +1002,11 @@ def normalizuj_url(url):
 
 
 def czy_nalezy_do_domeny(url, domena_glowna):
-    """Dokładne porównanie hosta (chroni przed agh.edu.pl.evil.com); 'www.' ignorowane."""
-    return netloc_bez_www(url) == netloc_bez_www(domena_glowna)
+    """Dokładne porównanie hosta ORAZ wyjątki dla CDN WIMiR i COK."""
+    netloc = netloc_bez_www(url)
+    if netloc in ["cdn.imir.agh.edu.pl", "cok.agh.edu.pl", "www.cok.agh.edu.pl"]:
+        return True
+    return netloc == netloc_bez_www(domena_glowna)
 
 
 def czy_pominac_obcy_jezyk(url, cfg):
@@ -323,7 +1023,7 @@ def czy_wykluczona_sciezka(url, cfg):
     path = urlsplit(url).path.lower().rstrip("/")
     for w in cfg["wykluczone_sciezki"]:
         w = w.lower().rstrip("/")
-        if path == w or path.startswith(w + "/"):
+        if path == w or path.startswith(w + "/") or (w.endswith(":") and path.startswith(w)):
             return True
     return False
 
@@ -582,8 +1282,45 @@ def wczytaj_sitemapy(adresy, glebokosc=0):
 # ==========================================
 # POBIERANIE
 # ==========================================
-def pobierz(url):
-    """Zwraca (res, bytes, None) albo (None, None, powód). Nie ściąga plików, które nie są HTML-em."""
+
+class DummyResponse:
+    """Atrapa obiektu requests.Response na potrzeby Playwrighta."""
+    def __init__(self, url, status_code=200):
+        self.url = url
+        self.status_code = status_code
+        self.headers = {}
+
+def pobierz(url, wymaga_js=False):
+    """Zwraca (res, bytes, None) albo (None, None, powód)."""
+    if wymaga_js:
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_extra_http_headers({"User-Agent": USER_AGENT, "Accept-Language": "pl,en;q=0.5"})
+                
+                response = page.goto(url, wait_until="networkidle", timeout=30000)
+                
+                if response and response.status >= 400:
+                    browser.close()
+                    return None, None, f"HTTP {response.status}"
+
+                ct = response.headers.get("content-type", "").lower() if response else "text/html"
+                if "html" not in ct:
+                    browser.close()
+                    return None, None, f"nie HTML ({ct})"
+                
+                final_url = page.url
+                html_content = page.content().encode("utf-8")
+                browser.close()
+                
+                if len(html_content) > MAX_BAJTOW:
+                    return None, None, "za duży plik"
+                    
+                return DummyResponse(final_url), html_content, None
+        except Exception as e:
+            return None, None, f"błąd Playwright: {e}"
+
     try:
         res = session.get(url, timeout=TIMEOUT, stream=True)
     except requests.RequestException as e:
@@ -678,7 +1415,7 @@ def crawl(cfg, reset=False, max_stron=None):
             stan.odwiedzone.add(url)
             przetworzone_w_sesji += 1
 
-            res, content, powod = pobierz(url)
+            res, content, powod = pobierz(url, wymaga_js=cfg.get("wymaga_js", False))
             time.sleep(opoznienie)
             if res is None:
                 stan.stat["bledy_lub_nie_html"] += 1
@@ -699,6 +1436,37 @@ def crawl(cfg, reset=False, max_stron=None):
                 url = final
 
             soup = parsuj_html(content)
+
+            if "historia" in url:
+                rocznice = soup.find(id="Rocznice")
+                if rocznice:
+                    poj = rocznice.parent if rocznice.parent and "mw-heading" in (rocznice.parent.get("class") or []) else rocznice
+                    if poj and poj.parent and poj.parent.name == "div":
+                        poj.parent.decompose()
+                for hdr in soup.find_all(id=re.compile("^(Bibliografia|Źródła)", re.I)):
+                    poj = hdr.parent if hdr.parent and "mw-heading" in (hdr.parent.get("class") or []) else hdr
+                    if poj:
+                        for sibling in poj.find_next_siblings():
+                            for a in sibling.find_all("a"):
+                                a.unwrap()
+
+            if "imir" in url and url.rstrip("/") == cfg["start_url"].rstrip("/"):
+                ukryte_strefy = [
+                    "https://imir.agh.edu.pl/pl/studenci/blankiety_dokumenty/blankiety",
+                    "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/komunikaty_prodziekana_ds_nauki/",
+                    "https://imir.agh.edu.pl/pl/studia/stacjonarne_i-st/",
+                    "https://imir.agh.edu.pl/pl/wydzial/o_wydziale/",
+                    "https://imir.agh.edu.pl/pl/studenci/blankiety_dokumenty/dokumenty/",
+                    "https://imir.agh.edu.pl/pl/studenci/stypendia/stypendium_ministra/",
+                    "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/doktoranci/",
+                    "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/program_doktorat_wdrozeniowy/",
+                    "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/kategoryzacja_mnisw_2017/",
+                    "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/oferta_naukowo_badawcza/",
+                    "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/projekty_wspolfinansowane_z_funduszy_ue/"
+                ]
+                for strefa in ukryte_strefy:
+                    log.info("💉 Wstrzykuję ukrytą strefę WIMiR: %s", strefa)
+                    dodaj_do_kolejki(stan, strefa, glebokosc + 1, cfg, robots)
 
             # 1) linki z pełnej strony (zanim wytniemy menu)
             for link in wyciagnij_linki(soup, url):

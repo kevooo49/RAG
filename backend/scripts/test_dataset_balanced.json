@@ -1,0 +1,452 @@
+[
+    {
+        "query": "Jaki jest kod przedmiotu dla 'Audyt energetyczny budynku i przedsiębiorstwa'?",
+        "expected_file": "Audyt energetyczny budynku i przedsiębiorstwa.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Czego uczą się studenci odnośnie redukcji zużycia energii w różnych scenariuszach?",
+        "expected_file": "Audyt energetyczny budynku i przedsiębiorstwa.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Kto prowadzi te wykłady o audycie energetycznym? Kojarzysz, kto to jest?",
+        "expected_file": "Audyt energetyczny budynku i przedsiębiorstwa.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaki jest unikalny kod strony, na której opisano wymagania dotyczące badań lekarskich dla uczelni AGH?",
+        "expected_file": "badania-lekarskie_3f0aa992.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Co należy zrobić, aby uzyskać dokument, który umożliwia wykonanie darmowej kontroli zdrowia wymaganej dla niektórych kierunków?",
+        "expected_file": "badania-lekarskie_3f0aa992.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Na które kierunki muszę zrobić badania zanim pójdziesz zapisać się na zajęcia?",
+        "expected_file": "badania-lekarskie_3f0aa992.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Kto jest doradcą odpowiedzialnym za symulację rozmowy kwalifikacyjnej?",
+        "expected_file": "dla-studentow__konsultacje-zawodowe_79452be3.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są opcje wsparcia dostępne dla studentów, które mogą pomóc w budowaniu profesjonalnej ścieżki kariery?",
+        "expected_file": "dla-studentow__konsultacje-zawodowe_79452be3.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Gdzie mogę się zgłosić, żeby poprawić swoje CV albo obcykać co zrobić z karierą po studiach?",
+        "expected_file": "dla-studentow__konsultacje-zawodowe_79452be3.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie zarządzenie reguluje zasady odbywania praktyk w AGH?",
+        "expected_file": "dla-studentow__praktyki_3c93d955.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Co trzeba zrobić, aby formalnie rozpocząć obowiązkowe doświadczenie zawodowe jako element studiów?",
+        "expected_file": "dla-studentow__praktyki_3c93d955.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Gdzie można znaleźć listę kumpli co pomagają z praktykami?",
+        "expected_file": "dla-studentow__praktyki_3c93d955.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie jest pełne brzmienie numeru konta oraz nazwa banku, do którego należy wpłacać opłaty?",
+        "expected_file": "dokumenty__numer-konta-do-wnoszenia-oplat_c339f9de.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jak należy opisać przelew, gdy opłata dotyczy dodatkowego dokumentu potwierdzającego biegłość językową?",
+        "expected_file": "dokumenty__numer-konta-do-wnoszenia-oplat_c339f9de.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jak przelać kasę za dodatkowy papierek z angola?",
+        "expected_file": "dokumenty__numer-konta-do-wnoszenia-oplat_c339f9de.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaki jest kod przedmiotu Ekonomia na kierunku Matematyka w roku akademickim 2022/2023?",
+        "expected_file": "Ekonomia.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są główne cele związane z nauczaniem zagadnień dotyczących relacji między różnymi koncepcjami tej dziedziny wiedzy na pierwszym poziomie edukacji?",
+        "expected_file": "Ekonomia.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jak ogarnąć zaliczenie z ekonomii na matmie? Ile punktów ECTS za to masz?",
+        "expected_file": "Ekonomia.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Który dokument doktoranci muszą przedłożyć w CSM, aby potwierdzić swój pobyt na studiach w ramach programu Erasmus+?",
+        "expected_file": "erasmus-doktorant__zasady-dotyczace-wyjazdow-doktorantow-agh-na-studia-i-praktyk_f0c12458.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie kroki podejmują studenci, aby uzyskać zgodę na dłuższy pobyt w trakcie wymiany akademickiej?",
+        "expected_file": "erasmus-doktorant__zasady-dotyczace-wyjazdow-doktorantow-agh-na-studia-i-praktyk_f0c12458.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Co doktoranci muszą załatwić w dziekanacie przed wyjazdem na wymianę?",
+        "expected_file": "erasmus-doktorant__zasady-dotyczace-wyjazdow-doktorantow-agh-na-studia-i-praktyk_f0c12458.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie dokumenty należy podpisać w przypadku zgubienia legitymacji elektronicznej podczas korzystania z szafki skrytkowej?",
+        "expected_file": "jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Co musi zrobić osoba, która napotka trudności z dostępem do swojej schowka w placówce, gdzie przechowuje się rzeczy osobiste?",
+        "expected_file": "jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Co zrobić jak zgubię kartę i nie mogę dostać się do swojej szafki na biblio?",
+        "expected_file": "jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie jest łączne ograniczenie liczby wypożyczeń w bibliotekach AGH?",
+        "expected_file": "jak-korzystac__zapis-do-biblioteki_01cf6b4c.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Co musisz zrobić, aby przedłużyć możliwość korzystania z wybranych materiałów po upływie standardowego czasu?",
+        "expected_file": "jak-korzystac__zapis-do-biblioteki_01cf6b4c.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Gdzie można wbić po książkę jak zamykają biblio?",
+        "expected_file": "jak-korzystac__zapis-do-biblioteki_01cf6b4c.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie jest bezpośrednie połączenie telefoniczne do Wypożyczalni i Strefy Wolnego Dostępu?",
+        "expected_file": "kontakt__godziny-otwarcia_12fa9fe4.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Kiedy miejsce do nauki jest nieczynne na przełomie października i listopada?",
+        "expected_file": "kontakt__godziny-otwarcia_12fa9fe4.md",
+        "type": "semantic"
+    },
+    {
+        "query": "O której najwcześniej można odwiedzić książkowy azyl na początku tygodnia?",
+        "expected_file": "kontakt__godziny-otwarcia_12fa9fe4.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie są dostępne kwoty miesięcznych transz kredytu studenckiego?",
+        "expected_file": "kredyty-studenckie_391165f1.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Kto może ubiegać się o roczną pomoc finansową na naukę i jak długo może ona trwać?",
+        "expected_file": "kredyty-studenckie_391165f1.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Co zrobić, żeby kredyt był tańszy albo żeby zrobić pauzę w spłacaniu, jak kiepsko z kasą?",
+        "expected_file": "kredyty-studenckie_391165f1.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaka jest równowagowa temperatura krystalizacji czystych metali i ich stopów?",
+        "expected_file": "Krystalizacja.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie procesy są kluczowe dla formowania struktury metali podczas ich transformacji z cieczy do ciała stałego?",
+        "expected_file": "Krystalizacja.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Co trzeba zakuć na kolosie z krychy?",
+        "expected_file": "Krystalizacja.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaki jest adres e-mail, na który należy wysłać zamówienie na certyfikat językowy AGH?",
+        "expected_file": "lektoraty__wydawanie-certyfikatow-jezykowych-agh_5b0f2052.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są wymagania dotyczące uzyskania dokumentu potwierdzającego znajomość języka po zdanym teście?",
+        "expected_file": "lektoraty__wydawanie-certyfikatow-jezykowych-agh_5b0f2052.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Ile kosztuje drugi egzemplarz certyfikatu, jeśli zgubiłeś pierwszy?",
+        "expected_file": "lektoraty__wydawanie-certyfikatow-jezykowych-agh_5b0f2052.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaki jest kod przedmiotu Muzealnictwo i wystawiennictwo?",
+        "expected_file": "Muzealnictwo i wystawiennictwo.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są cele edukacyjne związane z nauką o miejscach prezentujących zbiory historyczne i kulturowe?",
+        "expected_file": "Muzealnictwo i wystawiennictwo.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Kto jest odpowiedzialny za ten kurs na kulturoznawstwie na humanie?",
+        "expected_file": "Muzealnictwo i wystawiennictwo.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaka jest cena wynajmu całej Hali A lub Hali B na 90 minut z VAT?",
+        "expected_file": "obiekty-i-wynajem__cennik-i-wynajem_101e666d.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są dostępne środki komunikacji dla zainteresowanych komercyjnym użytkowaniem przestrzeni?",
+        "expected_file": "obiekty-i-wynajem__cennik-i-wynajem_101e666d.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Gdzie i kiedy można osobiście pogadać o wynajmie sal?",
+        "expected_file": "obiekty-i-wynajem__cennik-i-wynajem_101e666d.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Która olimpiada przyznaje tytuł 'laureaci III stopnia' w kategorii Geografia z elementami geologii?",
+        "expected_file": "olimpijczycy_b2005775.md",
+        "type": "lexical"
+    },
+    {
+        "query": "W jaki sposób uczestnicy konkursów na szczeblu krajowym mogą zostać przyjęci na studia bez konieczności spełniania typowych wymagań?",
+        "expected_file": "olimpijczycy_b2005775.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jakie są szanse na dodatkowe punkty przy rekrutacji dla osób, które miały farta na centralnych zawodach?",
+        "expected_file": "olimpijczycy_b2005775.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie dokumenty należy dostarczyć, jeśli zakup nie podlega przetargowi?",
+        "expected_file": "organizacje-studenckie__zakupy-za-granica_275f11ec.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Opisz proces zakupu produktów z obszarów podlegających specjalnym regulacjom, kiedy nie trzeba się martwić konkursem ofert.",
+        "expected_file": "organizacje-studenckie__zakupy-za-granica_275f11ec.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Co trzeba zrobić, żeby przywiezienie rzeczy z innego kontynentu na AGH nie skończyło się blokadą w urzędzie celnym?",
+        "expected_file": "organizacje-studenckie__zakupy-za-granica_275f11ec.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Co to jest PLGrid i jakie zasoby oferuje?",
+        "expected_file": "pl__offer__how-to-use-the-resources_bd24b31e.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jak można bezpłatnie korzystać z dostępnych zasobów wspierających badania naukowe?",
+        "expected_file": "pl__offer__how-to-use-the-resources_bd24b31e.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jak załatwić dostęp do tych mocarnych kompów z PLGrida, jak jestem studentem?",
+        "expected_file": "pl__offer__how-to-use-the-resources_bd24b31e.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaki jest kod przedmiotu dla Programowania zaawansowanego 1 w cyklu dydaktycznym 2025/2026?",
+        "expected_file": "Programowanie zaawansowane 1.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Który proces związany jest z podziałem zadań pomiędzy różne jednostki wykonywalne w pewnym języku programowania?",
+        "expected_file": "Programowanie zaawansowane 1.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Kto prowadzi wykłady z programowania na trzecim semestrze na Wydziale EAIiIB?",
+        "expected_file": "Programowanie zaawansowane 1.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Który typ obuwia jest wymagany do korzystania ze Ściany Wspinaczkowej AGH?",
+        "expected_file": "REGULAMIN-SCIANY-WSPINACZKOWEJ_1_c7ed5a1a.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są wymagania dotyczące kompetencji osób uczestniczących we wspinaczce z dodatkowym zabezpieczeniem?",
+        "expected_file": "REGULAMIN-SCIANY-WSPINACZKOWEJ_1_c7ed5a1a.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Co się stanie, jak ktoś się nie stosuje do zasad na tej wspinaczkowej miejscówce?",
+        "expected_file": "REGULAMIN-SCIANY-WSPINACZKOWEJ_1_c7ed5a1a.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaka jest minimalna liczba punktów ECTS, które muszą być zrealizowane w przypadku długoterminowej mobilności fizycznej w ramach programu Erasmus+ KA131 2026?",
+        "expected_file": "REGULAMIN_ERASMUS_2026_e687872f.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są wymagania dotyczące statusu osoby uczącej się, które należy spełnić przed rozpoczęciem edukacyjnego wyjazdu zagranicznego?",
+        "expected_file": "REGULAMIN_ERASMUS_2026_e687872f.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Czy można pojechać na wymianę z Erasmusa na magisterkę, jeśli zajęcia startują wcześniej niż na AGH?",
+        "expected_file": "REGULAMIN_ERASMUS_2026_e687872f.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Co oznacza skrót CSS według Regulaminu świadczeń dla studentów AGH?",
+        "expected_file": "Regulamin_swiadczen_dla_studentow_AGH_2026.md",
+        "type": "lexical"
+    },
+    {
+        "query": "W jaki sposób uczelnia decyduje o rozdzieleniu wsparcia finansowego dla studentów, zgodnie z wewnętrznymi zasadami? Opisz ogólny proces bez użycia specyficznych nazw.",
+        "expected_file": "Regulamin_swiadczen_dla_studentow_AGH_2026.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jakie są opcje stypów na AGH, jeśli szuka się wsparcia kasy na studiach?",
+        "expected_file": "Regulamin_swiadczen_dla_studentow_AGH_2026.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Kto jest odpowiedzialny za przyjęcie potwierdzeń zaliczeń i zwolnień lekarskich, a także gdzie można je dostarczać do 30 listopada 2026 r.?",
+        "expected_file": "Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jak wygląda proces zgłaszania się do zajęć związanych z aktywnością fizyczną dla studentów mających specjalne okoliczności, takie jak wcześniejsze zaliczenie lub potrzeba specjalnej grupy?",
+        "expected_file": "Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jak załatwić, żeby przenieść oceny z wuefu z innej uczelni, albo co zrobić, gdy masz zwolnienie od lekarza?",
+        "expected_file": "Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaka jest wysokość stypendium dla laureata III stopnia w roku akademickim 2025/2026?",
+        "expected_file": "swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Co musi zrobić student pierwszego roku, aby dostać nagrodę za sukcesy w konkursach, jeśli nie może liczyć na wyróżnienie od rektora?",
+        "expected_file": "swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Gdzie wrzucić papiery na stypko, jak nie chce mi się iść do dziekanatu?",
+        "expected_file": "swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaki jest kod przedmiotu dla kursu Język francuski B-2?",
+        "expected_file": "sylabus-francuski-b2-1_3_032889bc.md",
+        "type": "lexical"
+    },
+    {
+        "query": "W jaki sposób odbywa się ocena umiejętności uczestników kursu językowego dotyczącego współczesnych tematów?",
+        "expected_file": "sylabus-francuski-b2-1_3_032889bc.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Jakie są wymagane godziny na wykład z francuskiego w pierwszym semestrze?",
+        "expected_file": "sylabus-francuski-b2-1_3_032889bc.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie są numery decyzji Rektora AGH dotyczące utworzenia kierunków studiów drugiego stopnia o profilu ogólnoakademickim w roku 2025?",
+        "expected_file": "uchwala_2026_2027_warunki_rekrutacji.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie działania podjęto, aby dostosować programy nauczania do zmieniających się potrzeb rynku pracy w jednej z krakowskich uczelni technicznych na początku 2026 roku?",
+        "expected_file": "uchwala_2026_2027_warunki_rekrutacji.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Wiesz może, kiedy w AGH rusza nowy kierunek na pierwszym stopniu związany z kosmosem?",
+        "expected_file": "uchwala_2026_2027_warunki_rekrutacji.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaką maksymalną wartość może osiągnąć wskaźnik rekrutacji WR?",
+        "expected_file": "warunki-rekrutacji_3fc3d539.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są podstawowe kryteria przyjęć dla nowych studentów na poziomie początkowym na uczelni?",
+        "expected_file": "warunki-rekrutacji_3fc3d539.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Ile muszę mieć punktów z WR, żeby się dostać na darmowe studia na AGH?",
+        "expected_file": "warunki-rekrutacji_3fc3d539.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie jest dokładne położenie biura Działu Domów Studenckich, włącznie z nazwą ulicy i numerem pokoju?",
+        "expected_file": "www.miasteczko.agh.edu.pl_faq.html_26e7b95c.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Na jakiej zasadzie można uzyskać możliwość wspólnego przebywania z innymi w jednostce mieszkalnej, jeśli nie jest się formalnie zapisanym?",
+        "expected_file": "www.miasteczko.agh.edu.pl_faq.html_26e7b95c.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Kiedy trzeba się rozliczyć za akademik, zanim wpadniecie w kłopoty z opłatami?",
+        "expected_file": "www.miasteczko.agh.edu.pl_faq.html_26e7b95c.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jaka jest cena miesięcznego zakwaterowania dla pracowników AGH w DS ALFA w standardzie Komfort od 1 stycznia 2027?",
+        "expected_file": "www.miasteczko.agh.edu.pl_strefa-mieszkanca_cennik.html_15c5ed3e.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są warunki pobytu w miejscach oferujących najwyższą jakość zakwaterowania, które posiadają swoje prywatne łazienki i małe kuchnie?",
+        "expected_file": "www.miasteczko.agh.edu.pl_strefa-mieszkanca_cennik.html_15c5ed3e.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Ile trzeba zapłacić za przeprowadzki między akademikami na miasteczku?",
+        "expected_file": "www.miasteczko.agh.edu.pl_strefa-mieszkanca_cennik.html_15c5ed3e.md",
+        "type": "colloquial"
+    },
+    {
+        "query": "Jakie oznaczenie ma zarządzenie Rektora AGH dotyczące zasad organizacji zajęć z wychowania fizycznego w 2025 roku?",
+        "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+        "type": "lexical"
+    },
+    {
+        "query": "Jakie są wymagania, aby studenci mogli uzyskać pozytywną ocenę z obowiązkowych zajęć ruchowych na uczelni?",
+        "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+        "type": "semantic"
+    },
+    {
+        "query": "Ile razy w tygodniu można iść na wuef, żeby zaliczyć semestr?",
+        "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+        "type": "colloquial"
+    }
+]

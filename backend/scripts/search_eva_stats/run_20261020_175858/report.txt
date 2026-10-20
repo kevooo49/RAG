@@ -1,0 +1,60 @@
+
+=============================================================================================================================
+EWALUACJA RAG  |  90 zapytań, 30 dokumentów | K=10
+=============================================================================================================================
+Modality                 | Hit@1  | Hit@3  | Hit@5  | Hit@10 | MRR@10  | nDCG@10 | Retr_med| Retr_p95| LLM_mean
+-----------------------------------------------------------------------------------------------------------------------------
+Vector (ChromaDB)        | 0.578  | 0.800  | 0.856  | 0.889  | 0.6959  | 0.7439  | 181     | 273     | 0       
+Keyword (Elasticsearch)  | 0.511  | 0.644  | 0.722  | 0.778  | 0.5962  | 0.6399  | 52      | 57      | 0       
+Hybrid (RRF)             | 0.578  | 0.822  | 0.856  | 0.911  | 0.7046  | 0.7556  | 238     | 273     | 0       
+Hybrid + Expansion       | 0.667  | 0.889  | 0.922  | 0.944  | 0.7794  | 0.8209  | 240     | 281     | 1053    
+Hybrid + Re-Rank         | 0.667  | 0.878  | 0.911  | 0.922  | 0.7688  | 0.8074  | 2891    | 4332    | 0       
+Hybrid + Exp + Re-Rank   | 0.622  | 0.856  | 0.900  | 0.978  | 0.7414  | 0.7988  | 2953    | 6060    | 1053    
+(Retr_* = czasy wyszukiwania i rerankingu. LLM_mean = szacowany koszt przepisywania zapytań)
+
+95% PRZEDZIAŁY UFNOŚCI (Cluster Bootstrap po plikach)
+-----------------------------------------------------------------------------------------------------------------------------
+Modality                 | Hit@1               | Hit@5               | MRR@10              
+Vector (ChromaDB)        | 0.578 [0.49-0.67]   | 0.856 [0.78-0.93]   | 0.696 [0.61-0.78]   
+Keyword (Elasticsearch)  | 0.511 [0.41-0.61]   | 0.722 [0.63-0.81]   | 0.596 [0.51-0.68]   
+Hybrid (RRF)             | 0.578 [0.47-0.68]   | 0.856 [0.79-0.92]   | 0.705 [0.62-0.78]   
+Hybrid + Expansion       | 0.667 [0.57-0.77]   | 0.922 [0.87-0.97]   | 0.779 [0.70-0.85]   
+Hybrid + Re-Rank         | 0.667 [0.56-0.77]   | 0.911 [0.84-0.97]   | 0.769 [0.69-0.84]   
+Hybrid + Exp + Re-Rank   | 0.622 [0.52-0.72]   | 0.900 [0.83-0.96]   | 0.741 [0.67-0.81]   
+
+RÓŻNICE WZGLĘDEM BAZY 'Hybrid (RRF)' (Wartość dodatnia = poprawa)
+-----------------------------------------------------------------------------------------------------------------------------
+Modality                 | dHit@1 [95% CI]           | dMRR@10 [95% CI]          
+Vector (ChromaDB)        | +0.000 [-0.07,+0.07]      | -0.009 [-0.07,+0.05]
+Keyword (Elasticsearch)  | -0.067 [-0.14,+0.01]      | -0.108 [-0.18,-0.04]
+Hybrid + Expansion       | +0.089 [+0.01,+0.17]      | +0.075 [+0.02,+0.13]
+Hybrid + Re-Rank         | +0.089 [+0.01,+0.18]      | +0.064 [+0.01,+0.13]
+Hybrid + Exp + Re-Rank   | +0.044 [-0.03,+0.13]      | +0.037 [-0.02,+0.10]
+
+ROZBICIE NA TYPY ZAPYTAŃ (Hit@1 / MRR@10)
+-----------------------------------------------------------------------------------------------------------------------------
+Modality                 | colloquial (n=30)       | lexical (n=30)          | semantic (n=30)         
+Vector (ChromaDB)        | 0.57 / 0.703            | 0.80 / 0.838            | 0.37 / 0.548            
+Keyword (Elasticsearch)  | 0.43 / 0.548            | 0.80 / 0.872            | 0.30 / 0.368            
+Hybrid (RRF)             | 0.60 / 0.733            | 0.73 / 0.842            | 0.40 / 0.539            
+Hybrid + Expansion       | 0.63 / 0.748            | 0.80 / 0.890            | 0.57 / 0.700            
+Hybrid + Re-Rank         | 0.60 / 0.753            | 0.87 / 0.919            | 0.53 / 0.634            
+Hybrid + Exp + Re-Rank   | 0.57 / 0.734            | 0.87 / 0.919            | 0.43 / 0.571            
+
+PULA KANDYDATÓW RERANKERA (Top 30 z Hybrydy) - Górny limit skuteczności re-rankingu
+-----------------------------------------------------------------------------------------------------------------------------
+Hybrid + Re-Rank         | pool recall = 0.944  vs  Hit@10 po re-rankingu = 0.922
+Hybrid + Exp + Re-Rank   | pool recall = 0.978  vs  Hit@10 po re-rankingu = 0.978
+
+ZAPYTANIA POMINIĘTE (poza Top 5) PRZEZ WSZYSTKIE METODY: 3
+-----------------------------------------------------------------------------------------------------------------------------
+[semantic] Co musi zrobić student pierwszego roku, aby dostać nagrodę za sukcesy w konkursach, jeśli 
+     oczekiwane: swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md
+     najlepsze Top-3 z 'Hybrid + Expansion': Regulamin_swiadczen_dla_studentow_AGH_2026.md | IDUB2021_regulamin.md | Regulamin_zalacznik_nr_5.md
+[semantic] W jaki sposób odbywa się ocena umiejętności uczestników kursu językowego dotyczącego współ
+     oczekiwane: sylabus-francuski-b2-1_3_032889bc.md
+     najlepsze Top-3 z 'Hybrid + Expansion': sylabus-polski-b1-II-st_1fd13945.md | sylabus-francuski-a2-3_3_6df6d21e.md | sylabus-polski-b2-2-2-I-st_7f28dae3.md
+[semantic] Jakie są wymagania, aby studenci mogli uzyskać pozytywną ocenę z obowiązkowych zajęć rucho
+     oczekiwane: zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md
+     najlepsze Top-3 z 'Hybrid + Expansion': Problemy termiczne w układach elektronicznych.md | Audyt energetyczny budynku i przedsiębiorstwa.md | Tworzenie funkcjonalności języków skryptowych.md
+=============================================================================================================================

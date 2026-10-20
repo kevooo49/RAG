@@ -1,0 +1,338 @@
+[
+    {
+        "query": "Ile punktów ECTS przypisano przedmiotowi Audyt energetyczny budynku i przedsiębiorstwa?",
+        "expected_file": "Audyt energetyczny budynku i przedsiębiorstwa.md"
+    },
+    {
+        "query": "Jakie są nazwiska koordynatorów przedmiotu Audyt energetyczny budynku i przedsiębiorstwa?",
+        "expected_file": "Audyt energetyczny budynku i przedsiębiorstwa.md"
+    },
+    {
+        "query": "W jakim cyklu dydaktycznym będą prowadzone zajęcia z przedmiotu Audyt energetyczny budynku i przedsiębiorstwa?",
+        "expected_file": "Audyt energetyczny budynku i przedsiębiorstwa.md"
+    },
+    {
+        "query": "Jakie kierunki wymagają zaświadczenia lekarskiego w rekrutacji na rok 2026/2027?",
+        "expected_file": "badania-lekarskie_3f0aa992.md"
+    },
+    {
+        "query": "Kiedy należy dostarczyć zaświadczenie lekarskie do dziekanatu?",
+        "expected_file": "badania-lekarskie_3f0aa992.md"
+    },
+    {
+        "query": "Gdzie można znaleźć wykaz przychodni, w których można wykonać badania lekarskie za darmo?",
+        "expected_file": "badania-lekarskie_3f0aa992.md"
+    },
+    {
+        "query": "Jakie języki są dostępne podczas symulacji rozmowy kwalifikacyjnej?",
+        "expected_file": "dla-studentow__konsultacje-zawodowe_79452be3.md"
+    },
+    {
+        "query": "Kto jest doradcą, u którego można sprawdzić poprawność CV w języku angielskim?",
+        "expected_file": "dla-studentow__konsultacje-zawodowe_79452be3.md"
+    },
+    {
+        "query": "Jak długo trwa online symulacja rozmowy kwalifikacyjnej?",
+        "expected_file": "dla-studentow__konsultacje-zawodowe_79452be3.md"
+    },
+    {
+        "query": "Do kiedy muszę zaliczyć praktykę na studiach inżynierskich?",
+        "expected_file": "dla-studentow__praktyki_3c93d955.md"
+    },
+    {
+        "query": "Ile firm znajduje się w bazie Centrum Karier AGH, w których mogę odbyć praktykę?",
+        "expected_file": "dla-studentow__praktyki_3c93d955.md"
+    },
+    {
+        "query": "Jakie dokumenty są wymagane, jeśli zamierzam zaliczyć praktykę na podstawie doświadczenia zawodowego?",
+        "expected_file": "dla-studentow__praktyki_3c93d955.md"
+    },
+    {
+        "query": "Jaki jest numer konta do wnoszenia opłat?",
+        "expected_file": "dokumenty__numer-konta-do-wnoszenia-oplat_c339f9de.md"
+    },
+    {
+        "query": "Jakie informacje należy wpisać w tytule przelewu za dodatkowy egzemplarz certyfikatu?",
+        "expected_file": "dokumenty__numer-konta-do-wnoszenia-oplat_c339f9de.md"
+    },
+    {
+        "query": "Co należy wpisać w tytule przelewu za egzamin certyfikujący?",
+        "expected_file": "dokumenty__numer-konta-do-wnoszenia-oplat_c339f9de.md"
+    },
+    {
+        "query": "Ile punktów ECTS otrzymuje student za przedmiot Ekonomia?",
+        "expected_file": "Ekonomia.md"
+    },
+    {
+        "query": "Jakie są formy zaliczenia przedmiotu Ekonomia?",
+        "expected_file": "Ekonomia.md"
+    },
+    {
+        "query": "Kto jest koordynatorem przedmiotu Ekonomia?",
+        "expected_file": "Ekonomia.md"
+    },
+    {
+        "query": "Jakie dokumenty są wymagane do korzystania z szafek skrytkowych w Bibliotece AGH?",
+        "expected_file": "jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md"
+    },
+    {
+        "query": "Jakie przedmioty nie mogą być przechowywane w szafkach skrytkowych?",
+        "expected_file": "jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md"
+    },
+    {
+        "query": "W jakich godzinach można korzystać z szafek skrytkowych w Bibliotece AGH?",
+        "expected_file": "jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md"
+    },
+    {
+        "query": "Jak długo trwa ważność konta bibliotecznego dla studentów AGH?",
+        "expected_file": "jak-korzystac__zapis-do-biblioteki_01cf6b4c.md"
+    },
+    {
+        "query": "Jaki jest limit wypożyczeń na koncie w BG dla studentów?",
+        "expected_file": "jak-korzystac__zapis-do-biblioteki_01cf6b4c.md"
+    },
+    {
+        "query": "Na jaki okres można wypożyczać książki z Magazynu Podstawowego?",
+        "expected_file": "jak-korzystac__zapis-do-biblioteki_01cf6b4c.md"
+    },
+    {
+        "query": "Jakie są godziny otwarcia Wypożyczalni i Strefy Wolnego Dostępu w soboty?",
+        "expected_file": "kontakt__godziny-otwarcia_12fa9fe4.md"
+    },
+    {
+        "query": "Kiedy Biblioteka jest zamknięta w październiku?",
+        "expected_file": "kontakt__godziny-otwarcia_12fa9fe4.md"
+    },
+    {
+        "query": "Jakie są godziny otwarcia Czytelni Książek Własnych w piątki?",
+        "expected_file": "kontakt__godziny-otwarcia_12fa9fe4.md"
+    },
+    {
+        "query": "Ile punktów ECTS można uzyskać za przedmiot Krystalizacja?",
+        "expected_file": "Krystalizacja.md"
+    },
+    {
+        "query": "Jakie są godziny zajęć wykładowych i seminaryjnych w przedmiocie Krystalizacja?",
+        "expected_file": "Krystalizacja.md"
+    },
+    {
+        "query": "Kto jest koordynatorem przedmiotu Krystalizacja?",
+        "expected_file": "Krystalizacja.md"
+    },
+    {
+        "query": "Jakie informacje należy podać w e-mailu przy zamówieniu certyfikatu?",
+        "expected_file": "lektoraty__wydawanie-certyfikatow-jezykowych-agh_5b0f2052.md"
+    },
+    {
+        "query": "Ile wynosi opłata za duplikat certyfikatu?",
+        "expected_file": "lektoraty__wydawanie-certyfikatow-jezykowych-agh_5b0f2052.md"
+    },
+    {
+        "query": "Ile egzemplarzy certyfikatu przysługuje za każdy zdany egzamin?",
+        "expected_file": "lektoraty__wydawanie-certyfikatow-jezykowych-agh_5b0f2052.md"
+    },
+    {
+        "query": "Ile punktów ECTS można zdobyć za przedmiot Muzealnictwo i wystawiennictwo?",
+        "expected_file": "Muzealnictwo i wystawiennictwo.md"
+    },
+    {
+        "query": "Jakie są warunki dopuszczenia do egzaminu z przedmiotu Muzealnictwo i wystawiennictwo?",
+        "expected_file": "Muzealnictwo i wystawiennictwo.md"
+    },
+    {
+        "query": "Kto jest koordynatorem przedmiotu Muzealnictwo i wystawiennictwo?",
+        "expected_file": "Muzealnictwo i wystawiennictwo.md"
+    },
+    {
+        "query": "Ile kosztuje wynajem całej Hali A lub Hali B na 90 minut?",
+        "expected_file": "obiekty-i-wynajem__cennik-i-wynajem_101e666d.md"
+    },
+    {
+        "query": "Jakie są godziny, w których można skontaktować się telefonicznie w sprawie wynajmu?",
+        "expected_file": "obiekty-i-wynajem__cennik-i-wynajem_101e666d.md"
+    },
+    {
+        "query": "Jakie są stawki za wynajem Sali E z piłkami na 60 minut?",
+        "expected_file": "obiekty-i-wynajem__cennik-i-wynajem_101e666d.md"
+    },
+    {
+        "query": "Jakie punkty rekrutacyjne mogą uzyskać laureaci i finaliści olimpiad stopnia centralnego na rok akademicki 2026/2027?",
+        "expected_file": "olimpijczycy_b2005775.md"
+    },
+    {
+        "query": "Kiedy została uchwalona uchwała nr 63/2022 Senatu AGH?",
+        "expected_file": "olimpijczycy_b2005775.md"
+    },
+    {
+        "query": "Na jaki rok akademicki dotyczą regulacje w uchwale nr 61/2023 Senatu AGH?",
+        "expected_file": "olimpijczycy_b2005775.md"
+    },
+    {
+        "query": "Jakie dokumenty należy dostarczyć do DSS po dokonaniu zakupu towaru w UE?",
+        "expected_file": "organizacje-studenckie__zakupy-za-granica_275f11ec.md"
+    },
+    {
+        "query": "Jakie kroki należy podjąć, jeśli zakup towaru nie podlega przetargowi?",
+        "expected_file": "organizacje-studenckie__zakupy-za-granica_275f11ec.md"
+    },
+    {
+        "query": "Jakie są godziny pracy DSS w piątki?",
+        "expected_file": "organizacje-studenckie__zakupy-za-granica_275f11ec.md"
+    },
+    {
+        "query": "Jakie są zasady korzystania z zasobów obliczeniowych PLGrid?",
+        "expected_file": "pl__offer__how-to-use-the-resources_bd24b31e.md"
+    },
+    {
+        "query": "Kiedy można korzystać z infrastruktury PLGrid bezpłatnie?",
+        "expected_file": "pl__offer__how-to-use-the-resources_bd24b31e.md"
+    },
+    {
+        "query": "Jakie są warunki korzystania z zasobów PLGrid na zasadach komercyjnych?",
+        "expected_file": "pl__offer__how-to-use-the-resources_bd24b31e.md"
+    },
+    {
+        "query": "Ile punktów ECTS można zdobyć za przedmiot Programowanie zaawansowane 1?",
+        "expected_file": "Programowanie zaawansowane 1.md"
+    },
+    {
+        "query": "Jakie są średnie godziny przeznaczone na przygotowanie do zajęć w przedmiocie Programowanie zaawansowane 1?",
+        "expected_file": "Programowanie zaawansowane 1.md"
+    },
+    {
+        "query": "Kto jest koordynatorem przedmiotu Programowanie zaawansowane 1?",
+        "expected_file": "Programowanie zaawansowane 1.md"
+    },
+    {
+        "query": "Jakie są wymagania dotyczące sprzętu, który Użytkownik może używać na Ścianie Wspinaczkowej AGH?",
+        "expected_file": "REGULAMIN-SCIANY-WSPINACZKOWEJ_1_c7ed5a1a.md"
+    },
+    {
+        "query": "Jakie są konsekwencje dla Użytkownika, który naruszy zasady bezpieczeństwa na Ścianie Wspinaczkowej AGH?",
+        "expected_file": "REGULAMIN-SCIANY-WSPINACZKOWEJ_1_c7ed5a1a.md"
+    },
+    {
+        "query": "Jakie obuwie jest dozwolone podczas korzystania ze Ściany Wspinaczkowej AGH?",
+        "expected_file": "REGULAMIN-SCIANY-WSPINACZKOWEJ_1_c7ed5a1a.md"
+    },
+    {
+        "query": "Jak długo może trwać długoterminowa mobilność edukacyjna na studia w ramach programu Erasmus+?",
+        "expected_file": "REGULAMIN_ERASMUS_2026_e687872f.md"
+    },
+    {
+        "query": "Ile punktów ECTS minimum student musi zrealizować podczas krótkoterminowej mobilności edukacyjnej?",
+        "expected_file": "REGULAMIN_ERASMUS_2026_e687872f.md"
+    },
+    {
+        "query": "Do kiedy musi zakończyć się mobilność edukacyjna na studia w ramach projektu KA 131?",
+        "expected_file": "REGULAMIN_ERASMUS_2026_e687872f.md"
+    },
+    {
+        "query": "Jakie daty dotyczą zarządzenia Rektora AGH w sprawie regulaminu świadczeń dla studentów?",
+        "expected_file": "Regulamin_swiadczen_dla_studentow_AGH_2026.md"
+    },
+    {
+        "query": "Ile procent środków funduszu stypendialnego może być wydatkowane na stypendia rektora w danym roku?",
+        "expected_file": "Regulamin_swiadczen_dla_studentow_AGH_2026.md"
+    },
+    {
+        "query": "Jakie świadczenia może ubiegać się student AGH według regulaminu?",
+        "expected_file": "Regulamin_swiadczen_dla_studentow_AGH_2026.md"
+    },
+    {
+        "query": "Do kiedy studenci muszą dostarczyć potwierdzenia zaliczeń do Zastępcy Dyrektora SWFiS ds. Dydaktycznych?",
+        "expected_file": "Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md"
+    },
+    {
+        "query": "Jakie są godziny rejestracji do grup z Wychowania Fizycznego?",
+        "expected_file": "Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md"
+    },
+    {
+        "query": "Ile godzin zajęć z Wychowania Fizycznego musi zrealizować każdy student studiów stacjonarnych I stopnia?",
+        "expected_file": "Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md"
+    },
+    {
+        "query": "Do kiedy należy złożyć wniosek o przyznanie stypendium z Wfns?",
+        "expected_file": "swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md"
+    },
+    {
+        "query": "Jakie są kwoty stypendium w roku akademickim 2025/2026 dla laureatów I, II i III stopnia?",
+        "expected_file": "swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md"
+    },
+    {
+        "query": "Jakie są terminy składania wniosków oraz posiedzenia komisji dla osób studiujących?",
+        "expected_file": "swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md"
+    },
+    {
+        "query": "Ile godzin trwa kurs języka francuskiego B-2?",
+        "expected_file": "sylabus-francuski-b2-1_3_032889bc.md"
+    },
+    {
+        "query": "Jaką liczbę punktów ECTS przypisano do kursu języka francuskiego B-2?",
+        "expected_file": "sylabus-francuski-b2-1_3_032889bc.md"
+    },
+    {
+        "query": "Jakie są metody weryfikacji efektów uczenia się w kursie języka francuskiego B-2?",
+        "expected_file": "sylabus-francuski-b2-1_3_032889bc.md"
+    },
+    {
+        "query": "Jakie zmiany wprowadza uchwała nr 80/2026 Senatu AGH z dnia 27 maja 2026 r. dotyczące uchwały nr 76/2025?",
+        "expected_file": "uchwala_2026_2027_warunki_rekrutacji.md"
+    },
+    {
+        "query": "Kiedy odbywa się rekrutacja na pierwszy rok studiów w roku akademickim 2026/2027?",
+        "expected_file": "uchwala_2026_2027_warunki_rekrutacji.md"
+    },
+    {
+        "query": "Jakie decyzje Rektora AGH dotyczą utworzenia studiów drugiego stopnia na kierunku Energy Transition?",
+        "expected_file": "uchwala_2026_2027_warunki_rekrutacji.md"
+    },
+    {
+        "query": "Jaka jest maksymalna wartość wskaźnika rekrutacji dla studiów pierwszego stopnia?",
+        "expected_file": "warunki-rekrutacji_3fc3d539.md"
+    },
+    {
+        "query": "Ile punktów musi uzyskać kandydat, aby zostać przyjętym na pierwszy rok studiów stacjonarnych pierwszego stopnia?",
+        "expected_file": "warunki-rekrutacji_3fc3d539.md"
+    },
+    {
+        "query": "Co jest warunkiem skorzystania z uprawnień laureatów i finalistów olimpiad w rekrutacji?",
+        "expected_file": "warunki-rekrutacji_3fc3d539.md"
+    },
+    {
+        "query": "Do którego dnia należy uiścić miesięczną opłatę za akademik?",
+        "expected_file": "www.miasteczko.agh.edu.pl_faq.html_26e7b95c.md"
+    },
+    {
+        "query": "Jakie dokumenty są wymagane do zakwaterowania?",
+        "expected_file": "www.miasteczko.agh.edu.pl_faq.html_26e7b95c.md"
+    },
+    {
+        "query": "Czy mogę mieszkać w pokoju z partnerem/partnerką?",
+        "expected_file": "www.miasteczko.agh.edu.pl_faq.html_26e7b95c.md"
+    },
+    {
+        "query": "Jakie są opłaty za zakwaterowanie w standardzie Komfort+ dla studentów AGH od 1 października 2026 do 31 grudnia 2026?",
+        "expected_file": "www.miasteczko.agh.edu.pl_strefa-mieszkanca_cennik.html_15c5ed3e.md"
+    },
+    {
+        "query": "Ile wynosi dodatkowa opłata za zakwaterowanie oraz przekwaterowanie w domach studenckich od 1 października 2026?",
+        "expected_file": "www.miasteczko.agh.edu.pl_strefa-mieszkanca_cennik.html_15c5ed3e.md"
+    },
+    {
+        "query": "Jakie są stawki miesięczne za standard Podstawowy dla studentów i doktorantów AGH od 1 stycznia 2027?",
+        "expected_file": "www.miasteczko.agh.edu.pl_strefa-mieszkanca_cennik.html_15c5ed3e.md"
+    },
+    {
+        "query": "Jakie są wymagania dotyczące liczby godzin zajęć z wychowania fizycznego na studiach stacjonarnych pierwszego stopnia?",
+        "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md"
+    },
+    {
+        "query": "Ile godzin zajęć z WF odbywa się w pierwszym semestrze?",
+        "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md"
+    },
+    {
+        "query": "Jakie są minimum wymagane zajęcia dla studentów WF3, aby uzyskać zaliczenie?",
+        "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md"
+    }
+]

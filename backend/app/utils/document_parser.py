@@ -201,8 +201,8 @@ def przetworz_katalog(folder_surowe: str, folder_przetworzone: str, folder_tymcz
 
 if __name__ == "__main__":
     przetworz_katalog(
-        folder_surowe="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\SJO_Dokumenty_Surowe",
-        folder_przetworzone="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\SJO_Dokumenty_Przetworzone",
-        folder_tymczasowy="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\SJO_Dokumenty_Tymczasowe",
-        domena_zrodlowa="https://sjo.agh.edu.pl/"
+        folder_surowe="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Surowe",
+        folder_przetworzone="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Przetworzone",
+        folder_tymczasowy="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Tymczasowe",
+        domena_zrodlowa="https://www.cok.agh.edu.pl/"
     )
