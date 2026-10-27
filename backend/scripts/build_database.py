@@ -6,7 +6,11 @@ Budowa bazy wektorowej RAG z plików Markdown (AGH) – wersja przyrostowa.
     python build_database.py --dry-run            # statystyki + szacunek kosztu, BEZ API
     python build_database.py --podglad plik.md    # pokaż, jak plik zostanie pocięty (BEZ API)
     python build_database.py --szukaj "jak przedłużyć książkę?" -k 5 [--zrodlo "Biblioteka Główna AGH"]
-    python build_database.py --przebuduj          # wyczyść bazę i zbuduj od zera
+    python build_database.py --przebuduj          # wyczyść Chroma I Elasticsearch i zbuduj od zera
+    python build_database.py --odbuduj-es         # odtwórz indeks ES z plików (bez API OpenAI, za darmo)
+
+Bezpieczniki: brak katalogu kolekcji przerywa pracę (--pozwol-brak-katalogow), a masowe usuwanie chunków
+(> MAX_USUNIETYCH_PROC % plików) wymaga --potwierdz-usuwanie.
 
 Co jest inaczej niż w prostym RecursiveCharacterTextSplitter:
   * dzielimy po STRUKTURZE markdowna (nagłówki -> bloki: akapit / lista / tabela / kod),
@@ -31,15 +35,23 @@ from pathlib import Path
 from dotenv import load_dotenv
 import yaml
 
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
+load_dotenv()          # Elasticsearch importujemy leniwie (otworz_es): --podglad i --dry-run nie wymagają działającego ES
 
 # ==========================================
 # USTAWIENIA
 # ==========================================
-KATALOG_BAZY = "../../data/Baza_Wektorowa_Chroma"
-NAZWA_KOLEKCJI = "agh_wiedza"
+BAZA = Path(__file__).resolve().parent     # ścieżki względne liczone od folderu SKRYPTU, nie od katalogu uruchomienia
+KATALOG_BAZY = str((BAZA / "../../data/Baza_Wektorowa_Chroma_ASYM").resolve())
+NAZWA_KOLEKCJI = "agh_wiedza_asym"
+INDEKS_ES = NAZWA_KOLEKCJI                 # ta sama nazwa w Chroma i ES (tak ładuje je rag_service)
+ES_URL = os.getenv("ES_URL", "http://localhost:9200")
 MANIFEST = os.path.join(KATALOG_BAZY, "_manifest_indeksu.json")
+
+# Zmień przy zmianie sposobu budowania tekstu (nagłówek, breadcrumb, itp.): wymusza ponowne POCIĘCIE wszystkich plików.
+# Chunki o zmienionym tekście dostają nowe id (nowy embedding + dokument ES, stare znikają); niezmienione zostają.
+# Gdy zmieniasz tylko POLA dokumentu ES (dokument_es), po zwykłym indeksowaniu uruchom --odbuduj-es.
+WERSJA_FORMATU = "asym-v2"
+MAX_USUNIETYCH_PROC = 20           # bezpiecznik: usunięcie więcej niż tyle % indeksowanych plików wymaga --potwierdz-usuwanie
 
 MODEL = "text-embedding-3-small"   # dla polskiego warto porównać z "text-embedding-3-large" (patrz --szukaj)
 WYMIARY = None                     # np. 1024 – mniejsze wektory (model 3-* to wspiera); None = domyślne
@@ -74,7 +86,6 @@ KOLEKCJE = [
     {"sciezka": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone", "zrodlo": "Centrum Spraw Międzynarodowych AGH", "typ": "dokument", "naglowki_prawne": True},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/SWFiS_Strony", "zrodlo": "SWFiS AGH", "typ": "strona"},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone", "zrodlo": "SWFiS AGH", "typ": "dokument", "naglowki_prawne": True},
-    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony", "zrodlo": "Cyfronet AGH", "typ": "strona"},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/Cyfronet_Dokumenty_Przetworzone", "zrodlo": "Cyfronet AGH", "typ": "dokument", "naglowki_prawne": True},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/SJO_Strony", "zrodlo": "SJO AGH", "typ": "strona"},
@@ -99,7 +110,7 @@ KOLEKCJE = [
     {"sciezka": "../../data/Baza_Wiedzy_AGH/WH_Strony", "zrodlo": "WH AGH", "typ": "strona"},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/WH_Dokumenty_Przetworzone", "zrodlo": "WH AGH", "typ": "dokument", "naglowki_prawne": True},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony", "zrodlo": "Odlewnictwo AGH", "typ": "strona"},
-    {"sciezka": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Dokumenty_Przetworzone", "zrodlo": "Odlewnictwo AGH", "typ": "dokument", "naglowki_prawne": True},
+    # {"sciezka": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Dokumenty_Przetworzone", "zrodlo": "Odlewnictwo AGH", "typ": "dokument", "naglowki_prawne": True},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/WNIG_Strony", "zrodlo": "WNIG AGH", "typ": "strona"},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/WNIG_Dokumenty_Przetworzone", "zrodlo": "WNIG AGH", "typ": "dokument", "naglowki_prawne": True},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/Zarz_Strony", "zrodlo": "Zarz AGH", "typ": "strona"},
@@ -136,9 +147,15 @@ KOLEKCJE = [
     {"sciezka": "../../data/Baza_Wiedzy_AGH/AZS_Strony", "zrodlo": "AZS AGH", "typ": "strona"},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/AZS_Dokumenty_Przetworzone", "zrodlo": "AZS AGH", "typ": "dokument", "naglowki_prawne": True},
     {"sciezka": "../../data/Baza_Wiedzy_AGH/COK_Strony", "zrodlo": "COK AGH", "typ": "strona"},
-    {"sciezka": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone", "zrodlo": "COK AGH", "typ": "dokument", "naglowki_prawne": True}
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone", "zrodlo": "COK AGH", "typ": "dokument", "naglowki_prawne": True},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2021_2022", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2023_2024", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2024_2025", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2025_2026", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2026_2027", "zrodlo": "Sylabusy AGH", "typ": "sylabus"},
+    {"sciezka": "../../data/Baza_Wiedzy_AGH/Skos_Strony", "zrodlo": "Skos AGH", "typ": "strona"},
 ]
-
 # ==========================================
 # LICZENIE TOKENÓW
 # ==========================================
@@ -523,6 +540,7 @@ class Chunk:
     sekcja: str
     tok: int
     ma_tabele: bool
+    tok_emb: int = 0      # tokeny tekstu faktycznie wysyłanego do embeddingu (do kosztu); `tok` dotyczy tekstu z URL-ami
 
 
 def kontekst(zrodlo, tytul, sciezka):
@@ -590,10 +608,16 @@ def zloz_chunki(bloki, tytul, zrodlo):
     chunki = []
     for g in grupy:
         prefiks, tresc = renderuj(g["czesci"])
+
         kontekst_txt = kontekst(zrodlo, tytul, prefiks)
         tekst = f"{kontekst_txt}\n\n{tresc}"
-        chunki.append(Chunk(tekst=tekst, tekst_emb=f"{kontekst_txt}\n\n{bez_url(tresc)}",
-                            sekcja=" › ".join(prefiks), tok=tokeny(tekst), ma_tabele=g["tabela"]))
+        
+        bc_parts = [x for x in (tytul, " › ".join(prefiks)) if x]
+        breadcrumb = " › ".join(bc_parts)
+        tekst_wektor = f"{breadcrumb}\n\n{bez_url(tresc)}" if breadcrumb else bez_url(tresc)
+        
+        chunki.append(Chunk(tekst=tekst, tekst_emb=tekst_wektor,
+                            sekcja=" › ".join(prefiks), tok=tokeny(tekst), ma_tabele=g["tabela"], tok_emb=tokeny(tekst_wektor)))
     return chunki
 
 
@@ -620,11 +644,11 @@ def sygnatura_pliku(body, tytul, cfg):
     Daty pobrania z frontmattera celowo NIE wchodzą – ponowny crawl bez zmian treści nie kosztuje ani grosza."""
     param = [MAX_TOKENOW, MIN_TOKENOW, ZAPAS_TOKENOW, NAKLADKA_ZDAN, MAX_TOKENOW_WSTEPU, TOKENIZER, MODEL, WYMIARY,
              cfg["zrodlo"], cfg["typ"], bool(cfg.get("naglowki_prawne")),
-             cfg.get("pogrubienia_jako_naglowki", True), 4]
+             cfg.get("pogrubienia_jako_naglowki", True), 4, WERSJA_FORMATU]
     return hashlib.sha1(f"{body}\x00{tytul}\x00{param}".encode("utf-8")).hexdigest()
 
 
-def chunkuj_plik(sciezka_pliku, cfg, dok=None):
+def chunkuj_plik(sciezka_pliku, cfg, dok=None, rel=None):
     dok = dok or przygotuj_dokument(sciezka_pliku, cfg)
     if dok is None:
         return []
@@ -633,11 +657,13 @@ def chunkuj_plik(sciezka_pliku, cfg, dok=None):
                          pogrubienia=cfg.get("pogrubienia_jako_naglowki", True))
     chunki = zloz_chunki(bloki, tytul, cfg["zrodlo"])
 
-    rel = Path(sciezka_pliku).as_posix()
+    rel = rel or Path(sciezka_pliku).as_posix()
     dodatkowe = czysc_meta(meta)
     wynik, widziane = [], {}
     for nr, c in enumerate(chunki):
-        k = c.tekst_emb
+        # id zależy od OBU tekstów: wektorowego i pokazywanego (ES/LLM). Gdy zmienia się sam adres linku albo etykieta
+        # źródła, tekst do embeddingu zostaje ten sam – bez tego chunk uchodził za niezmieniony i ES trzymał stary tekst.
+        k = c.tekst_emb + "\x00" + c.tekst
         widziane[k] = widziane.get(k, 0) + 1            # identyczny chunk w tym samym pliku -> inny id
         cid = hashlib.sha1(f"{rel}|{widziane[k]}|{k}|{MODEL}|{WYMIARY}".encode("utf-8")).hexdigest()[:32]
         md = {**dodatkowe,
@@ -651,14 +677,40 @@ def chunkuj_plik(sciezka_pliku, cfg, dok=None):
 # ==========================================
 # POBIERANIE LISTY PLIKÓW, MANIFEST
 # ==========================================
-def zbierz_pliki():
-    pliki = []
+def rozwiaz(sciezka):
+    p = Path(sciezka)
+    return p if p.is_absolute() else (BAZA / p).resolve()
+
+
+def waliduj_konfiguracje():
+    widziane = []
+    for i, c in enumerate(KOLEKCJE):
+        if not isinstance(c, dict) or not {"sciezka", "zrodlo", "typ"} <= set(c):
+            sys.exit(f"KOLEKCJE[{i}] jest niepoprawne (wymagane klucze: sciezka, zrodlo, typ): {c!r}")
+        kat = rozwiaz(c["sciezka"])
+        for inny in widziane:
+            if kat == inny or kat in inny.parents or inny in kat.parents:
+                sys.exit(f"KOLEKCJE: ścieżki nakładają się ({kat} i {inny}) – te same pliki trafiłyby do indeksu dwa razy.")
+        widziane.append(kat)
+
+
+def zbierz_pliki(pozwol_brak=False):
+    """Zwraca [(cfg, ścieżka_do_odczytu, rel)]. `rel` to dawny klucz manifestu (ścieżka tak, jak w KOLEKCJE),
+    więc istniejący manifest i identyfikatory chunków pozostają ważne."""
+    waliduj_konfiguracje()
+    pliki, brak = [], []
     for cfg in KOLEKCJE:
-        kat = Path(cfg["sciezka"])
+        kat = rozwiaz(cfg["sciezka"])
         if not kat.exists():
-            print(f"⚠️ Brak katalogu: {kat}")
+            brak.append(str(kat))
             continue
-        pliki += [(cfg, p) for p in sorted(kat.rglob("*.md"))]
+        pliki += [(cfg, p, (Path(cfg["sciezka"]) / p.relative_to(kat)).as_posix()) for p in sorted(kat.rglob("*.md"))]
+    if brak:
+        for k in brak:
+            print(f"⚠️ Brak katalogu: {k}")
+        if not pozwol_brak:
+            sys.exit("Przerwano: brakujące katalogi kolekcji oznaczałyby USUNIĘCIE ich chunków z indeksu "
+                     "(np. zła ścieżka albo niezamontowany dysk). Napraw ścieżki albo użyj --pozwol-brak-katalogow.")
     return pliki
 
 
@@ -680,7 +732,6 @@ def zapisz_manifest(manifest):
 # ==========================================
 # OPENAI + CHROMA (importy leniwe: --podglad i --dry-run działają bez nich)
 # ==========================================
-load_dotenv()
 def utworz_klienta_openai():
     api_key = os.getenv("OPENAI_API_KEY")
 
@@ -740,56 +791,129 @@ def otworz_kolekcje(przebuduj=False):
     return kol
 
 
-def usun_id(kol, ids):
+# ==========================================
+# ELASTICSEARCH (leniwie: bez połączenia przy imporcie)
+# ==========================================
+USTAWIENIA_ES = {"analysis": {"analyzer": {"default": {"type": "polish"}}}}       # wymaga wtyczki analysis-stempel
+MAPOWANIE_ES = {"properties": {
+    "tekst": {"type": "text"}, "tytul": {"type": "text"}, "sekcja": {"type": "text"},
+    "zrodlo": {"type": "keyword"}, "url": {"type": "keyword", "ignore_above": 2048},
+    "plik": {"type": "keyword", "ignore_above": 1024},
+}}
+
+
+def otworz_es():
+    from elasticsearch import Elasticsearch
+    return Elasticsearch(ES_URL)
+
+
+def przygotuj_indeks_es(es, przebuduj=False):
+    if przebuduj and es.indices.exists(index=INDEKS_ES):
+        es.indices.delete(index=INDEKS_ES)          # --przebuduj czyści TEŻ ES (wcześniej zostawały tam stare chunki)
+    if not es.indices.exists(index=INDEKS_ES):
+        es.indices.create(index=INDEKS_ES, settings=USTAWIENIA_ES, mappings=MAPOWANIE_ES)
+
+
+def bulk_es(es, akcje):
+    """bulk z kontrolą błędów: 404 przy kasowaniu jest OK (już go nie ma); każdy inny błąd PRZERYWA pracę,
+    więc manifest nie oznaczy czegoś jako załatwionego, gdy ES go nie przyjął."""
+    if not akcje:
+        return
+    from elasticsearch.helpers import bulk
+    _, bledy = bulk(es, akcje, raise_on_error=False, stats_only=False)
+    bledy = [b for b in bledy if not ("delete" in b and b["delete"].get("status") == 404)]
+    if bledy:
+        raise RuntimeError(f"Elasticsearch: {len(bledy)} operacji bulk nie powiodło się, np. {bledy[0]}")
+
+
+def dokument_es(c, md):
+    return {"tekst": c.tekst, "tytul": md.get("tytul", ""), "zrodlo": md.get("zrodlo", ""),
+            "sekcja": md.get("sekcja", ""), "url": md.get("url") or "", "plik": md.get("plik", "")}   # bez ścieżki dysku w "url"
+
+
+def akcje_indeksu(chunki):
+    return [{"_op_type": "index", "_index": INDEKS_ES, "_id": cid, "_source": dokument_es(c, md)} for cid, c, md in chunki]
+
+
+def usun_id(kol, ids, es):
     ids = list(ids)
     for i in range(0, len(ids), 500):
         kol.delete(ids=ids[i:i + 500])
-    akcje_es = [{"_op_type": "delete", "_index": NAZWA_KOLEKCJI, "_id": i} for i in ids]
-    try:
-        bulk(es, akcje_es, ignore_status=[404])
-    except Exception:
-        pass
+    bulk_es(es, [{"_op_type": "delete", "_index": INDEKS_ES, "_id": i} for i in ids])
 
 
-es = Elasticsearch("http://localhost:9200")
-try:
-    es.indices.get(index=NAZWA_KOLEKCJI)
-except Exception:
-    es.indices.create(
-        index=NAZWA_KOLEKCJI, 
-        settings={
-            "analysis": {
-                "analyzer": {
-                    "default": {
-                        "type": "polish"
-                    }
-                }
-            }
-        }
-    )
+def sprawdz_spojnosc_es(es, manifest):
+    """Teksty chunków leżą TYLKO w ES. Jeśli ES został wyczyszczony (np. docker compose down -v), a Chroma i manifest
+    nie, indeksowanie uznałoby wszystko za aktualne, a aplikacja nie miałaby czego pokazać."""
+    oczekiwane = sum(len(v["ids"]) for v in manifest["pliki"].values())
+    if not oczekiwane:
+        return
+    es.indices.refresh(index=INDEKS_ES)
+    w_es = es.count(index=INDEKS_ES)["count"]
+    if w_es < oczekiwane:
+        print(f"⚠️ ROZJAZD: manifest zna {oczekiwane} chunków, a w Elasticsearch jest ich {w_es}. "
+              f"Uruchom:  python build_database.py --odbuduj-es   (bez kosztów API)")
+
+
+def odbuduj_es(pozwol_brak_katalogow=False):
+    """Odtwarza indeks ES z plików: BEZ API OpenAI i bez ruszania Chroma. Dla plików niezmienionych od ostatniego
+    indeksowania identyfikatory są te same co w Chroma; pozostałe pomija (załatwi je zwykłe indeksowanie)."""
+    manifest = wczytaj_manifest()
+    if not manifest["pliki"]:
+        sys.exit("Manifest jest pusty – najpierw zwykłe indeksowanie.")
+    pliki = zbierz_pliki(pozwol_brak=pozwol_brak_katalogow)
+    es = otworz_es()
+    przygotuj_indeks_es(es, przebuduj=True)
+    chunkow, pominiete = 0, []
+    for cfg, sciezka, rel in pliki:
+        wpis, dok = manifest["pliki"].get(rel), przygotuj_dokument(sciezka, cfg)
+        if not wpis or dok is None or wpis["sygnatura"] != sygnatura_pliku(dok[1], dok[2], cfg):
+            pominiete.append(rel)
+            continue
+        chunki = chunkuj_plik(sciezka, cfg, dok, rel=rel)
+        if [cid for cid, _, _ in chunki] != wpis["ids"]:
+            pominiete.append(rel)
+            continue
+        bulk_es(es, akcje_indeksu(chunki))
+        chunkow += len(chunki)
+    es.indices.refresh(index=INDEKS_ES)
+    print(f"✅ ES odbudowany: {chunkow} chunków z plików zgodnych z manifestem.")
+    if pominiete:
+        print(f"⚠️ Pominięto {len(pominiete)} plików zmienionych od ostatniego indeksowania "
+              f"(np. {pominiete[0]}) – uruchom zwykłe indeksowanie, aby je uzupełnić.")
+
 
 # ==========================================
 # INDEKSOWANIE (przyrostowe)
 # ==========================================
-def indeksuj(dry_run=False, przebuduj=False):
-    pliki = zbierz_pliki()
+def indeksuj(dry_run=False, przebuduj=False, potwierdz_usuwanie=False, pozwol_brak_katalogow=False):
+    pliki = zbierz_pliki(pozwol_brak=dry_run or pozwol_brak_katalogow)
     if przebuduj and os.path.exists(MANIFEST):
         os.remove(MANIFEST)
     manifest = wczytaj_manifest()
-    kol = klient = None
+    kol = klient = es = None
     if not dry_run:
         kol = otworz_kolekcje(przebuduj)
         klient = utworz_klienta_openai()
+        es = otworz_es()
+        przygotuj_indeks_es(es, przebuduj)
+        if not przebuduj:
+            sprawdz_spojnosc_es(es, manifest)
 
     print(f"🚀 Indeksowanie: {len(pliki)} plików Markdown | tokenizer: {TOKENIZER}"
           + ("  (⚠️ przybliżenie – zainstaluj tiktoken)" if TOKENIZER != "tiktoken" else ""))
 
     # 1) pliki usunięte z dysku -> usuń ich chunki
-    obecne = {p.as_posix() for _, p in pliki}
+    obecne = {rel for _, _, rel in pliki}
     usuniete = [r for r in manifest["pliki"] if r not in obecne]
+    limit = max(5, len(manifest["pliki"]) * MAX_USUNIETYCH_PROC // 100)
+    if len(usuniete) > limit and not dry_run and not potwierdz_usuwanie:
+        sys.exit(f"Przerwano: do usunięcia {len(usuniete)} z {len(manifest['pliki'])} plików (limit bezpiecznika: {limit}), "
+                 f"np. {usuniete[0]}.\nJeśli to zamierzone, uruchom ponownie z --potwierdz-usuwanie; "
+                 f"jeśli nie – sprawdź ścieżki w KOLEKCJE.")
     for rel in usuniete:
         if not dry_run:
-            usun_id(kol, manifest["pliki"][rel]["ids"])
+            usun_id(kol, manifest["pliki"][rel]["ids"], es)
             del manifest["pliki"][rel]
     if usuniete:
         print(f"🗑️  Usunięte pliki: {len(usuniete)} (chunki {'do usunięcia' if dry_run else 'usunięte z bazy'})")
@@ -810,42 +934,25 @@ def indeksuj(dry_run=False, przebuduj=False):
             wektory = embedduj(klient, [c.tekst_emb for _, c, _ in do_emb])
             for i in range(0, len(do_emb), 256):
                 czesc = do_emb[i:i + 256]
-                wektory_czesc = wektory[i:i + 256]
                 kol.upsert(ids=[cid for cid, _, _ in czesc],
-                           embeddings=wektory_czesc,
+                           embeddings=wektory[i:i + 256],
                            documents=[c.tekst for _, c, _ in czesc],
                            metadatas=[md for _, _, md in czesc])
-
-                akcje_es = []
-                for (cid, c, md) in czesc:
-                    akcje_es.append({
-                        "_op_type": "index",
-                        "_index": NAZWA_KOLEKCJI,
-                        "_id": cid,
-                        "_source": {
-                            "tekst": c.tekst,
-                            "tytul": md.get("tytul", ""),
-                            "zrodlo": md.get("zrodlo", ""),
-                            "sekcja": md.get("sekcja", ""),
-                            "url": md.get("url") or md.get("plik")
-                        }
-                    })
-                bulk(es, akcje_es)
+                bulk_es(es, akcje_indeksu(czesc))
 
         for rel, sygn, wszystkie_ids, stare_ids, _, zachowane in bufor:
             for i in range(0, len(zachowane), 256):      # niezmienione chunki: tylko odświeżenie metadanych (bez embeddingu)
                 kol.update(ids=[c for c, _ in zachowane[i:i + 256]], metadatas=[m for _, m in zachowane[i:i + 256]])
             osierocone = set(stare_ids) - set(wszystkie_ids)
             if osierocone:
-                usun_id(kol, osierocone)
+                usun_id(kol, osierocone, es)
             manifest["pliki"][rel] = {"sygnatura": sygn, "ids": wszystkie_ids}
         zapisz_manifest(manifest)          # po każdym zrzucie: przerwanie (Ctrl+C) niczego nie psuje
         print(f"   💾 zapisano {len(do_emb)} nowych chunków ({stat['przetworzone']} plików przetworzonych)")
         bufor, bufor_chunkow = [], 0
 
     try:
-        for cfg, sciezka in pliki:
-            rel = sciezka.as_posix()
+        for cfg, sciezka, rel in pliki:
             dok = przygotuj_dokument(sciezka, cfg)
             if dok is None:
                 stat["puste"] += 1
@@ -856,13 +963,13 @@ def indeksuj(dry_run=False, przebuduj=False):
                 stat["bez_zmian"] += 1
                 continue
 
-            chunki = chunkuj_plik(sciezka, cfg, dok)
+            chunki = chunkuj_plik(sciezka, cfg, dok, rel=rel)
             stare_ids = set(stary.get("ids", []))
             nowe = [(cid, c, md) for cid, c, md in chunki if cid not in stare_ids]   # niezmienione chunki nie kosztują
             stat["przetworzone"] += 1
             stat["chunki"] += len(chunki)
             stat["chunki_nowe"] += len(nowe)
-            stat["tokeny_nowe"] += sum(c.tok for _, c, _ in nowe)
+            stat["tokeny_nowe"] += sum(c.tok_emb for _, c, _ in nowe)     # koszt = tekst faktycznie wysyłany do API
             rozmiary += [c.tok for _, c, _ in chunki]
             z_tabela += sum(c.ma_tabele for _, c, _ in chunki)
 
@@ -905,7 +1012,7 @@ def raport(stat, rozmiary, z_tabela, dry_run):
 # ==========================================
 def podglad(sciezka_pliku):
     p = Path(sciezka_pliku)
-    cfg = next((c for c in KOLEKCJE if Path(c["sciezka"]).as_posix() in p.as_posix()),
+    cfg = next((c for c in KOLEKCJE if rozwiaz(c["sciezka"]) in p.resolve().parents),
                {"sciezka": str(p.parent), "zrodlo": "Źródło testowe", "typ": "strona"})
     wynik = chunkuj_plik(p, cfg)
     if not wynik:
@@ -938,7 +1045,10 @@ def szukaj(zapytanie, k=5, zrodlo=None):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Budowa bazy wektorowej RAG (Markdown -> Chroma)")
     ap.add_argument("--dry-run", action="store_true", help="policz chunki i koszt, bez wywołań API")
-    ap.add_argument("--przebuduj", action="store_true", help="usuń kolekcję i zbuduj od zera")
+    ap.add_argument("--przebuduj", action="store_true", help="usuń kolekcję Chroma i indeks ES i zbuduj od zera")
+    ap.add_argument("--odbuduj-es", action="store_true", help="odtwórz indeks ES z plików (bez API OpenAI)")
+    ap.add_argument("--potwierdz-usuwanie", action="store_true", help="zezwól na masowe usunięcie chunków (bezpiecznik)")
+    ap.add_argument("--pozwol-brak-katalogow", action="store_true", help="kontynuuj mimo brakujących katalogów kolekcji")
     ap.add_argument("--podglad", metavar="PLIK.md", help="pokaż, jak plik zostanie pocięty")
     ap.add_argument("--szukaj", metavar="ZAPYTANIE", help="test wyszukiwania w bazie")
     ap.add_argument("-k", type=int, default=5, help="liczba wyników --szukaj")
@@ -948,5 +1058,8 @@ if __name__ == "__main__":
         podglad(a.podglad)
     elif a.szukaj:
         szukaj(a.szukaj, a.k, a.zrodlo)
+    elif a.odbuduj_es:
+        odbuduj_es(pozwol_brak_katalogow=a.pozwol_brak_katalogow)
     else:
-        indeksuj(dry_run=a.dry_run, przebuduj=a.przebuduj)
+        indeksuj(dry_run=a.dry_run, przebuduj=a.przebuduj, potwierdz_usuwanie=a.potwierdz_usuwanie,
+                 pozwol_brak_katalogow=a.pozwol_brak_katalogow)

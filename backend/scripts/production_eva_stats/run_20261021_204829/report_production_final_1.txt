@@ -1,0 +1,34 @@
+
+==========================================================================================
+🌟 WYNIKI OSTATECZNEGO STOSU PRODUKCYJNEGO RAG | 90 zapytań, 30 dokumentów
+==========================================================================================
+Architektura: text-embedding-3-small + Asymmetric Context + Hybrid Search (RRF) + LLM Query Expansion
+------------------------------------------------------------------------------------------
+GŁÓWNE METRYKI SKUTECZNOŚCI (95% CI):
+  • Hit@1   : 0.667  [0.556 - 0.767]
+  • Hit@3   : 0.833  [0.756 - 0.900]
+  • Hit@5   : 0.856  [0.789 - 0.922]
+  • Hit@10  : 0.889  [0.822 - 0.944]
+  • MRR@10  : 0.752  [0.669 - 0.831]
+
+WYDAJNOŚĆ (Opóźnienia):
+  • Wyszukiwanie (Bazy + RRF): Mediana = 278.7 ms | p95 = 390.7 ms
+  • Szacowany koszt LLM (Rewriter): Średnio = 1209.1 ms
+
+ROZBICIE NA TYPY ZAPYTAŃ (Hit@1 / MRR@10):
+  • Colloquial   (n=30): 0.67 / 0.727
+  • Lexical      (n=30): 0.77 / 0.873
+  • Semantic     (n=30): 0.57 / 0.655
+
+⚠️ PRZYKŁADY ZAPYTAŃ POZA TOP 5 (Błędy docelowego systemu):
+  [colloquial] Na które kierunki muszę zrobić badania zanim pójdziesz zapisać się na zajęcia?...
+      Oczekiwano: badania-lekarskie_3f0aa992.md | Zwrócono: Stopy o specjalnych właściwościach.md | Finanse przedsiębiorstwa.md | Inżynieria zarządzania.md
+  [colloquial] Gdzie można wbić po książkę jak zamykają biblio?...
+      Oczekiwano: jak-korzystac__zapis-do-biblioteki_01cf6b4c.md | Zwrócono: kontakt__godziny-otwarcia_12fa9fe4.md | jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md | jak-korzystac__regulaminy-i-cennik__szafki-skrytkowe_84be3288.md
+  [semantic] Kto może ubiegać się o roczną pomoc finansową na naukę i jak długo może ona trwa...
+      Oczekiwano: kredyty-studenckie_391165f1.md | Zwrócono: REGULAMIN_ERASMUS_2026_e687872f.md | Regulamin_swiadczen_dla_studentow_AGH_2026.md | swiadczenia_21c1dc02.md
+  [colloquial] Co trzeba zakuć na kolosie z krychy?...
+      Oczekiwano: Krystalizacja.md | Zwrócono: sylabus-polski-b2-2-2-I-st_7f28dae3.md | uchwala_2026_2027_warunki_rekrutacji.md | Egzamin_wstepny_drugi_stopien_ETI.md
+  [semantic] Jakie są cele edukacyjne związane z nauką o miejscach prezentujących zbiory hist...
+      Oczekiwano: Muzealnictwo i wystawiennictwo.md | Zwrócono: uchwala_2026_2027_olimpiady.md | Zal.nr_3_OWU-sig-1_e450b2eb.md | programy-miedzynarodowe__pozostale-programy-stypendialne__time_3ca9d4c6.md
+==========================================================================================

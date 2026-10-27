@@ -945,6 +945,32 @@ PROFILE = {
             "/aktualnosci/"
         ]
     },
+    "skos": {
+        "start_url": "https://skos.agh.edu.pl/",
+        "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Skos_Strony"),
+        "wymaga_js": True,
+        "selektory_tresci": [
+            "main"
+        ],
+        "selektory_stopki": [
+            "footer",
+            ".sc-7bb83908-0"
+        ],
+        "selektory_smieci_dodatkowe": [
+            "nav",
+            ".sc-e826046d-0",
+            "form",
+            "svg",
+            "script", "style", "noscript", "iframe",
+            "#skip-to"
+        ],
+        "wykluczone_sciezki": [
+            "/search",
+            "/advanced",
+            "/tel",
+            "old.skos.agh.edu.pl"
+        ]
+    },
 }
 
 # ==========================================

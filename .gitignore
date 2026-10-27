@@ -3,3 +3,5 @@ backend/.env
 data/
 __pycache__/
 backend/__pycache__/
+backend/scripts/.eval_cache/
+backend/scripts/meta_eva_cache.sqlite

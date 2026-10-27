@@ -19,3 +19,4 @@ numpy
 langchain-ollama
 playwright
 sentence-transformers
+torch

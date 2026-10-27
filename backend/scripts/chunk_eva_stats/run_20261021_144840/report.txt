@@ -1,0 +1,79 @@
+
+==========================================================================================================================================
+EWALUACJA STRATEGII CHUNKOWANIA | 90 zapytań, 30 plików referencyjnych | poziom plików K=10, poziom chunków K=5
+==========================================================================================================================================
+Strategia                 | Hit@1  | Hit@3  | Hit@5  | Hit@10 | MRR@10  | nDCG@10 | CHit@5  | CPrec@5 
+------------------------------------------------------------------------------------------------------------------------------------------
+Fixed_500                 | 0.678  | 0.811  | 0.889  | 0.911  | 0.7560  | 0.7940  | 0.811   | 0.444   
+Fixed_1000                | 0.544  | 0.756  | 0.844  | 0.922  | 0.6741  | 0.7344  | 0.767   | 0.407   
+Fixed_2000                | 0.456  | 0.756  | 0.822  | 0.900  | 0.6150  | 0.6848  | 0.767   | 0.347   
+Paragraphs_2500           | 0.578  | 0.744  | 0.822  | 0.900  | 0.6792  | 0.7321  | 0.767   | 0.322   
+Fixed_Matched             | 0.511  | 0.756  | 0.833  | 0.900  | 0.6483  | 0.7100  | 0.756   | 0.376   
+Paragraphs_Matched        | 0.533  | 0.778  | 0.844  | 0.911  | 0.6698  | 0.7291  | 0.744   | 0.384   
+Fixed_Matched+Title       | 0.567  | 0.822  | 0.878  | 0.933  | 0.7062  | 0.7621  | 0.800   | 0.453   
+Paragraphs_Matched+Title  | 0.622  | 0.822  | 0.878  | 0.956  | 0.7344  | 0.7879  | 0.800   | 0.458   
+Production_Advanced       | 0.578  | 0.789  | 0.889  | 0.933  | 0.7008  | 0.7576  | 0.789   | 0.456   
+(CHit@5: czy któryś z top-5 chunków pochodzi z właściwego pliku; CPrec@5: jaki ułamek top-5 chunków pochodzi z właściwego pliku)
+
+STATYSTYKI BAZY CHUNKÓW
+------------------------------------------------------------------------------------------------------------------------------------------
+Strategia                 | Chunks  | Ch/plik | Śr.dł.  | Med.dł. | P95 dł. | Max dł. | Brak ch. | Ucięte | Uwagi
+Fixed_500                 | 4837    | 25.5    | 465     | 500     | 500     | 500     | 0        | 0      | 
+Fixed_1000                | 2465    | 13.0    | 931     | 1000    | 1000    | 1000    | 0        | 0      | 
+Fixed_2000                | 1272    | 6.7     | 1826    | 1999    | 2000    | 2000    | 0        | 0      | 
+Paragraphs_2500           | 1179    | 6.2     | 1874    | 2211    | 2500    | 2500    | 0        | 0      | 
+Fixed_Matched             | 1833    | 9.6     | 1263    | 1362    | 1363    | 1363    | 0        | 0      | rozmiar=1363
+Paragraphs_Matched        | 2119    | 11.2    | 1043    | 1240    | 1363    | 1363    | 0        | 0      | max=1363
+Fixed_Matched+Title       | 1833    | 9.6     | 1298    | 1386    | 1430    | 1444    | 0        | 0      | rozmiar=1363
+Paragraphs_Matched+Title  | 2119    | 11.2    | 1078    | 1276    | 1409    | 1444    | 0        | 0      | max=1363
+Production_Advanced       | 2850    | 15.0    | 1363    | 941     | 3819    | 4386    | 0        | 0      | 
+(Brak ch. = pliki referencyjne bez ani jednego chunku; Ucięte = chunki > 16000 znaków, obcięte przed embeddingiem)
+
+95% PRZEDZIAŁY UFNOŚCI (cluster bootstrap po plikach)
+------------------------------------------------------------------------------------------------------------------------------------------
+Strategia                 | Hit@1               | Hit@5               | MRR@10              | CPrec@5             
+Fixed_500                 | 0.678 [0.59-0.77]   | 0.889 [0.83-0.94]   | 0.756 [0.68-0.82]   | 0.444 [0.36-0.53]   
+Fixed_1000                | 0.544 [0.46-0.64]   | 0.844 [0.77-0.91]   | 0.674 [0.59-0.76]   | 0.407 [0.32-0.50]   
+Fixed_2000                | 0.456 [0.34-0.57]   | 0.822 [0.74-0.89]   | 0.615 [0.53-0.69]   | 0.347 [0.28-0.42]   
+Paragraphs_2500           | 0.578 [0.48-0.68]   | 0.822 [0.73-0.90]   | 0.679 [0.59-0.77]   | 0.322 [0.26-0.39]   
+Fixed_Matched             | 0.511 [0.40-0.62]   | 0.833 [0.74-0.91]   | 0.648 [0.56-0.74]   | 0.376 [0.30-0.46]   
+Paragraphs_Matched        | 0.533 [0.42-0.64]   | 0.844 [0.77-0.91]   | 0.670 [0.59-0.75]   | 0.384 [0.30-0.47]   
+Fixed_Matched+Title       | 0.567 [0.44-0.68]   | 0.878 [0.79-0.96]   | 0.706 [0.62-0.79]   | 0.453 [0.36-0.55]   
+Paragraphs_Matched+Title  | 0.622 [0.51-0.72]   | 0.878 [0.80-0.94]   | 0.734 [0.65-0.81]   | 0.458 [0.37-0.55]   
+Production_Advanced       | 0.578 [0.49-0.67]   | 0.889 [0.81-0.96]   | 0.701 [0.62-0.78]   | 0.456 [0.37-0.54]   
+
+RÓŻNICE WZGLĘDEM 'Production_Advanced' (dodatnie = lepsze od bazy)
+------------------------------------------------------------------------------------------------------------------------------------------
+Strategia                 | dHit@1 [95% CI]           | p      | dMRR@10 [95% CI]          | p      
+Fixed_500                 | +0.100 [+0.03,+0.18]      | 0.014  | +0.055 [-0.00,+0.12]      | 0.065  
+Fixed_1000                | -0.033 [-0.12,+0.06]      | 0.578  | -0.027 [-0.09,+0.03]      | 0.429  
+Fixed_2000                | -0.122 [-0.23,-0.01]      | 0.034  | -0.086 [-0.15,-0.02]      | 0.018  
+Paragraphs_2500           | +0.000 [-0.07,+0.07]      | 1.000  | -0.022 [-0.07,+0.02]      | 0.381  
+Fixed_Matched             | -0.067 [-0.16,+0.02]      | 0.171  | -0.053 [-0.11,+0.00]      | 0.063  
+Paragraphs_Matched        | -0.044 [-0.13,+0.03]      | 0.409  | -0.031 [-0.08,+0.02]      | 0.223  
+Fixed_Matched+Title       | -0.011 [-0.11,+0.08]      | 0.958  | +0.005 [-0.05,+0.06]      | 0.798  
+Paragraphs_Matched+Title  | +0.044 [-0.03,+0.12]      | 0.298  | +0.034 [-0.01,+0.08]      | 0.139  
+(p = dwustronna p-wartość z bootstrapu; ~9 porównań naraz, więc pojedyncze p<0.05 traktuj ostrożnie - patrz przedziały ufności)
+
+ROZBICIE NA TYPY ZAPYTAŃ (Hit@1 / MRR@10)
+------------------------------------------------------------------------------------------------------------------------------------------
+Strategia                 | colloquial (n=30)       | lexical (n=30)          | semantic (n=30)         
+Fixed_500                 | 0.63 / 0.739            | 0.87 / 0.913            | 0.53 / 0.616            
+Fixed_1000                | 0.50 / 0.670            | 0.77 / 0.833            | 0.37 / 0.520            
+Fixed_2000                | 0.50 / 0.652            | 0.60 / 0.742            | 0.27 / 0.451            
+Paragraphs_2500           | 0.63 / 0.723            | 0.70 / 0.801            | 0.40 / 0.514            
+Fixed_Matched             | 0.57 / 0.680            | 0.67 / 0.764            | 0.30 / 0.501            
+Paragraphs_Matched        | 0.57 / 0.708            | 0.67 / 0.794            | 0.37 / 0.507            
+Fixed_Matched+Title       | 0.60 / 0.719            | 0.67 / 0.787            | 0.43 / 0.613            
+Paragraphs_Matched+Title  | 0.73 / 0.804            | 0.70 / 0.802            | 0.43 / 0.597            
+Production_Advanced       | 0.57 / 0.703            | 0.80 / 0.854            | 0.37 / 0.546            
+
+ZAPYTANIA NIETRAFIONE (poza top-5 plików) PRZEZ KAŻDĄ STRATEGIĘ: 3 - najpierw sprawdź etykiety / parsowanie pliku
+------------------------------------------------------------------------------------------------------------------------------------------
+[colloquial] Jak załatwić, żeby przenieść oceny z wuefu z innej uczelni, albo co zrobić, gdy masz zwolnienie od l
+     oczekiwany: Rejestracja_do_grup_z_Wychowania_Fizycznego_w_semestrze_zimowym_26-27_c4b53c96.md
+[colloquial] Gdzie wrzucić papiery na stypko, jak nie chce mi się iść do dziekanatu?
+     oczekiwany: swiadczenia__stypendium-z-wlasnego-funduszu-na-stypendia_898cd999.md
+[semantic] Jakie są wymagania, aby studenci mogli uzyskać pozytywną ocenę z obowiązkowych zajęć ruchowych na uc
+     oczekiwany: zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md
+==========================================================================================================================================
