@@ -1,10 +1,10 @@
 import { sendChatMessage } from './api/client';
 import { createSourcesComponent } from './components/sources';
 import type { Message, ChatRequestPayload } from './types';
+import { formatText } from './utils/formatters';
 
-
-const DEV_MODE_SOURCES = true;   // Wyświetla listę źródeł (karty RRF) pod odpowiedzią
-const DEV_MODE_SWITCHER = true;  // Wyświetla przełącznik modeli w nagłówku
+const DEV_MODE_SOURCES = true;
+const DEV_MODE_SWITCHER = true;
 
 const form = document.getElementById('chat-form') as HTMLFormElement;
 const input = document.getElementById('message-input') as HTMLInputElement;
@@ -26,19 +26,15 @@ if (DEV_MODE_SWITCHER) {
   
   const modelSwitcher = document.getElementById('model-switcher') as HTMLSelectElement;
   if (modelSwitcher) {
-    // 1. ODCZYT: Podczas ładowania strony sprawdź, czy mamy już zapisany model
     const savedModel = localStorage.getItem('rag_selected_model');
     if (savedModel) {
         modelSwitcher.value = savedModel;
     }
-
-    // 2. ZAPIS: Gdy użytkownik zmieni model, zapisz to w pamięci przeglądarki
     modelSwitcher.addEventListener('change', (event) => {
         const target = event.target as HTMLSelectElement;
         localStorage.setItem('rag_selected_model', target.value);
-        console.log("Zapisano model:", target.value); // Opcjonalnie do debugowania
     });
-}
+  }
 }
 
 const savedHistory = sessionStorage.getItem('chatHistory');
@@ -57,7 +53,7 @@ function appendMessage(message: Message): HTMLElement {
 
   const contentDiv = document.createElement('div');
   contentDiv.className = 'message-content';
-  contentDiv.innerHTML = `<p>${message.content}</p>`;
+  contentDiv.innerHTML = formatText(message.content);
   
   msgDiv.appendChild(contentDiv);
   messagesArea.appendChild(msgDiv);
@@ -88,7 +84,7 @@ form.addEventListener('submit', async (e) => {
   sendBtn.disabled = true;
 
   loadingIndicator.classList.remove('hidden');
-  loadingText.textContent = 'Analiza historii i wyszukiwanie w bazach...';
+  loadingText.textContent = 'Analiza zapytania...';
   messagesArea.appendChild(loadingIndicator);
   messagesArea.scrollTop = messagesArea.scrollHeight;
 
@@ -115,7 +111,7 @@ form.addEventListener('submit', async (e) => {
     (chunk) => {
       handleFirstEvent();
       botMsg.content += chunk;
-      if (botContentDiv) botContentDiv.innerHTML = `<p>${botMsg.content}</p>`;
+      if (botContentDiv) botContentDiv.innerHTML = formatText(botMsg.content);
       messagesArea.scrollTop = messagesArea.scrollHeight;
     },
     (sources) => {
@@ -127,6 +123,9 @@ form.addEventListener('submit', async (e) => {
         botContentDiv.parentElement!.appendChild(sourcesEl);
         messagesArea.scrollTop = messagesArea.scrollHeight;
       }
+    },
+    (status) => {
+      loadingText.textContent = status;
     }
   );
 

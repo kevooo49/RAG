@@ -1,28 +1,35 @@
 import os
+from typing import Set, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-class Settings(BaseSettings):
-    # Klucze API (wymagane, wczytywane automatycznie z .env)
-    OPENAI_API_KEY: str
-    LLAMA_CLOUD_API_KEY: str = ""  # Opcjonalne w samym API, używane przez LlamaParse
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+ENV_PATH = os.path.join(BACKEND_DIR, ".env")
 
-    # Konfiguracja baz danych
-    ES_INDEX: str = "agh_wiedza"
+class Settings(BaseSettings):
+    OPENAI_API_KEY: str
+    LLAMA_CLOUD_API_KEY: str = ""
+
+    ES_INDEX: str = "agh_wiedza_asym"
     ES_URL: str = "http://localhost:9200"
     
-    # Ścieżka do bazy wektorowej (zakładając uruchamianie serwera z katalogu backend/)
-    CHROMA_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../data/Baza_Wektorowa_Chroma"))
+    CHROMA_DIR: str = os.path.abspath(os.path.join(BACKEND_DIR, "../data/Baza_Wektorowa_Chroma_ASYM"))
+    CHROMA_COLLECTION: str = "agh_wiedza_asym"
 
-    # Ustawienia modelu RAG
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    ALLOWED_MODELS: Set[str] = {"gpt-4o-mini", "bielik", "gpt-4o"}
+    BIELIK_MODEL: str = "SpeakLeash/bielik-11b-v3.0-instruct:Q4_K_M"
+    BIELIK_NUM_CTX: int = 8192
+    EXPANSION_MODEL: str = "gpt-4o-mini"
+    
+    EMBED_MODEL: str = "text-embedding-3-small"
+    EMBED_DIMENSIONS: Optional[int] = None
     RRF_K: int = 60
+    RAG_MIN_DENSE_SIM: Optional[float] = None
+    RAG_MAX_CONTEXT_CHARS: int = 12000
 
-    # Wskazanie, gdzie znajduje się plik .env
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_PATH,
         env_file_encoding="utf-8",
-        extra="ignore"  # Ignoruje dodatkowe zmienne w .env, których tu nie zdefiniowaliśmy
+        extra="ignore" 
     )
 
-# Tworzymy globalną instancję ustawień, którą będziemy importować w innych plikach
 settings = Settings()

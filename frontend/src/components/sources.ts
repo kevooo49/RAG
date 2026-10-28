@@ -4,7 +4,6 @@ export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
   const container = document.createElement('div');
   container.className = 'sources-container';
 
-  // Przycisk rozwijający panel
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'sources-toggle';
   toggleBtn.innerHTML = `
@@ -14,7 +13,6 @@ export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
     Zobacz źródła i cytowane fragmenty (${sources.length})
   `;
 
-  // Kontener na karty z dokumentami
   const list = document.createElement('div');
   list.className = 'sources-list';
 
@@ -22,7 +20,6 @@ export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
     const card = document.createElement('div');
     card.className = 'source-card';
     
-    // Zabezpieczenie brakujących metadanych
     const title = source.meta?.tytul || 'Dokument AGH';
     const section = source.meta?.sekcja || 'Baza główna';
     const url = source.meta?.url || '#';
@@ -41,7 +38,6 @@ export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
     list.appendChild(card);
   });
 
-  // Mechanizm rozwijania/zwijania
   toggleBtn.addEventListener('click', () => {
     const isOpen = list.classList.contains('open');
     if (isOpen) {

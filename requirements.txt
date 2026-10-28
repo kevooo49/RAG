@@ -20,3 +20,6 @@ langchain-ollama
 playwright
 sentence-transformers
 torch
+slowapi
+pytest
+vitest

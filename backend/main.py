@@ -1,24 +1,56 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-
-# Importujemy nasz wydzielony router czatu
+from fastapi.exceptions import RequestValidationError
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from app.api.routers import chat
+from app.services import rag_service
 
-# Inicjalizacja głównej aplikacji
+from app.core.limiter import limiter
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    rag_service.inicjalizuj()
+    yield
+
 app = FastAPI(
     title="AGH RAG API",
-    description="Wirtualny Asystent Wiedzy AGH - Architektura Mikroserwisowa",
-    version="2.0.0"
+    description="Wirtualny Asystent Wiedzy AGH",
+    version="2.0.0",
+    lifespan=lifespan
 )
 
-# Konfiguracja CORS (pozwala na komunikację z frontendem, np. Vite)
+app.state.limiter = limiter
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # W produkcji zmień na konkretny adres, np. ["http://localhost:5173"]
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Rejestracja endpointów w głównej aplikacji
+@app.exception_handler(RateLimitExceeded)
+async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Gdy ktoś pyta zbyt często (Błąd 429)."""
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Zbyt wiele zapytań. Odczekaj chwilę przed zadaniem kolejnego pytania."}
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Gdy historia lub pytanie przekroczy dozwolony limit (Błąd 422)."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Przekroczono limit długości konwersacji lub zapytania. Odśwież stronę, aby zacząć nowy czat."}
+    )
+
 app.include_router(chat.router)
+
+@app.get("/health", tags=["Monitoring"])
+def health_check():
+    """Zwraca status działania baz danych (Chroma, ES)."""
+    return rag_service.sprawdz_zaleznosci()
