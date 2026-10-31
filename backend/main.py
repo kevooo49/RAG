@@ -12,7 +12,7 @@ from app.core.limiter import limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    rag_service.inicjalizuj()
+    rag_service.initialize()
     yield
 
 app = FastAPI(
@@ -34,7 +34,7 @@ app.add_middleware(
 
 @app.exception_handler(RateLimitExceeded)
 async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    """Gdy ktoś pyta zbyt często (Błąd 429)."""
+    """When someone asks too often (Error 429)."""
     return JSONResponse(
         status_code=429,
         content={"detail": "Zbyt wiele zapytań. Odczekaj chwilę przed zadaniem kolejnego pytania."}
@@ -42,7 +42,7 @@ async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Gdy historia lub pytanie przekroczy dozwolony limit (Błąd 422)."""
+    """When the history or question exceeds the permitted limit (Error 422)."""
     return JSONResponse(
         status_code=422,
         content={"detail": "Przekroczono limit długości konwersacji lub zapytania. Odśwież stronę, aby zacząć nowy czat."}
@@ -52,5 +52,5 @@ app.include_router(chat.router)
 
 @app.get("/health", tags=["Monitoring"])
 def health_check():
-    """Zwraca status działania baz danych (Chroma, ES)."""
-    return rag_service.sprawdz_zaleznosci()
+    """Returns the operational status of the databases (Chroma, ES)."""
+    return rag_service.check_dependencies()

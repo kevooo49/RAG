@@ -3,13 +3,13 @@ from chromadb.api.models.Collection import Collection
 from app.core.databases import db_manager
 
 def get_es_client() -> Elasticsearch:
-    """Dependency dostarczające klienta Elasticsearch"""
+    """Dependency providing an Elasticsearch client"""
     if not db_manager.es_client:
-        raise RuntimeError("Brak połączenia z Elasticsearch.")
+        raise RuntimeError("No connection to Elasticsearch.")
     return db_manager.es_client
 
 def get_chroma_collection() -> Collection:
-    """Dependency dostarczające kolekcję z ChromaDB"""
+    """Dependency providing ChromaDB collection"""
     if not db_manager.chroma_collection:
-        raise RuntimeError("Brak połączenia z ChromaDB.")
+        raise RuntimeError("No connection to ChromaDB.")
     return db_manager.chroma_collection

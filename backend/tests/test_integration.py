@@ -8,45 +8,45 @@ from main import app, limiter
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
-def reset_limiter():
-    """Gwarantuje, że limit zapytań (Rate Limit) jest zerowany przed KAŻDYM testem."""
+def reset_rate_limiter():
+    """Ensures the Rate Limit is reset before EVERY test."""
     limiter.reset()
 
 # =====================================================================
-# 1. TESTY ENDPOINTU MONITORINGU (Health Check)
+# 1. HEALTH CHECK TESTS
 # =====================================================================
 
 class TestHealthCheck:
     
-    @patch("app.services.rag_service.sprawdz_zaleznosci")
-    def test_health_check_ok(self, mock_zaleznosci):
-        """Weryfikacja czy load balancer otrzyma status 200 OK, gdy bazy działają."""
-        mock_zaleznosci.return_value = {"elasticsearch": "ok", "chroma": "ok"}
+    @patch("app.services.rag_service.check_dependencies")
+    def test_health_check_ok(self, mock_dependencies):
+        """Verifies the load balancer receives 200 OK when databases are running."""
+        mock_dependencies.return_value = {"elasticsearch": "ok", "chroma": "ok"}
         
         response = client.get("/health")
         
         assert response.status_code == 200
         assert response.json() == {"elasticsearch": "ok", "chroma": "ok"}
 
-    @patch("app.services.rag_service.sprawdz_zaleznosci")
-    def test_health_check_awaria(self, mock_zaleznosci):
-        """Weryfikacja odpowiedzi przy awarii jednej z baz danych."""
-        mock_zaleznosci.return_value = {"elasticsearch": "błąd: timeout", "chroma": "ok"}
+    @patch("app.services.rag_service.check_dependencies")
+    def test_health_check_failure(self, mock_dependencies):
+        """Verifies the response during a database failure."""
+        mock_dependencies.return_value = {"elasticsearch": "error: timeout", "chroma": "ok"}
         
         response = client.get("/health")
         
         assert response.status_code == 200
-        assert response.json()["elasticsearch"] == "błąd: timeout"
+        assert response.json()["elasticsearch"] == "error: timeout"
 
 
 # =====================================================================
-# 2. TESTY ZABEZPIECZEŃ SIECIOWYCH I ROUTINGU
+# 2. NETWORK SECURITY AND ROUTING TESTS
 # =====================================================================
 
-class TestZabezpieczeniaAPI:
+class TestAPISecurityAndRouting:
     
-    def test_czat_odrzuca_zbyt_dluga_historie_422(self):
-        """Test integracyjny middleware'u FastAPI: czy złapie błąd Pydantica i zwróci nasz ładny JSON."""
+    def test_chat_rejects_oversized_history_422(self):
+        """FastAPI middleware integration test: catches Pydantic error and returns a clean JSON."""
         payload = {
             "query": "Pytanie",
             "history": [{"role": "user", "content": "spam"}] * 101
@@ -57,9 +57,9 @@ class TestZabezpieczeniaAPI:
         assert response.status_code == 422
         assert "Przekroczono limit długości konwersacji" in response.json()["detail"]
 
-    @patch("app.api.routers.chat.generuj_odpowiedz_stream")
-    def test_czat_rate_limiting_429(self, mock_stream):
-        """Symulacja spamera uderzającego w API powyżej limitu 5 zapytań na minutę."""
+    @patch("app.api.routers.chat.generate_streamed_response")
+    def test_chat_rate_limiting_429(self, mock_stream):
+        """Simulation of a spammer hitting the API above the 5 req/min limit."""
 
         async def fake_stream(*args, **kwargs):
             yield "data: [DONE]\n\n"
@@ -78,14 +78,14 @@ class TestZabezpieczeniaAPI:
 
 
 # =====================================================================
-# 3. TESTY STRUMIENIOWANIA SSE (Server-Sent Events)
+# 3. SSE STREAMING TESTS (Server-Sent Events)
 # =====================================================================
 
-class TestStrumieniowanieSSE:
+class TestSSEStreaming:
     
-    @patch("app.api.routers.chat.generuj_odpowiedz_stream")
-    def test_format_strumienia_sse(self, mock_stream):
-        """Weryfikacja integralności protokołu SSE (nagłówki Nginx i format pakietów)."""
+    @patch("app.api.routers.chat.generate_streamed_response")
+    def test_sse_stream_format(self, mock_stream):
+        """Verifies SSE protocol integrity (Nginx headers and packet format)."""
 
         async def fake_sse_generator(*args, **kwargs):
             yield 'data: {"type": "status", "content": "Przeszukuję bazę..."}\n\n'
@@ -111,19 +111,19 @@ class TestStrumieniowanieSSE:
 
 
 # =====================================================================
-# 4. TEST DEGRADACJI (Logika Hybrydowa / Failover)
+# 4. DEGRADATION TESTS (Hybrid Logic / Failover)
 # =====================================================================
 
 class TestRAGFailover:
 
-    @patch("app.services.rag_service._szukaj_bm25")
-    @patch("app.services.rag_service._szukaj_dense")
-    def test_aszukaj_po_zapytaniu_es_awaria(self, mock_dense, mock_bm25):
+    @patch("app.services.rag_service._search_bm25")
+    @patch("app.services.rag_service._search_dense")
+    def test_search_by_query_es_failure(self, mock_dense, mock_bm25):
         """
-        Symulacja potężnej awarii: pada Elasticsearch.
-        Testujemy, czy logika RAG poradzi sobie na samym silniku Chroma.
+        Simulates a massive failure: Elasticsearch goes down.
+        Tests if RAG logic gracefully degrades to just the Chroma engine.
         """
-        from app.services.rag_service import aszukaj_po_zapytaniu
+        from app.services.rag_service import search_by_query
         
         mock_bm25.side_effect = Exception("Elasticsearch timeout")
 
@@ -133,9 +133,9 @@ class TestRAGFailover:
             {"doc1": {"tekst": "Treść awaryjna z wektorów", "tytul": "Zapas", "url": ""}}
         )
 
-        wyniki = asyncio.run(aszukaj_po_zapytaniu("Test zapytania"))
+        results = asyncio.run(search_by_query("Test zapytania"))
 
-        assert len(wyniki) == 1
-        assert wyniki[0][0] == "Treść awaryjna z wektorów"
-        assert wyniki[0][1]["meta"]["tytul"] == "Zapas"
-        assert wyniki[0][1]["dense_sim"] == 0.85
+        assert len(results) == 1
+        assert results[0][0] == "Treść awaryjna z wektorów"
+        assert results[0][1]["meta"]["tytul"] == "Zapas"
+        assert results[0][1]["dense_sim"] == 0.85

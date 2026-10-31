@@ -34,19 +34,17 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ==========================================
 # USTAWIENIA GLOBALNE
 # ==========================================
-# Przedstaw się uczciwie i podaj kontakt – admin serwisu będzie wiedział, kto go odwiedza.
-USER_AGENT = "AGH-RAG-Crawler/1.0 (+kontakt: kevinst@student.agh.edu.pl)"
-OPOZNIENIE = 0.3               # sekundy między requestami (robots.txt Crawl-delay ma pierwszeństwo, jeśli większy)
-TIMEOUT = (5, 20)              # (połączenie, odczyt)
-MAX_BAJTOW = 5 * 1024 * 1024   # strony HTML większe niż 5 MB pomijamy
-MAX_WARIANTOW_QUERY = 15       # ile wariantów ?query na jedną ścieżkę (ochrona przed pułapkami paginacji)
-ZAPIS_STANU_CO = 25            # co ile stron zapisywać stan (wznawianie po przerwaniu)
-MAX_SMIEC_ZNAKOW = 3000        # element "śmieciowy" dłuższy niż to uznajemy za kontener treści i NIE usuwamy
 
-# Parametry URL, które tylko śledzą / sesjonują – wycinamy je z adresu
+USER_AGENT = "AGH-RAG-Crawler/1.0 (+kontakt: kevinst@student.agh.edu.pl)"
+OPOZNIENIE = 0.3
+TIMEOUT = (5, 20)
+MAX_BAJTOW = 5 * 1024 * 1024
+MAX_WARIANTOW_QUERY = 15
+ZAPIS_STANU_CO = 25
+MAX_SMIEC_ZNAKOW = 3000
+
 PARAMETRY_DO_USUNIECIA = {"fbclid", "gclid", "chash", "no_cache", "phpsessid", "sid", "jsessionid"}
 PREFIKSY_DO_USUNIECIA = ("utm_", "mc_", "pk_")
-# Parametry oznaczające inny "widok" tej samej treści – takich URL-i w ogóle nie odwiedzamy
 PARAMETRY_POMIJAJ_URL = {"print", "sort", "order", "orderby", "sortby", "format", "output", "ical"}
 
 ROZSZERZENIA_PDF = re.compile(r"\.pdf$", re.I)
@@ -56,10 +54,8 @@ ROZSZERZENIA_BINARNE = re.compile(
     re.I,
 )
 
-# Elementy usuwane zawsze
 SMIECI_BEZWARUNKOWO = ["script", "style", "noscript", "template", "svg", "iframe", "canvas",
                        "object", "embed", "link", "meta"]
-# Elementy usuwane, o ile są "małe" (zabezpieczenie przed wycięciem kontenera z treścią)
 SMIECI_OSTROZNIE = [
     "nav", "form", "button", "select", "textarea", "input",
     "[role=navigation]", "[role=search]", "[role=banner]",
@@ -67,7 +63,7 @@ SMIECI_OSTROZNIE = [
     "[class*=share]", "[class*=social]", "[class*=pagination]",
     "[class*=skip]", "[class*=carousel-control]",
 ]
-# Dodatkowo usuwane TYLKO gdy nie znaleziono kontenera treści i bierzemy całe <body>
+
 SMIECI_STRUKTURA = ["header", "footer", "aside"]
 
 # ==========================================
@@ -79,8 +75,8 @@ KONFIG_DOMYSLNY = {
     "selektory_smieci_dodatkowe": [],
     "wykluczone_sciezki": [],
     "jezyki_obce_prefiksy": ["/en", "/de", "/ru", "/uk", "/fr", "/es"],
-    "jezyki_dozwolone": ("pl",),   # None = nie filtruj po <html lang>
-    "min_znakow": 300,             # krótsze strony nie trafiają do bazy (linki z nich nadal śledzimy)
+    "jezyki_dozwolone": ("pl",),
+    "min_znakow": 300,
     "max_glebokosc": 12,
     "wymaga_js": False
 }
@@ -89,11 +85,7 @@ PROFILE = {
     "bg": {
         "start_url": "https://bg.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Biblioteka_Strony"),
-        
-        # Pusta lista wymusza wczytanie całego tagu <body> zamiast fałszywego #mainContent
         "selektory_tresci": [], 
-        
-        # Wskazujemy precyzyjnie, co skrypt ma wyciąć (menu desktopowe, menu mobilne, stopka i linki "skip")
         "selektory_smieci_dodatkowe": ["#pageFooter", "#unitMenu", "#mainMenuNav", ".skip-to-content"],
         
         "wykluczone_sciezki": [
@@ -929,10 +921,10 @@ PROFILE = {
             "nav",
             "#cookieyes-banner",
             ".cky-consent-container",
-            "#sb_instagram",               # Widget Instagrama
-            ".fb_iframe_widget",           # Widget Facebooka
-            ".elementor-widget-video",     # Filmy (czysty iframe)
-            ".elementor-widget-icon-list", # Listy ikonek social media
+            "#sb_instagram",
+            ".fb_iframe_widget",
+            ".elementor-widget-video",
+            ".elementor-widget-icon-list",
             ".dialog-lightbox-close-button",
             "script", "style", "noscript", "iframe"
         ],
@@ -1115,12 +1107,11 @@ def napraw_linki(root, baza):
 
 
 def czysc_tekst(t):
-    t = t.replace("\u00ad", "")                    # miękkie dzielenie wyrazów ("biblio­teka") psuje tokenizację
-    t = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", t)  # znaki zerowej szerokości
+    t = t.replace("\u00ad", "")
+    t = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", t)
     t = t.replace("\xa0", " ")
     t = re.sub(r"[ \t]+\n", "\n", t)
     t = re.sub(r"[ \t]{2,}", " ", t)
-    # usuń bezpośrednio powtórzone linie (zduplikowane karuzele, menu mobilne/desktop)
     wynik, poprzednia = [], None
     for linia in t.split("\n"):
         if linia.strip() and linia.strip() == poprzednia:
@@ -1185,7 +1176,6 @@ def przetworz_strone(soup, cfg, url):
 
 
 def zbuduj_frontmatter(meta):
-    # json.dumps daje poprawne stringi YAML (cudzysłowy, ukośniki, polskie znaki)
     linie = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in meta.items()] + ["---", "", ""]
     return "\n".join(linie)
 
@@ -1194,19 +1184,19 @@ def zapisz_atomowo(sciezka, tekst):
     tmp = sciezka + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(tekst)
-    os.replace(tmp, sciezka)  # przerwanie skryptu nie zostawi uciętego pliku
+    os.replace(tmp, sciezka)
 
 
 # ==========================================
-# STAN CRAWLERA (wznawianie bez ponownego pobierania)
+# STAN CRAWLERA
 # ==========================================
 class Stan:
     def __init__(self):
         self.odwiedzone = set()
-        self.kolejka = deque()          # (url, głębokość)
-        self.znane = set()              # wszystko, co już widzieliśmy (kolejka + odwiedzone + odrzucone)
-        self.hashe = {}                 # hash treści -> url (wykrywanie duplikatów)
-        self.warianty = defaultdict(set)  # ścieżka -> zestaw query
+        self.kolejka = deque()
+        self.znane = set()
+        self.hashe = {}
+        self.warianty = defaultdict(set)
         self.pdf = set()
         self.stat = Counter()
 
@@ -1373,8 +1363,6 @@ def pobierz(url, wymaga_js=False):
 
 
 def parsuj_html(content):
-    # Przekazujemy BAJTY, nie res.text: requests bez 'charset' w nagłówku zgaduje ISO-8859-1
-    # i psuje polskie znaki. BeautifulSoup sam wykrywa kodowanie (meta charset / UTF-8).
     try:
         return BeautifulSoup(content, "lxml")
     except Exception:
@@ -1386,7 +1374,7 @@ def parsuj_html(content):
 # ==========================================
 def crawl(cfg, reset=False, max_stron=None):
     folder = cfg["folder"]
-    meta_folder = folder + "_meta"   # stan/manifest poza folderem z .md, żeby nie trafiły do indeksowania
+    meta_folder = folder + "_meta"
     os.makedirs(folder, exist_ok=True)
     os.makedirs(meta_folder, exist_ok=True)
     sciezka_stanu = os.path.join(meta_folder, "stan.json")
@@ -1413,7 +1401,6 @@ def crawl(cfg, reset=False, max_stron=None):
         start = normalizuj_url(cfg["start_url"])
         stan.znane.add(start)
         stan.kolejka.append((start, 0))
-        # sitemapy: pewniejsze pokrycie niż samo klikanie po linkach
         try:
             mapy = robots.site_maps() or []
         except AttributeError:
@@ -1448,7 +1435,6 @@ def crawl(cfg, reset=False, max_stron=None):
                 log.info("⏩ %s – %s", url, powod)
                 continue
 
-            # Przekierowania: dalej pracujemy na adresie końcowym (to względem niego rozwiązujemy linki)
             try:
                 final = normalizuj_url(res.url)
             except ValueError:
@@ -1491,24 +1477,21 @@ def crawl(cfg, reset=False, max_stron=None):
                     "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/projekty_wspolfinansowane_z_funduszy_ue/"
                 ]
                 for strefa in ukryte_strefy:
-                    log.info("💉 Wstrzykuję ukrytą strefę WIMiR: %s", strefa)
+                    log.info("Wstrzykuję ukrytą strefę WIMiR: %s", strefa)
                     dodaj_do_kolejki(stan, strefa, glebokosc + 1, cfg, robots)
 
-            # 1) linki z pełnej strony (zanim wytniemy menu)
             for link in wyciagnij_linki(soup, url):
                 dodaj_do_kolejki(stan, link, glebokosc + 1, cfg, robots)
 
-            # 2) stopka – raz
             if not stopka_zapisana:
                 stopka = wyciagnij_stopke(soup, cfg, url)
                 if stopka:
                     meta = {"url": url, "tytul": "Stopka serwisu (adres, telefon, e-mail)", "typ_dokumentu": "stopka",
                             "data_pobrania": teraz()}
                     zapisz_atomowo(os.path.join(folder, "_stopka.md"), zbuduj_frontmatter(meta) + stopka)
-                    log.info("📌 Zapisano stopkę serwisu")
+                    log.info("Zapisano stopkę serwisu")
                 stopka_zapisana = True
 
-            # 3) treść właściwa
             dok = przetworz_strone(soup, cfg, url)
             jez_ok = cfg["jezyki_dozwolone"] is None or not dok["jezyk"] or dok["jezyk"] in cfg["jezyki_dozwolone"]
             if not jez_ok:
@@ -1524,7 +1507,6 @@ def crawl(cfg, reset=False, max_stron=None):
                 log.info("⏩ %s – za mało treści (%d zn.)", url, len(body))
                 continue
 
-            # hash liczymy z samego tekstu (bez adresów linków), żeby ta sama treść pod innym URL-em była duplikatem
             tekst_do_hasha = re.sub(r"\]\([^)]*\)", "]", body).lower()
             skrot = hashlib.sha1(re.sub(r"\W+", " ", tekst_do_hasha).encode("utf-8")).hexdigest()
             if skrot in stan.hashe and stan.hashe[skrot] != url:

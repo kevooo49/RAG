@@ -10,167 +10,174 @@ try:
     DOCX_SUPPORT = True
 except ImportError:
     DOCX_SUPPORT = False
-    print("⚠️ Brak docx2pdf. Pliki .docx zostaną pominięte. (Zainstaluj: pip install docx2pdf)")
+    print("⚠️ docx2pdf is missing. .docx files will be skipped. (Install: pip install docx2pdf)")
 
 load_dotenv()
 API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
 
-def czy_wymaga_zaawansowanego_parsowania(sciezka_pdf: str) -> bool:
+
+def requires_advanced_parsing(pdf_path: str) -> bool:
     try:
-        with fitz.open(sciezka_pdf) as dokument:
-            for strona in dokument:
-                tekst = strona.get_text("text").strip()
-                if len(tekst) < 50:
+        with fitz.open(pdf_path) as document:
+            for page in document:
+                text = page.get_text("text").strip()
+                if len(text) < 50:
                     return True
-      
-                obrazy = strona.get_images()
-                if len(obrazy) > 2:
+
+                images = page.get_images()
+                if len(images) > 2:
                     return True
-                
-                tabele = strona.find_tables()
-                if tabele and len(tabele.tables) > 0:
+
+                tables = page.find_tables()
+                if tables and len(tables.tables) > 0:
                     return True
         return False
     except Exception as e:
-        print(f"⚠️ Błąd analizy lokalnej {sciezka_pdf}: {e}. Wymuszam LlamaParse.")
+        print(f"⚠️ Local analysis error for {pdf_path}: {e}. Forcing LlamaParse.")
         return True
 
-def wyciagnij_tekst_lokalnie(sciezka_pdf: str) -> str:
-    tekst_calosciowy = ""
-    with fitz.open(sciezka_pdf) as dokument:
-        for strona in dokument:
-            tekst_calosciowy += strona.get_text("text") + "\n\n"
-    return tekst_calosciowy
 
-def dodaj_frontmatter(tekst: str, nazwa_oryginalna: str, metoda: str, rozszerzenie: str="pdf", zrodlo: str="") -> str:
+def extract_text_locally(pdf_path: str) -> str:
+    full_text = ""
+    with fitz.open(pdf_path) as document:
+        for page in document:
+            full_text += page.get_text("text") + "\n\n"
+    return full_text
+
+
+def add_frontmatter(text: str, original_name: str, method: str, extension: str = "pdf", source: str = "") -> str:
     frontmatter = f"""---
-plik: "{nazwa_oryginalna}"
-typ_dokumentu: {rozszerzenie}
-zrodlo: {zrodlo}
-metoda_ekstrakcji: {metoda}
+plik: "{original_name}"
+typ_dokumentu: {extension}
+zrodlo: {source}
+metoda_ekstrakcji: {method}
 ---
 
 """
-    return frontmatter + tekst
+    return frontmatter + text
 
-def wykonaj_llamaparse_v2(sciezka_do_pliku: str, klucz_api: str) -> str:
-    if not klucz_api:
-         raise Exception("Brak klucza LLAMA_CLOUD_API_KEY")
-    url_upload = "https://api.cloud.llamaindex.ai/api/v2/parse/upload"
-    headers = {"Authorization": f"Bearer {klucz_api}"}
-    
-    with open(sciezka_do_pliku, "rb") as f:
+
+def run_llamaparse_v2(file_path: str, api_key: str) -> str:
+    if not api_key:
+        raise Exception("Missing LLAMA_CLOUD_API_KEY")
+
+    upload_url = "https://api.cloud.llamaindex.ai/api/v2/parse/upload"
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    with open(file_path, "rb") as f:
         config = {"tier": "agentic", "version": "latest"}
         response = requests.post(
-            url_upload, 
-            headers=headers, 
+            upload_url,
+            headers=headers,
             files={"file": f},
             data={"configuration": json.dumps(config)},
             timeout=30
         )
-        
+
     if not response.ok:
-        raise Exception(f"Błąd połączenia z API v2: {response.text}")
-        
+        raise Exception(f"API v2 connection error: {response.text}")
+
     job_id = response.json()["id"]
-    url_status = f"https://api.cloud.llamaindex.ai/api/v2/parse/{job_id}?expand=markdown_full"
-    
-    max_prob = 60 
-    for _ in range(max_prob):
-        res = requests.get(url_status, headers=headers, timeout=20)
+    status_url = f"https://api.cloud.llamaindex.ai/api/v2/parse/{job_id}?expand=markdown_full"
+
+    max_attempts = 60
+    for _ in range(max_attempts):
+        res = requests.get(status_url, headers=headers, timeout=20)
         if not res.ok:
-            raise Exception(f"Błąd sprawdzania statusu: {res.text}")
-            
-        dane = res.json()
-        status = dane["job"]["status"]
-        
+            raise Exception(f"Status check error: {res.text}")
+
+        data = res.json()
+        status = data["job"]["status"]
+
         if status == "COMPLETED":
-            return dane.get("markdown_full", "")
+            return data.get("markdown_full", "")
         elif status in ["FAILED", "CANCELLED"]:
-            error_msg = dane["job"].get("error_message", "Nieznany błąd")
-            raise Exception(f"Zadanie odrzucone przez serwer: {error_msg}")
-            
+            error_message = data["job"].get("error_message", "Unknown error")
+            raise Exception(f"Job rejected by the server: {error_message}")
+
         time.sleep(2)
-        
-    raise Exception("Timeout zadania LlamaParse: proces trwał zbyt długo.")
 
-def przetworz_katalog(folder_surowe: str, folder_przetworzone: str, folder_tymczasowy: str, domena_zrodlowa: str):
-    os.makedirs(folder_przetworzone, exist_ok=True)
-    os.makedirs(folder_tymczasowy, exist_ok=True)
+    raise Exception("LlamaParse job timeout: the process took too long.")
 
-    print("⚙️ Uruchamiam Zaawansowany Parser (PyMuPDF + LlamaParse) z izolacją DOCX...")
-    licznik_lokalny, licznik_chmurowy, licznik_docx = 0, 0, 0
 
-    for nazwa_pliku in os.listdir(folder_surowe):
-        sciezka_surowa = os.path.join(folder_surowe, nazwa_pliku)
-        if not os.path.isfile(sciezka_surowa):
-            continue
-            
-        nazwa_bez_rozszerzenia, obecne_rozszerzenie = os.path.splitext(nazwa_pliku)
-        obecne_rozszerzenie = obecne_rozszerzenie.lower().replace(".", "")
-        sciezka_wyniku = os.path.join(folder_przetworzone, f"{nazwa_bez_rozszerzenia}.md")
-        
-        if obecne_rozszerzenie not in ["pdf", "docx"]:
-            print(f"Pominięto {nazwa_pliku} - nieobsługiwany format.")
-            continue
-        
-        if os.path.exists(sciezka_wyniku) and os.path.getsize(sciezka_wyniku) > 150:
+def process_directory(raw_folder: str, processed_folder: str, temporary_folder: str, source_domain: str):
+    os.makedirs(processed_folder, exist_ok=True)
+    os.makedirs(temporary_folder, exist_ok=True)
+
+    print("⚙️ Starting Advanced Parser (PyMuPDF + LlamaParse) with DOCX isolation...")
+    local_count, cloud_count, docx_count = 0, 0, 0
+
+    for file_name in os.listdir(raw_folder):
+        raw_path = os.path.join(raw_folder, file_name)
+        if not os.path.isfile(raw_path):
             continue
 
-        sciezka_do_analizy = sciezka_surowa
-        czy_plik_tymczasowy = False
+        name_without_extension, current_extension = os.path.splitext(file_name)
+        current_extension = current_extension.lower().replace(".", "")
+        output_path = os.path.join(processed_folder, f"{name_without_extension}.md")
 
-        if obecne_rozszerzenie == "docx" and DOCX_SUPPORT:
-            sciezka_tymczasowa = os.path.join(folder_tymczasowy, f"{nazwa_bez_rozszerzenia}.pdf")
-            print(f"🔄 Normalizuję: {nazwa_pliku} -> PDF")
+        if current_extension not in ["pdf", "docx"]:
+            print(f"Skipped {file_name} - unsupported format.")
+            continue
+
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 150:
+            continue
+
+        path_to_analyze = raw_path
+        is_temporary_file = False
+
+        if current_extension == "docx" and DOCX_SUPPORT:
+            temporary_path = os.path.join(temporary_folder, f"{name_without_extension}.pdf")
+            print(f"🔄 Normalizing: {file_name} -> PDF")
             try:
-                convert(sciezka_surowa, sciezka_tymczasowa)
-                sciezka_do_analizy = sciezka_tymczasowa
-                czy_plik_tymczasowy = True
-                licznik_docx += 1
+                convert(raw_path, temporary_path)
+                path_to_analyze = temporary_path
+                is_temporary_file = True
+                docx_count += 1
             except Exception as e:
-                print(f"❌ Błąd konwersji Worda: {e}")
+                print(f"❌ Word conversion error: {e}")
                 continue
 
-        if sciezka_do_analizy.lower().endswith(".pdf"):
-            print(f"📄 Analizuję: {os.path.basename(sciezka_surowa)}...")
-            
-            if czy_wymaga_zaawansowanego_parsowania(sciezka_do_analizy):
-                print("   ☁️ Wysyłam do LlamaParse...")
+        if path_to_analyze.lower().endswith(".pdf"):
+            print(f"📄 Analyzing: {os.path.basename(raw_path)}...")
+
+            if requires_advanced_parsing(path_to_analyze):
+                print("   ☁️ Sending to LlamaParse...")
                 try:
-                    tekst_surowy = wykonaj_llamaparse_v2(sciezka_do_analizy, API_KEY)
-                    tekst_koncowy = dodaj_frontmatter(tekst_surowy, nazwa_pliku, "llamaparse", obecne_rozszerzenie, domena_zrodlowa)
-                    licznik_chmurowy += 1
+                    raw_text = run_llamaparse_v2(path_to_analyze, API_KEY)
+                    final_text = add_frontmatter(raw_text, file_name, "llamaparse", current_extension, source_domain)
+                    cloud_count += 1
                 except Exception as e:
-                    print(f"   ❌ Błąd LlamaParse: {e}")
-                    if czy_plik_tymczasowy and os.path.exists(sciezka_do_analizy): 
-                        os.remove(sciezka_do_analizy)
+                    print(f"   ❌ LlamaParse error: {e}")
+                    if is_temporary_file and os.path.exists(path_to_analyze):
+                        os.remove(path_to_analyze)
                     continue
             else:
-                print("   💻 Przetwarzam lokalnie...")
+                print("   💻 Processing locally...")
                 try:
-                    tekst_surowy = wyciagnij_tekst_lokalnie(sciezka_do_analizy)
-                    tekst_koncowy = dodaj_frontmatter(tekst_surowy, nazwa_pliku, "pymupdf", obecne_rozszerzenie, domena_zrodlowa)
-                    licznik_lokalny += 1
+                    raw_text = extract_text_locally(path_to_analyze)
+                    final_text = add_frontmatter(raw_text, file_name, "pymupdf", current_extension, source_domain)
+                    local_count += 1
                 except Exception as e:
-                    print(f"   ❌ Błąd ekstrakcji lokalnej: {e}")
-                    if czy_plik_tymczasowy and os.path.exists(sciezka_do_analizy): 
-                        os.remove(sciezka_do_analizy)
+                    print(f"   ❌ Local extraction error: {e}")
+                    if is_temporary_file and os.path.exists(path_to_analyze):
+                        os.remove(path_to_analyze)
                     continue
-            
-            with open(sciezka_wyniku, "w", encoding="utf-8") as f:
-                f.write(tekst_koncowy)
-                
-            if czy_plik_tymczasowy and os.path.exists(sciezka_do_analizy):
-                os.remove(sciezka_do_analizy)
 
-    print("\n📊 RAPORT:")
-    print(f"DOCX->PDF: {licznik_docx} | Lokalne (Darmowe): {licznik_lokalny} | Chmura AI: {licznik_chmurowy}")
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(final_text)
+
+            if is_temporary_file and os.path.exists(path_to_analyze):
+                os.remove(path_to_analyze)
+
+    print("\n📊 REPORT:")
+    print(f"DOCX->PDF: {docx_count} | Local (Free): {local_count} | AI Cloud: {cloud_count}")
+
 
 if __name__ == "__main__":
-    przetworz_katalog(
-        folder_surowe="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Surowe",
-        folder_przetworzone="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Przetworzone",
-        folder_tymczasowy="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Tymczasowe",
-        domena_zrodlowa="https://www.cok.agh.edu.pl/"
+    process_directory(
+        raw_folder="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Surowe",
+        processed_folder="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Przetworzone",
+        temporary_folder="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Tymczasowe",
+        source_domain="https://www.cok.agh.edu.pl/"
     )

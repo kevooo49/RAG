@@ -66,18 +66,17 @@ OUT_ROOT = os.path.join(SCRIPT_DIR, "chunk_eva_stats")
 EMBED_MODEL = "text-embedding-3-small"
 K_VALUES = (1, 3, 5, 10)
 K_MAX = max(K_VALUES)
-CHUNK_K = 5            # tyle chunków RAG faktycznie przekazuje do LLM
+CHUNK_K = 5
 N_BOOTSTRAP = 2000
 SEED = 42
 
-MAX_EMBED_CHARS = 16000     # zabezpieczenie przed limitem tokenów API
+MAX_EMBED_CHARS = 16000
 EMBED_BATCH_ITEMS = 64
 EMBED_BATCH_CHARS = 150000
 
 CH_HIT = f"CHit@{CHUNK_K}"
 CH_PREC = f"CPrec@{CHUNK_K}"
 
-# Paleta referencyjna (kolejność slotów 1-3 zwalidowana dla sąsiednich par)
 C_BLUE, C_ORANGE, C_AQUA = "#2a78d6", "#eb6834", "#1baf7a"
 INK, INK_2, SURFACE, GRID = "#0b0b0b", "#52514e", "#fcfcfb", "#e4e3df"
 
@@ -105,9 +104,9 @@ class QueryResult:
     query: str
     qtype: str
     expected_file: str
-    rank: int          # ranga pliku (1-based), 0 = poza top K_MAX
-    chunk_rank: int    # ranga pierwszego chunku z oczekiwanego pliku, 0 = plik bez chunków
-    chunk_prec: float  # odsetek top-CHUNK_K chunków pochodzących z oczekiwanego pliku
+    rank: int
+    chunk_rank: int
+    chunk_prec: float
     top_files: List[str]
 
 
@@ -244,13 +243,13 @@ def chunk_paragraphs(text: str, max_size: int) -> List[str]:
     chunks: List[str] = []
     cur = ""
     for p in paras:
-        if len(p) > max_size:                      # akapit dłuższy niż limit -> tnij
+        if len(p) > max_size:
             if cur:
                 chunks.append(cur)
                 cur = ""
             chunks.extend(chunk_fixed(p, max_size))
             continue
-        if cur and len(cur) + 2 + len(p) > max_size:   # +2 = separator "\n\n"
+        if cur and len(cur) + 2 + len(p) > max_size:
             chunks.append(cur)
             cur = p
         else:
@@ -262,7 +261,7 @@ def chunk_paragraphs(text: str, max_size: int) -> List[str]:
 
 def title_from_filename(fn: str) -> str:
     stem = os.path.splitext(fn)[0]
-    stem = re.sub(r"_[0-9a-f]{8}$", "", stem)          # np. badania-lekarskie_3f0aa992
+    stem = re.sub(r"_[0-9a-f]{8}$", "", stem)
     return re.sub(r"[-_]+", " ", stem).strip()
 
 
@@ -310,12 +309,10 @@ def chunk_production_asymmetric(bd, filepath: str) -> List[str]:
     for _cid, c, md in bd.chunkuj_plik(filepath, cfg, dok):
         tytul = md.get("tytul", "")
         sekcja = md.get("sekcja", "")
-        
-        # Odcinamy stary, długi nagłówek "ścieżki chlebowej" z wektora
+
         parts = c.tekst_emb.split("\n\n", 1)
         raw_tresc = parts[1] if len(parts) > 1 else c.tekst_emb
         
-        # Tworzymy nowy, lżejszy nagłówek (tylko Tytuł - Podsekcja)
         prefiks = sekcja.split(" › ") if sekcja else []
         nowy_naglowek = f"{tytul}" + (f" - {prefiks[-1]}" if prefiks else "")
         
@@ -341,22 +338,6 @@ def build_strategies(prod_mean: Optional[int]) -> List[Strategy]:
         s.append(Strategy("Production_Advanced", production=True))
         s.append(Strategy("Production_Asymmetric", production=True, note="Hybryda - lekki naglowek"))
     return s
-
-
-# def build_chunks(strat: Strategy, corpus, bd, prod_cache: Dict[str, List[str]]) -> List[Chunk]:
-#     chunks: List[Chunk] = []
-#     for fn, path, text in corpus:
-#         if strat.production:
-#             if fn not in prod_cache:
-#                 prod_cache[fn] = chunk_production(bd, path)
-#             pieces = prod_cache[fn]
-#         else:
-#             pieces = strat.split(text)
-#             if strat.title_prefix:
-#                 title = title_from_filename(fn)
-#                 pieces = [f"{title}\n\n{p}" for p in pieces]
-#         chunks.extend(Chunk(p, fn) for p in pieces if p and p.strip())
-#     return chunks
 
 def build_chunks(strat: Strategy, corpus, bd, prod_cache: Dict[str, List[str]]) -> List[Chunk]:
     chunks: List[Chunk] = []
@@ -385,13 +366,13 @@ def build_chunks(strat: Strategy, corpus, bd, prod_cache: Dict[str, List[str]]) 
 def evaluate_strategy(name: str, chunks: List[Chunk], queries: List[Query],
                       chunk_vecs: np.ndarray, query_vecs: np.ndarray) -> List[QueryResult]:
     files = np.array([c.source_file for c in chunks])
-    sims = query_vecs @ chunk_vecs.T           # cosinus (wektory znormalizowane)
+    sims = query_vecs @ chunk_vecs.T
     results = []
     for qi, q in enumerate(queries):
         order = np.argsort(-sims[qi], kind="stable")
         ranked = files[order]
 
-        uniq = list(dict.fromkeys(ranked.tolist()))[:K_MAX]       # chunki -> pliki
+        uniq = list(dict.fromkeys(ranked.tolist()))[:K_MAX]
         rank = uniq.index(q.expected_file) + 1 if q.expected_file in uniq else 0
 
         hits = np.flatnonzero(ranked == q.expected_file)
@@ -606,7 +587,7 @@ def plot_size_vs_quality(summary, path):
     fig, ax = plt.subplots(figsize=(9, 6), facecolor=SURFACE)
     _style_axes(ax)
     ax.xaxis.grid(True, color=GRID, linewidth=0.8)
-    offsets = [(7, 6), (7, -14), (-7, 14), (-7, -18)]       # rozsuwa etykiety bliskich punktów
+    offsets = [(7, 6), (7, -14), (-7, 14), (-7, -18)]
     for i, (n, s) in enumerate(summary.items()):
         x, y = s["chunk_stats"]["mean_len"], s["MRR@10"]["mean"]
         prod = n.startswith("Production")
@@ -634,7 +615,6 @@ def run(data_dir: str, dataset_path: str, only: List[str], baseline: str,
     n_files = len({q.expected_file for q in queries})
     print(f"Zbiór: {len(queries)} zapytań, {n_files} plików referencyjnych, {len(corpus)} plików w bazie")
 
-    # Strategie bazujące na produkcji (potrzebna średnia długość chunku)
     bd, prod_cache, prod_mean = None, {}, None
     try:
         bd = load_production()
@@ -643,7 +623,7 @@ def run(data_dir: str, dataset_path: str, only: List[str], baseline: str,
         if prod_chunks:
             prod_mean = int(np.mean([len(c.text) for c in prod_chunks]))
             print(f"Produkcyjny chunker: {len(prod_chunks)} chunków, średnia długość {prod_mean} znaków")
-    except Exception as e:                                     # noqa: BLE001
+    except Exception as e:
         print(f"UWAGA: nie udało się użyć build_database ({e!r}) - pomijam strategie produkcyjne i *_Matched")
 
     strategies = build_strategies(prod_mean)

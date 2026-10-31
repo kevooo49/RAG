@@ -1,3 +1,4 @@
+
 import os
 import json
 import sys
@@ -7,10 +8,10 @@ from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 load_dotenv()
 
-KATALOG_EWALUACJI = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
-PLIK_WYNIKOWY = "test_dataset_balanced.json"
+EVALUATION_DIRECTORY = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
+OUTPUT_FILE = "test_dataset_balanced.json"
 
-BAZOWE_PLIKI = [
+BASE_FILES = [
     "Audyt energetyczny budynku i przedsiębiorstwa.md",
     "badania-lekarskie_3f0aa992.md",
     "dla-studentow__konsultacje-zawodowe_79452be3.md",
@@ -43,27 +44,28 @@ BAZOWE_PLIKI = [
     "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md"
 ]
 
-def generuj_pytania():
+
+def generate_questions():
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
+
     if not client.api_key:
-        print("❌ Brak klucza OPENAI_API_KEY.")
+        print("Missing OPENAI_API_KEY.")
         return
 
-    zbior_testowy = []
-    
-    print(f"🚀 Rozpoczynam generowanie pytań testowych dla {len(BAZOWE_PLIKI)} plików...\n")
+    test_dataset = []
 
-    for idx, nazwa_pliku in enumerate(BAZOWE_PLIKI, 1):
-        sciezka = os.path.join(KATALOG_EWALUACJI, nazwa_pliku)
-        
-        if not os.path.exists(sciezka):
-            print(f"⚠️ Nie znaleziono pliku {nazwa_pliku}, pomijam...")
+    print(f"Starting test question generation for {len(BASE_FILES)} files...\n")
+
+    for idx, file_name in enumerate(BASE_FILES, 1):
+        file_path = os.path.join(EVALUATION_DIRECTORY, file_name)
+
+        if not os.path.exists(file_path):
+            print(f"⚠️ File {file_name} not found, skipping...")
             continue
-            
-        with open(sciezka, "r", encoding="utf-8") as f:
-            tresc = f.read()
-            tresc_skrocona = tresc[:5000] 
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            truncated_content = content[:5000]
 
         prompt = f"""
 Jesteś inżynierem AI budującym system ewaluacyjny RAG dla uczelni AGH. Twój cel to wygenerowanie 3 pytań testowych na podstawie poniższego fragmentu dokumentu.
@@ -77,43 +79,44 @@ Wygeneruj dokładnie 3 pytania, po jednym dla każdej strategii:
 Zwróć wynik WYŁĄCZNIE jako poprawny obiekt JSON zawierający tablicę "pytania" w następującym formacie:
 {{
   "pytania": [
-    {{"query": "pytanie leksykalne...", "expected_file": "{nazwa_pliku}", "type": "lexical"}},
-    {{"query": "pytanie semantyczne...", "expected_file": "{nazwa_pliku}", "type": "semantic"}},
-    {{"query": "pytanie potoczne...", "expected_file": "{nazwa_pliku}", "type": "colloquial"}}
+    {{"query": "pytanie leksykalne...", "expected_file": "{file_name}", "type": "lexical"}},
+    {{"query": "pytanie semantyczne...", "expected_file": "{file_name}", "type": "semantic"}},
+    {{"query": "pytanie potoczne...", "expected_file": "{file_name}", "type": "colloquial"}}
   ]
 }}
 
 Tekst źródłowy:
-{tresc_skrocona}
+{truncated_content}
 """
-        
-        print(f"[{idx}/{len(BAZOWE_PLIKI)}] Generowanie dla: {nazwa_pliku}...")
+
+        print(f"[{idx}/{len(BASE_FILES)}] Generating questions for: {file_name}...")
         try:
             response = client.chat.completions.create(
-                model="gpt-4o",  # Zmiana modelu na potężniejszy do lepszej generacji złożeń semantycznych
+                model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.8, # Lekko podwyższona temperatura dla lepszych parafraz i słownictwa potocznego
+                temperature=0.8,
                 response_format={"type": "json_object"}
             )
-            
-            odp_tekst = response.choices[0].message.content.strip()
-            wygenerowane_pytania = json.loads(odp_tekst)
-            
-            if isinstance(wygenerowane_pytania, dict) and "pytania" in wygenerowane_pytania:
-                wygenerowane_pytania = wygenerowane_pytania["pytania"]
-            elif isinstance(wygenerowane_pytania, dict): 
-                klucz = list(wygenerowane_pytania.keys())[0]
-                wygenerowane_pytania = wygenerowane_pytania[klucz]
 
-            zbior_testowy.extend(wygenerowane_pytania)
-            
+            response_text = response.choices[0].message.content.strip()
+            generated_questions = json.loads(response_text)
+
+            if isinstance(generated_questions, dict) and "pytania" in generated_questions:
+                generated_questions = generated_questions["pytania"]
+            elif isinstance(generated_questions, dict):
+                key = list(generated_questions.keys())[0]
+                generated_questions = generated_questions[key]
+
+            test_dataset.extend(generated_questions)
+
         except Exception as e:
-            print(f"❌ Błąd przy pliku {nazwa_pliku}: {e}")
+            print(f"Error processing file {file_name}: {e}")
 
-    with open(PLIK_WYNIKOWY, "w", encoding="utf-8") as f:
-        json.dump(zbior_testowy, f, ensure_ascii=False, indent=4)
-        
-    print(f"\n✅ Sukces! Wygenerowano {len(zbior_testowy)} zbalansowanych pytań i zapisano w {PLIK_WYNIKOWY}.")
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(test_dataset, f, ensure_ascii=False, indent=4)
+
+    print(f"\nGenerated {len(test_dataset)} balanced questions and saved them to {OUTPUT_FILE}.")
+
 
 if __name__ == "__main__":
-    generuj_pytania()
+    generate_questions()

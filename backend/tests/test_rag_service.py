@@ -1,63 +1,63 @@
 import pytest
 from app.services.rag_service import (
-    _rrf,
-    _czysc,
-    _czysc_rozszerzenie,
-    _parsuj_przeformulowanie,
-    _klucz,
-    MAX_DLUGOSC_ZAPYTANIA
+    _reciprocal_rank_fusion,
+    _sanitize,
+    _sanitize_expansion,
+    _parse_reformulation,
+    _generate_key,
+    MAX_EXPANDED_QUERY_CHARS
 )
 
 # =====================================================================
-# 1. TESTY ALGORYTMU RRF (Reciprocal Rank Fusion)
+# 1. RRF ALGORITHM TESTS (Reciprocal Rank Fusion)
 # =====================================================================
 
-class TestRRF:
-    """Testy łączenia wyników wyszukiwania (BM25 + Dense) algorytmem RRF."""
+class TestReciprocalRankFusion:
+    """Tests for merging search results (BM25 + Dense) using the RRF algorithm."""
 
-    def test_rrf_puste_listy(self):
-        assert _rrf([]) == []
-        assert _rrf([[], []]) == []
+    def test_rrf_empty_lists(self):
+        assert _reciprocal_rank_fusion([]) == []
+        assert _reciprocal_rank_fusion([[], []]) == []
 
-    def test_rrf_jedna_lista(self):
-        wynik = _rrf([["doc1", "doc2"]], k=60)
-        assert len(wynik) == 2
-        assert wynik[0][0] == "doc1"
-        assert wynik[1][0] == "doc2"
-        assert wynik[0][1] > wynik[1][1]
+    def test_rrf_single_list(self):
+        result = _reciprocal_rank_fusion([["doc1", "doc2"]], k=60)
+        assert len(result) == 2
+        assert result[0][0] == "doc1"
+        assert result[1][0] == "doc2"
+        assert result[0][1] > result[1][1]
 
-    def test_rrf_przeciecie_i_sortowanie(self):
-        lista_chroma = ["doc1", "doc2", "doc3"]
-        lista_es = ["doc4", "doc2", "doc5"]
+    def test_rrf_intersection_and_sorting(self):
+        chroma_list = ["doc1", "doc2", "doc3"]
+        es_list = ["doc4", "doc2", "doc5"]
         
-        wynik = _rrf([lista_chroma, lista_es], k=60)
+        result = _reciprocal_rank_fusion([chroma_list, es_list], k=60)
         
-        najlepszy_dokument = wynik[0][0]
-        assert najlepszy_dokument == "doc2"
-        assert len(wynik) == 5
+        best_document = result[0][0]
+        assert best_document == "doc2"
+        assert len(result) == 5
 
-    def test_rrf_remisy_deterministyczne(self):
-        wynik = _rrf([["doc1"], ["doc2"]], k=60)
-        assert wynik[0][0] == "doc1"
-        assert wynik[1][0] == "doc2"
+    def test_rrf_deterministic_ties(self):
+        result = _reciprocal_rank_fusion([["doc1"], ["doc2"]], k=60)
+        assert result[0][0] == "doc1"
+        assert result[1][0] == "doc2"
 
 
 # =====================================================================
-# 2. TESTY POMOCNICZYCH FUNKCJI TEKSTOWYCH (Czyszczenie i Cache)
+# 2. TEXT UTILITY TESTS (Sanitization & Cache Keys)
 # =====================================================================
 
-@pytest.mark.parametrize("wejscie, oczekiwane", [
+@pytest.mark.parametrize("input_text, expected", [
     ("   Wielbłąd   ", "wielbłąd"),
     ("AGH  i \t Dziekanat", "agh i dziekanat"),
     ("    ", ""),
     ("!@#$%", "!@#$%")
 ])
-def test_klucz(wejscie, oczekiwane):
-    """Generowanie identyfikatorów dla cache'a (normalizacja spacji i wielkości liter)."""
-    assert _klucz(wejscie) == oczekiwane
+def test_generate_key(input_text, expected):
+    """Generating identifiers for the cache (normalization of spaces and casing)."""
+    assert _generate_key(input_text) == expected
 
 
-@pytest.mark.parametrize("wejscie, oczekiwane", [
+@pytest.mark.parametrize("input_text, expected", [
     ("[Gdzie jest dziekanat?]", "Gdzie jest dziekanat?"),
     ("\r\n\n  Tekst  \n", "Tekst"),
     ('"Cytat"', "Cytat"),
@@ -65,39 +65,39 @@ def test_klucz(wejscie, oczekiwane):
     ("[[Zagnieżdżone]]", "Zagnieżdżone"),
     (None, "")
 ])
-def test_czysc(wejscie, oczekiwane):
-    """Sanityzacja surowego tekstu, usuwanie narzutów z promptu."""
-    assert _czysc(wejscie) == oczekiwane
+def test_sanitize(input_text, expected):
+    """Sanitization of raw text, removing prompt artifacts."""
+    assert _sanitize(input_text) == expected
 
 
 # =====================================================================
-# 3. TESTY ROZSZERZANIA I PARSOWANIA (Zabezpieczenia przed LLM)
+# 3. EXPANSION & PARSING TESTS (LLM Output Safeguards)
 # =====================================================================
 
-class TestRozszerzanieZapytan:
+class TestQueryExpansion:
     
-    @pytest.mark.parametrize("pytanie, odp_llm, oczekiwane", [
+    @pytest.mark.parametrize("query, llm_response, expected", [
         ("Gdzie jest MS?", "[Gdzie jest MS?] Miasteczko Studenckie akademiki", "Gdzie jest MS? Miasteczko Studenckie akademiki"),
         ("Godziny otwarcia", "czas pracy harmonogram", "Godziny otwarcia czas pracy harmonogram"),
         ("Dziekanat WIEiT", "   ", "Dziekanat WIEiT"),
         ("stypendium", "[stypendium]", "stypendium"),
     ])
-    def test_czysc_rozszerzenie_ochrona_oryginalu(self, pytanie, odp_llm, oczekiwane):
-        """Weryfikacja czy rozszerzone zapytanie zawsze zawiera oryginalny tekst użytkownika."""
-        assert _czysc_rozszerzenie(pytanie, odp_llm) == oczekiwane
+    def test_sanitize_expansion_protects_original_query(self, query, llm_response, expected):
+        """Verifies that the expanded query ALWAYS contains the user's original text."""
+        assert _sanitize_expansion(query, llm_response) == expected
 
-    def test_czysc_rozszerzenie_limit_dlugosci(self):
-        """Ochrona przed zapchaniem wyszukiwarki gigantycznym stringiem od LLMa."""
-        pytanie = "Krótkie pytanie."
-        odp_llm = "A" * 500
-        wynik = _czysc_rozszerzenie(pytanie, odp_llm)
-        assert len(wynik) <= MAX_DLUGOSC_ZAPYTANIA
-        assert wynik.startswith("Krótkie pytanie.")
+    def test_sanitize_expansion_enforces_length_limit(self):
+        """Protection against choking the search engine with a giant LLM string."""
+        query = "Krótkie pytanie."
+        llm_response = "A" * 500
+        result = _sanitize_expansion(query, llm_response)
+        assert len(result) <= MAX_EXPANDED_QUERY_CHARS
+        assert result.startswith("Krótkie pytanie.")
 
 
-class TestParsowaniePrzeformulowania:
+class TestReformulationParsing:
     
-    @pytest.mark.parametrize("pytanie_oryginalne, odpowiedz_llm, ocz_samodzielne, ocz_cale", [
+    @pytest.mark.parametrize("original_query, llm_response, expected_standalone, expected_full", [
         (
             "ile to kosztuje?", 
             "PYTANIE: Ile kosztuje legitymacja?\nSLOWA: oplata cena", 
@@ -123,8 +123,8 @@ class TestParsowaniePrzeformulowania:
             "kto?"
         ),
     ])
-    def test_parsuj_przeformulowanie_wyrazenia_regularne(self, pytanie_oryginalne, odpowiedz_llm, ocz_samodzielne, ocz_cale):
-        """Weryfikacja regexów wyciągających strukturę z potencjalnie niestabilnego wyjścia LLM."""
-        samodzielne, cale = _parsuj_przeformulowanie(pytanie_oryginalne, odpowiedz_llm)
-        assert samodzielne == ocz_samodzielne
-        assert cale == ocz_cale
+    def test_parse_reformulation_regex_matching(self, original_query, llm_response, expected_standalone, expected_full):
+        """Verifies regex patterns extracting structure from potentially unstable LLM outputs."""
+        standalone, full = _parse_reformulation(original_query, llm_response)
+        assert standalone == expected_standalone
+        assert full == expected_full
