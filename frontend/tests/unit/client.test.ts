@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { sendChatMessage } from '../../src/api/client';
 import type { ChatRequestPayload, Message } from '../../src/types';
 
-// Tworzymy pomocniczą funkcję do symulowania natywnego strumienia bajtów z backendu
 function createMockStream(chunks: string[]) {
   const encoder = new TextEncoder();
   let index = 0;
@@ -18,11 +17,10 @@ function createMockStream(chunks: string[]) {
   };
 }
 
-describe('Klient API i SSE (client.ts)', () => {
+describe('API and SSE Client (client.ts)', () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    // Resetujemy mocki przed każdym testem używając globalThis
     globalThis.fetch = vi.fn();
   });
 
@@ -31,17 +29,14 @@ describe('Klient API i SSE (client.ts)', () => {
     vi.clearAllMocks();
   });
 
-  it('powinien ucinać historię do 6 ostatnich wiadomości (Sliding Window)', async () => {
-    // Generujemy fałszywą długą historię (15 wiadomości)
+  it('should truncate history to the last 6 messages (Sliding Window)', async () => {
     const fakeHistory: Message[] = Array.from({ length: 15 }).map((_, i) => ({
       id: String(i),
       role: i % 2 === 0 ? 'user' : 'assistant',
-      content: `Wiadomość ${i + 1}`
+      content: `Message ${i + 1}`
     }));
 
     const payload: ChatRequestPayload = { query: 'Test', model: 'bielik', history: fakeHistory };
-
-    // Symulacja prawidłowej, pustej odpowiedzi z serwera
     (globalThis.fetch as any).mockResolvedValue({
       ok: true,
       body: createMockStream(['data: [DONE]\n\n'])
@@ -49,21 +44,17 @@ describe('Klient API i SSE (client.ts)', () => {
 
     await sendChatMessage(payload, vi.fn(), vi.fn(), vi.fn());
 
-    // Weryfikujemy przechwycone żądanie
     const fetchCallArgs = (globalThis.fetch as any).mock.calls[0][1];
     const bodySent = JSON.parse(fetchCallArgs.body);
-
-    // Zamiast 15 wiadomości, serwer musi dostać tylko 6 najnowszych (od 10 do 15)
     expect(bodySent.history).toHaveLength(6);
-    expect(bodySent.history[5].content).toBe('Wiadomość 15'); 
+    expect(bodySent.history[5].content).toBe('Message 15'); 
   });
 
-  it('powinien poprawnie obsługiwać ludzkie komunikaty błędów z backendu (np. 429)', async () => {
-    // Mockujemy odrzucenie zapytania przez SlowAPI
+  it('should properly handle human-readable error messages from the backend (e.g., 429)', async () => {
     (globalThis.fetch as any).mockResolvedValue({
       ok: false,
       status: 429,
-      json: async () => ({ detail: 'Zbyt wiele zapytań. Odczekaj chwilę.' })
+      json: async () => ({ detail: 'Too many requests. Please wait a moment.' })
     });
 
     const onChunkMock = vi.fn();
@@ -71,17 +62,15 @@ describe('Klient API i SSE (client.ts)', () => {
 
     await sendChatMessage(payload, onChunkMock, vi.fn(), vi.fn());
 
-    // Upewniamy się, że klient wrzucił do UI sformatowany error, a nie padł
     expect(onChunkMock).toHaveBeenCalledWith(
-      expect.stringContaining('Zbyt wiele zapytań. Odczekaj chwilę.')
+      expect.stringContaining('Too many requests. Please wait a moment.')
     );
   });
 
-  it('powinien parsować poprawne zdarzenia strumienia SSE', async () => {
-    // Symulacja prawidłowego potoku generowania odpowiedzi w RAG
+  it('should parse valid SSE stream events', async () => {
     const sseChunks = [
-      'data: {"type": "status", "content": "Przeszukuję..."}\n\n',
-      'data: {"type": "sources", "content": [{"id": 1, "text": "Dokument"}]}\n\n',
+      'data: {"type": "status", "content": "Searching..."}\n\n',
+      'data: {"type": "sources", "content": [{"id": 1, "text": "Document"}]}\n\n',
       'data: {"type": "token", "content": "A"}\n\n',
       'data: {"type": "token", "content": "B"}\n\n',
       'data: [DONE]\n\n'
@@ -98,18 +87,17 @@ describe('Klient API i SSE (client.ts)', () => {
 
     await sendChatMessage({ query: 'Test' } as any, onChunkMock, onSourcesMock, onStatusMock);
 
-    expect(onStatusMock).toHaveBeenCalledWith('Przeszukuję...');
-    expect(onSourcesMock).toHaveBeenCalledWith([{ id: 1, text: 'Dokument' }]);
+    expect(onStatusMock).toHaveBeenCalledWith('Searching...');
+    expect(onSourcesMock).toHaveBeenCalledWith([{ id: 1, text: 'Document' }]);
     expect(onChunkMock).toHaveBeenCalledTimes(2);
     expect(onChunkMock).toHaveBeenNthCalledWith(1, 'A');
     expect(onChunkMock).toHaveBeenNthCalledWith(2, 'B');
   });
 
-  it('powinien radzić sobie z pofragmentowanymi pakietami sieciowymi', async () => {
-    // Rozrywamy jeden pakiet JSON na dwa osobne kawałki bajtów 
+  it('should handle fragmented network packets', async () => {
     const sseChunks = [
       'data: {"type": "token", "con',
-      'tent": "Całość"}\n\ndata: [DONE]\n\n'
+      'tent": "Whole"}\n\ndata: [DONE]\n\n'
     ];
 
     (globalThis.fetch as any).mockResolvedValue({
@@ -121,7 +109,6 @@ describe('Klient API i SSE (client.ts)', () => {
 
     await sendChatMessage({ query: 'Test' } as any, onChunkMock, vi.fn(), vi.fn());
 
-    // Mimo przecięcia, wewnętrzny bufor klienta (buffer +=) powinien poprawnie to zlepić i sparsować
-    expect(onChunkMock).toHaveBeenCalledWith('Całość');
+    expect(onChunkMock).toHaveBeenCalledWith('Whole');
   });
 });

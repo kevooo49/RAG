@@ -1,14 +1,12 @@
-/* GŁÓWNY KONTENER APLIKACJI */
 #app {
   max-width: var(--max-width);
   margin: 0 auto;
-  height: 100vh;           /* Zajmuje równe 100% wysokości okna przeglądarki */
+  height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 1rem;
 }
 
-/* NAGŁÓWEK (Header) */
 .app-header {
   display: flex;
   align-items: center;
@@ -18,10 +16,9 @@
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
   margin-bottom: 1rem;
-  border-left: 5px solid var(--agh-red); /* Charakterystyczny bordowy akcent */
+  border-left: 5px solid var(--agh-red);
 }
 
-/* Styl zastępczy, gdyby brakowało pliku logo_agh.png */
 .logo-fallback {
   background-color: var(--agh-red);
   color: white;
@@ -64,9 +61,8 @@
   font-weight: 500;
 }
 
-/* OBSZAR CZATU (Główne okno) */
 .chat-container {
-  flex: 1;                 /* Wypełnia całą wolną przestrzeń pod nagłówkiem */
+  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-chat);
@@ -75,10 +71,9 @@
   overflow: hidden;
 }
 
-/* Sekcja z listą dymków */
 .messages-area {
   flex: 1;
-  overflow-y: auto;        /* Pasek przewijania tylko w środku czatu */
+  overflow-y: auto;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -86,7 +81,6 @@
   scroll-behavior: smooth;
 }
 
-/* FORMULARZ WYSYŁANIA WIADOMOŚCI */
 .input-area {
   display: flex;
   gap: 0.75rem;
@@ -108,10 +102,9 @@
 
 #message-input:focus {
   border-color: var(--agh-red);
-  box-shadow: 0 0 0 3px rgba(166, 25, 46, 0.1); /* Delikatna bordowa poświata przy pisaniu */
+  box-shadow: 0 0 0 3px rgba(166, 25, 46, 0.1);
 }
 
-/* Przycisk wyślij */
 #send-button {
   display: flex;
   align-items: center;
@@ -137,7 +130,6 @@
   opacity: 0.7;
 }
 
-/* Responsywność dla ekranów telefonów */
 @media (max-width: 600px) {
   #app {
     padding: 0;

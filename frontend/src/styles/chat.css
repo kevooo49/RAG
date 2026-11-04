@@ -1,4 +1,3 @@
-/* Stylizacja dymków wiadomości */
 .message {
   display: flex;
   flex-direction: column;
@@ -25,13 +24,11 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Animacja wejścia wiadomości */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Formatowanie tekstu w dymkach (np. pogrubienia markdown) */
 .message-content strong {
   color: var(--agh-dark-red);
 }
@@ -44,7 +41,6 @@
   margin-bottom: 0;
 }
 
-/* KONTENER ŁADOWANIA (PULSUJĄCE KROPKI) */
 .loading-indicator {
   align-self: flex-start;
   margin-bottom: 1rem;

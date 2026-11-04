@@ -1,4 +1,3 @@
-/* Rozwijany panel ze źródłami */
 .sources-container {
   margin-top: 0.75rem;
   font-size: 0.9rem;
@@ -32,7 +31,6 @@
   transform: rotate(180deg);
 }
 
-/* Kontener na listę kart - domyślnie ukryty */
 .sources-list {
   display: none;
   margin-top: 0.5rem;
@@ -50,7 +48,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Pojedyncza karta źródła */
 .source-card {
   background-color: var(--bg-main);
   border-left: 4px solid var(--agh-red);
@@ -106,7 +103,7 @@
   line-height: 1.5;
   white-space: pre-wrap;
   display: -webkit-box;
-  -webkit-line-clamp: 4; /* Ograniczenie długości tekstu */
+  -webkit-line-clamp: 4;
   line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;

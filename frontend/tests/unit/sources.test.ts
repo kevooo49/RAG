@@ -5,48 +5,44 @@
 import { describe, it, expect } from 'vitest';
 import { createSourcesComponent } from '../../src/components/sources';
 
-// Symulujemy interfejs źródła (Source) używany w Twoim typowaniu
 interface MockSource {
   id: string | number;
   text?: string;
   meta?: {
-    tytul?: string;
+    title?: string;
     url?: string;
   };
 }
 
-describe('Renderowanie Elementów UI (sources.ts)', () => {
+describe('UI Element Rendering (sources.ts)', () => {
   
-  it('powinien wygenerować pusty główny kontener, gdy brak źródeł', () => {
-    const pustaTablica: MockSource[] = [];
-    const el = createSourcesComponent(pustaTablica as any);
-    
-    // Sprawdzamy, czy funkcja nadal zwraca element HTML (prawdopodobnie div.sources-container)
+  it('should generate an empty main container when there are no sources', () => {
+    const emptyArray: MockSource[] = [];
+    const el = createSourcesComponent(emptyArray as any);
+
     expect(el).toBeInstanceOf(HTMLElement);
-    // Upewniamy się, że w środku nie wygenerowano żadnych kart źródeł
     expect(el.querySelectorAll('.source-card').length).toBe(0);
   });
 
-  it('powinien wygenerować odpowiednią liczbę kart źródeł (.source-card)', () => {
+  it('should generate the appropriate number of source cards (.source-card)', () => {
     const mockSources: MockSource[] = [
-      { id: 1, meta: { tytul: 'Regulamin' } },
-      { id: 2, meta: { tytul: 'Stypendia' } },
-      { id: 3, meta: { tytul: 'DS Kapitol' } }
+      { id: 1, meta: { title: 'Regulations' } },
+      { id: 2, meta: { title: 'Scholarships' } },
+      { id: 3, meta: { title: 'Kapitol Dormitory' } }
     ];
     
     const el = createSourcesComponent(mockSources as any);
     const cards = el.querySelectorAll('.source-card');
-    
-    // Dla 3 źródeł, w DOM muszą pojawić się dokładnie 3 elementy z tą klasą
+
     expect(cards.length).toBe(3);
   });
 
-  it('powinien poprawnie bindować metadane (tytuł, url) i sekwencyjny numer wewnątrz karty', () => {
+  it('should properly bind metadata (title, url) and sequential number inside the card', () => {
     const mockSources: MockSource[] = [
       { 
-        id: 42, // Wewnętrzne ID z wektorowej bazy danych (nie powinno być widoczne dla usera jako numer cytowania)
+        id: 42,
         meta: { 
-          tytul: 'Zasady rekrutacji WIEiT',
+          title: 'WIEiT Admission Rules',
           url: 'https://kandydaci.agh.edu.pl'
         } 
       }
@@ -57,15 +53,13 @@ describe('Renderowanie Elementów UI (sources.ts)', () => {
     
     expect(card).not.toBeNull();
     
-    const htmlKarty = card!.innerHTML;
+    const cardHtml = card!.innerHTML;
     
-    // Zamiast wewnętrznego ID (42), komponent powinien nadać numer sekwencyjny (#1) dla pierwszego elementu
-    expect(htmlKarty).toContain('#1');
-    expect(htmlKarty).toContain('Zasady rekrutacji WIEiT');
+    expect(cardHtml).toContain('#1');
+    expect(cardHtml).toContain('WIEiT Admission Rules');
     
-    // Jeśli źródło ma URL, komponent zazwyczaj generuje tag <a> z atrybutem href
-    if (htmlKarty.includes('<a')) {
-      expect(htmlKarty).toContain('href="https://kandydaci.agh.edu.pl"');
+    if (cardHtml.includes('<a')) {
+      expect(cardHtml).toContain('href="https://kandydaci.agh.edu.pl"');
     }
   });
 

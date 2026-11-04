@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Crawler HTML -> Markdown pod RAG (Uczelnia AGH).
+HTML -> Markdown Crawler for RAG (AGH University).
 
-Uruchomienie:
-    python scraper_agh.py                 # profil "bg" (Biblioteka Główna)
-    python scraper_agh.py bg --max-stron 50   # test na 50 stronach
-    python scraper_agh.py bg --reset      # pełny re-crawl od zera
+Usage:
+    python scraper_agh.py                 # "bg" profile (Main Library)
+    python scraper_agh.py bg --max-pages 50   # test on 50 pages
+    python scraper_agh.py bg --reset      # full re-crawl from scratch
 
-Jedna logika crawlera + osobny PROFIL na każdy serwis (selektory, wykluczenia).
-Nowy serwis = nowy wpis w PROFILE, a nie nowy skrypt.
+Single crawler logic + separate PROFILE per site (selectors, exclusions).
+New site = new entry in PROFILES, not a new script.
 """
 import argparse
 import hashlib
@@ -32,31 +32,31 @@ from urllib3.util.retry import Retry
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ==========================================
-# USTAWIENIA GLOBALNE
+# GLOBAL SETTINGS
 # ==========================================
 
-USER_AGENT = "AGH-RAG-Crawler/1.0 (+kontakt: kevinst@student.agh.edu.pl)"
-OPOZNIENIE = 0.3
+USER_AGENT = "AGH-RAG-Crawler/1.0 (+contact: kevinst@student.agh.edu.pl)"
+DELAY = 0.3
 TIMEOUT = (5, 20)
-MAX_BAJTOW = 5 * 1024 * 1024
-MAX_WARIANTOW_QUERY = 15
-ZAPIS_STANU_CO = 25
-MAX_SMIEC_ZNAKOW = 3000
+MAX_BYTES = 5 * 1024 * 1024
+MAX_QUERY_VARIANTS = 15
+SAVE_STATE_EVERY = 25
+MAX_JUNK_CHARS = 3000
 
-PARAMETRY_DO_USUNIECIA = {"fbclid", "gclid", "chash", "no_cache", "phpsessid", "sid", "jsessionid"}
-PREFIKSY_DO_USUNIECIA = ("utm_", "mc_", "pk_")
-PARAMETRY_POMIJAJ_URL = {"print", "sort", "order", "orderby", "sortby", "format", "output", "ical"}
+PARAMS_TO_REMOVE = {"fbclid", "gclid", "chash", "no_cache", "phpsessid", "sid", "jsessionid"}
+PREFIXES_TO_REMOVE = ("utm_", "mc_", "pk_")
+PARAMS_SKIP_URL = {"print", "sort", "order", "orderby", "sortby", "format", "output", "ical"}
 
-ROZSZERZENIA_PDF = re.compile(r"\.pdf$", re.I)
-ROZSZERZENIA_BINARNE = re.compile(
+PDF_EXTENSIONS = re.compile(r"\.pdf$", re.I)
+BINARY_EXTENSIONS = re.compile(
     r"\.(docx?|xlsx?|pptx?|odt|ods|zip|rar|7z|gz|jpe?g|png|gif|svg|webp|bmp|ico|mp[34]|avi|mov|wav|"
     r"css|js|woff2?|ttf|eot|xml|json|rss|ics|epub|csv|txt|exe|dmg)$",
     re.I,
 )
 
-SMIECI_BEZWARUNKOWO = ["script", "style", "noscript", "template", "svg", "iframe", "canvas",
+JUNK_UNCONDITIONAL = ["script", "style", "noscript", "template", "svg", "iframe", "canvas",
                        "object", "embed", "link", "meta"]
-SMIECI_OSTROZNIE = [
+JUNK_CAUTIOUS = [
     "nav", "form", "button", "select", "textarea", "input",
     "[role=navigation]", "[role=search]", "[role=banner]",
     "[class*=breadcrumb]", "[class*=cookie]", "[id*=cookie]",
@@ -64,31 +64,31 @@ SMIECI_OSTROZNIE = [
     "[class*=skip]", "[class*=carousel-control]",
 ]
 
-SMIECI_STRUKTURA = ["header", "footer", "aside"]
+JUNK_STRUCTURE = ["header", "footer", "aside"]
 
 # ==========================================
-# PROFILE SERWISÓW
+# SITE PROFILES
 # ==========================================
-KONFIG_DOMYSLNY = {
-    "selektory_tresci": ["#mainContent", "main", "[role=main]", "article", "#main", "#content"],
-    "selektory_stopki": ["#pageFooter", "footer"],
-    "selektory_smieci_dodatkowe": [],
-    "wykluczone_sciezki": [],
-    "jezyki_obce_prefiksy": ["/en", "/de", "/ru", "/uk", "/fr", "/es"],
-    "jezyki_dozwolone": ("pl",),
-    "min_znakow": 300,
-    "max_glebokosc": 12,
-    "wymaga_js": False
+DEFAULT_CONFIG = {
+    "content_selectors": ["#mainContent", "main", "[role=main]", "article", "#main", "#content"],
+    "footer_selectors": ["#pageFooter", "footer"],
+    "additional_junk_selectors": [],
+    "excluded_paths": [],
+    "foreign_language_prefixes": ["/en", "/de", "/ru", "/uk", "/fr", "/es"],
+    "allowed_languages": ("pl",),
+    "min_chars": 300,
+    "max_depth": 12,
+    "requires_js": False
 }
 
-PROFILE = {
+PROFILES = {
     "bg": {
         "start_url": "https://bg.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Biblioteka_Strony"),
-        "selektory_tresci": [], 
-        "selektory_smieci_dodatkowe": ["#pageFooter", "#unitMenu", "#mainMenuNav", ".skip-to-content"],
+        "content_selectors": [], 
+        "additional_junk_selectors": ["#pageFooter", "#unitMenu", "#mainMenuNav", ".skip-to-content"],
         
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/wydarzenia", "/aktualnosci", "/galeria", "/galerie",
             "/konferencje", "/archiwum", "/blog",
             "/webinaria", "/noc-bibliotek-2026", 
@@ -100,10 +100,10 @@ PROFILE = {
     "css": {
         "start_url": "https://css.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "CSS_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": ["#mainMenuNav", "#pageFooter", ".skip-to-content"],
-        "wykluczone_sciezki": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": ["#mainMenuNav", "#pageFooter", ".skip-to-content"],
+        "excluded_paths": [
             "/swiadczenia/archiwum-dokumentow",
         ],
     },
@@ -111,13 +111,13 @@ PROFILE = {
         "start_url": "https://www.miasteczko.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Miasteczko_Strony"),
         
-        "selektory_tresci": ["#maincontent"],
+        "content_selectors": ["#maincontent"],
         
-        "selektory_stopki": ["#footer"],
+        "footer_selectors": ["#footer"],
         
-        "selektory_smieci_dodatkowe": ["#header", ".content-right", "#search", ".facebook-like"],
+        "additional_junk_selectors": ["#header", ".content-right", "#search", ".facebook-like"],
         
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/galeria-zdjec.html",
             "/pl/horizontal/pjm.html",
         ],
@@ -126,17 +126,17 @@ PROFILE = {
         "start_url": "https://www.ck.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Centrum_Karier_Strony"),
         
-        "selektory_tresci": [],
+        "content_selectors": [],
         
-        "selektory_stopki": ["#pageFooter"],
+        "footer_selectors": ["#pageFooter"],
         
-        "selektory_smieci_dodatkowe": [
+        "additional_junk_selectors": [
             "#mainMenuNav", "#unitMenu", ".fw-block", 
             ".skip-to-content", ".news__container_stud",
             "header"
         ],
         
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/szukaj", "/login"
         ],
@@ -144,12 +144,12 @@ PROFILE = {
     "rekrutacja": {
         "start_url": "https://rekrutacja.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Rekrutacja_Strony"),
-        "wymaga_js": True,
-        "selektory_tresci": ["#tabs-content-wrapper", ".menu-content-result__option", ".site-main", "#content"],
+        "requires_js": True,
+        "content_selectors": ["#tabs-content-wrapper", ".menu-content-result__option", ".site-main", "#content"],
         
-        "selektory_stopki": ["#colophon", "#pageFooter"],
+        "footer_selectors": ["#colophon", "#pageFooter"],
         
-        "selektory_smieci_dodatkowe": [
+        "additional_junk_selectors": [
             ".cr-counter-wrapper",
             ".navbar-row", ".menu-vertical",
             ".socialmedia-logos", ".social-section",
@@ -162,7 +162,7 @@ PROFILE = {
             ".owl-carousel", ".owl-stage"
         ],
         
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci", 
             "/kalkulator", 
             "/rejestracja"
@@ -171,10 +171,10 @@ PROFILE = {
     "csm": {
         "start_url": "https://csm.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Centrum_Spraw_Miedzynarodowych_Strony"),
-        "selektory_tresci": [], 
+        "content_selectors": [], 
         
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "#unitMenu", 
             "#mainMenuNav", 
             ".skip-to-content", 
@@ -183,7 +183,7 @@ PROFILE = {
             ".carousel-indicators",
             ".carousel-control"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/szukaj", 
             "/login"
@@ -192,9 +192,9 @@ PROFILE = {
     "cyfronet": {
         "start_url": "https://www.cyfronet.pl/pl",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Cyfronet_Strony"),
-        "selektory_tresci": ["main"],
-        "selektory_stopki": ["footer"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": ["main"],
+        "footer_selectors": ["footer"],
+        "additional_junk_selectors": [
             "header",
             ".searchbox-wrapper",
             "#skip-link",
@@ -202,7 +202,7 @@ PROFILE = {
             "#return-to-top",
             "noscript", "script", "style"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/search/query",
             "/login",
             "/newsletter"
@@ -211,9 +211,9 @@ PROFILE = {
     "swfis": {
         "start_url": "https://swfis.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "SWFiS_Strony"),
-        "selektory_tresci": [], 
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [], 
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "#unitMenu",
             "#mainMenuNav",
             ".skip-to-content",
@@ -222,7 +222,7 @@ PROFILE = {
             ".carousel-indicators",
             ".carousel-control"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/szukaj", 
             "/login"
         ],
@@ -230,16 +230,16 @@ PROFILE = {
     "sjo": {
         "start_url": "https://www.sjo.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "SJO_Strony"),
-        "selektory_tresci": ["#main"],
-        "selektory_stopki": ["footer"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": ["#main"],
+        "footer_selectors": ["footer"],
+        "additional_junk_selectors": [
             "header",
             ".header",
             "#cookieconsent",
             ".mobile-menu-head",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/"
         ],
@@ -247,9 +247,9 @@ PROFILE = {
     "ckim": {
         "start_url": "https://ckim.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "CKiM_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -258,7 +258,7 @@ PROFILE = {
             ".skip-to-content",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/"
         ]
@@ -266,9 +266,9 @@ PROFILE = {
     "cok": {
         "start_url": "https://cok.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "COK_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -277,7 +277,7 @@ PROFILE = {
             ".skip-to-content",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/"
         ]
@@ -285,9 +285,9 @@ PROFILE = {
     "cri": {
         "start_url": "https://cri.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "CRI_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -297,7 +297,7 @@ PROFILE = {
             ".skip-to-content",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/en"
@@ -306,9 +306,9 @@ PROFILE = {
     "ka": {
         "start_url": "https://ka.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "KA_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -318,7 +318,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/app/"
@@ -327,9 +327,9 @@ PROFILE = {
     "sd": {
         "start_url": "https://sd.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "SD_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -339,7 +339,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -349,9 +349,9 @@ PROFILE = {
     "podyplomowe": {
         "start_url": "https://www.podyplomowe.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Podyplomowe_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -360,7 +360,7 @@ PROFILE = {
             ".skip-to-content",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/en"
@@ -369,9 +369,9 @@ PROFILE = {
     "samorzad": {
         "start_url": "https://samorzad.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Samorzad_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["footer.footer"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["footer.footer"],
+        "additional_junk_selectors": [
             "nav",
             "header.header",
             "#cookieconsent",
@@ -383,7 +383,7 @@ PROFILE = {
             ".skip-to-content",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/en"
@@ -392,9 +392,9 @@ PROFILE = {
     "fundacja": {
         "start_url": "https://fundacja.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Fundacja_Strony"),
-        "selektory_tresci": ["main", ".entry-content", ".wp-block-kadence-rowlayout"],
-        "selektory_stopki": ["#colophon"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": ["main", ".entry-content", ".wp-block-kadence-rowlayout"],
+        "footer_selectors": ["#colophon"],
+        "additional_junk_selectors": [
             "nav",
             "header",
             "#cookieconsent",
@@ -405,7 +405,7 @@ PROFILE = {
             ".screen-reader-text",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/tag/"
@@ -414,9 +414,9 @@ PROFILE = {
     "eaiiib": {
         "start_url": "https://eaiib.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "EAIIB_Strony"),
-        "selektory_tresci": ["main#jupiterx-main"],
-        "selektory_stopki": ["footer.jupiterx-footer"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": ["main#jupiterx-main"],
+        "footer_selectors": ["footer.jupiterx-footer"],
+        "additional_junk_selectors": [
             "nav",
             "header.jupiterx-header",
             "#cookie-notice",
@@ -428,7 +428,7 @@ PROFILE = {
             ".jupiterx-corner-buttons",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/tag/",
@@ -438,9 +438,9 @@ PROFILE = {
     "wh": {
         "start_url": "https://wh.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WH_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -449,7 +449,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -459,12 +459,12 @@ PROFILE = {
     "odlewnictwo": {
         "start_url": "https://odlewnictwo.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Odlewnictwo_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": [
+        "content_selectors": [],
+        "footer_selectors": [
             "[data-elementor-type='footer']",
             "footer"
         ],
-        "selektory_smieci_dodatkowe": [
+        "additional_junk_selectors": [
             "[data-elementor-type='header']",
             ".elementor-widget-nav-menu",
             ".elementor-widget-search-form",
@@ -477,7 +477,7 @@ PROFILE = {
             ".screen-reader-text",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/category/",
             "/tag/",
@@ -487,9 +487,9 @@ PROFILE = {
     "wnig": {
         "start_url": "https://wnig.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WNIG_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -498,7 +498,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -508,9 +508,9 @@ PROFILE = {
     "zarz": {
         "start_url": "https://zarz.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Zarz_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -519,7 +519,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -529,9 +529,9 @@ PROFILE = {
     "wimic": {
         "start_url": "https://wimic.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WIMIC_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -540,7 +540,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -552,9 +552,9 @@ PROFILE = {
     "wilgz": {
         "start_url": "https://wilgz.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WILGZ_Strony"),
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -563,7 +563,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -573,17 +573,17 @@ PROFILE = {
     "metal": {
         "start_url": "https://www.metal.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Metal_Strony"),
-        "wymaga_js": True,
-        "selektory_tresci": ["main", "article", ".page-content"],
-        "selektory_stopki": ["footer"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": True,
+        "content_selectors": ["main", "article", ".page-content"],
+        "footer_selectors": ["footer"],
+        "additional_junk_selectors": [
             "header",
             "#news-section",
             ".search-wrapper",
             "[class*='_sliderContainer_']",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/news/",
             "/category/",
             "/en"
@@ -592,10 +592,10 @@ PROFILE = {
     "iet": {
         "start_url": "https://iet.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "IET_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["footer.jupiterx-footer"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["footer.jupiterx-footer"],
+        "additional_junk_selectors": [
             "header.jupiterx-header",
             "#cmplz-cookiebanner-container",
             "#iet-search-overlay",
@@ -606,7 +606,7 @@ PROFILE = {
             ".swiper",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/wydarzenia-wydzialowe",
@@ -618,10 +618,10 @@ PROFILE = {
     "rps": {
         "start_url": "https://rps.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "RPS_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#unitMenu",
             "#mainMenuNav",
@@ -630,7 +630,7 @@ PROFILE = {
             ".skip-to-content",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/formularz",
@@ -640,10 +640,10 @@ PROFILE = {
     "wggiis": {
         "start_url": "https://wggiis.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WGGIIS_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -653,7 +653,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -663,17 +663,17 @@ PROFILE = {
     "wggiis-studiuj": {
         "start_url": "https://studiuj.wggiis.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WGGIIS_Studiuj_Strony"),
-        "wymaga_js": False,
-        "jezyki_dozwolone": None,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#footer", "footer"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "allowed_languages": None,
+        "content_selectors": [],
+        "footer_selectors": ["#footer", "footer"],
+        "additional_junk_selectors": [
             "nav",
             "#header",
             ".back-to-top",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/"
@@ -682,10 +682,10 @@ PROFILE = {
     "informatyka": {
         "start_url": "https://www.informatyka.agh.edu.pl/pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Informatyka_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["footer"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["footer"],
+        "additional_junk_selectors": [
             "header",
             ".pre-header",
             "#CookieInfoBanner",
@@ -697,7 +697,7 @@ PROFILE = {
             ".scrollup",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/pl/blog",
             "/en",
             "/search"
@@ -706,10 +706,10 @@ PROFILE = {
     "spacetech": {
         "start_url": "https://spacetech.agh.edu.pl/pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Spacetech_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -718,7 +718,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/pl/aktualnosci",
             "/pl/wydarzenia",
             "/category/",
@@ -728,10 +728,10 @@ PROFILE = {
     "wms": {
         "start_url": "https://www.wms.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WMS_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -740,7 +740,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -752,10 +752,10 @@ PROFILE = {
     "fis": {
         "start_url": "https://www.fis.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "FIS_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -764,7 +764,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -774,10 +774,10 @@ PROFILE = {
     "weip": {
         "start_url": "https://weip.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WEIP_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -787,7 +787,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/news-pl",
             "/wydarzenia",
@@ -799,10 +799,10 @@ PROFILE = {
     "wmn": {
         "start_url": "https://wmn.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WMN_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -811,7 +811,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -821,10 +821,10 @@ PROFILE = {
     "wggios": {
         "start_url": "https://www.wggios.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "WGGIOS_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [],
-        "selektory_stopki": ["#pageFooter"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "content_selectors": [],
+        "footer_selectors": ["#pageFooter"],
+        "additional_junk_selectors": [
             "nav",
             "#mainMenuNav",
             "#cookieconsent",
@@ -834,7 +834,7 @@ PROFILE = {
             ".carousel",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -845,11 +845,11 @@ PROFILE = {
     "historia": {
         "start_url": "https://historia.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Historia_Strony"),
-        "wymaga_js": False,
-        "max_glebokosc": 1,
-        "selektory_tresci": [".mw-parser-output"],
-        "selektory_stopki": ["#footer", ".mw-footer"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": False,
+        "max_depth": 1,
+        "content_selectors": [".mw-parser-output"],
+        "footer_selectors": ["#footer", ".mw-footer"],
+        "additional_junk_selectors": [
             "nav",
             "#mw-navigation",
             "#mw-panel",
@@ -865,7 +865,7 @@ PROFILE = {
             "script", "style", "noscript", "iframe",
             ".mw-references-wrap"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/wiki/Specjalna:",
             "/wiki/Dyskusja:",
             "/wiki/Plik:",
@@ -879,10 +879,10 @@ PROFILE = {
     "imir": {
         "start_url": "https://imir.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "IMIR_Strony"),
-        "wymaga_js": True,
-        "selektory_tresci": ["#page-detail-content", "main", "#root"],
-        "selektory_stopki": ["footer"],
-        "selektory_smieci_dodatkowe": [
+        "requires_js": True,
+        "content_selectors": ["#page-detail-content", "main", "#root"],
+        "footer_selectors": ["footer"],
+        "additional_junk_selectors": [
             "nav",
             "header",
             ".element-breadcrumbs",
@@ -895,7 +895,7 @@ PROFILE = {
             ".cky-consent-container",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/aktualnosci",
             "/wydarzenia",
             "/category/",
@@ -905,18 +905,18 @@ PROFILE = {
     "azs": {
         "start_url": "https://azs.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "AZS_Strony"),
-        "wymaga_js": False,
-        "selektory_tresci": [
+        "requires_js": False,
+        "content_selectors": [
             "[data-elementor-type='single-page']", 
             "[data-elementor-type='wp-post']", 
             "[data-elementor-type='wp-page']",
             "main"
         ],
-        "selektory_stopki": [
+        "footer_selectors": [
             "[data-elementor-type='footer']",
             "footer"
         ],
-        "selektory_smieci_dodatkowe": [
+        "additional_junk_selectors": [
             "[data-elementor-type='header']",
             "nav",
             "#cookieyes-banner",
@@ -928,7 +928,7 @@ PROFILE = {
             ".dialog-lightbox-close-button",
             "script", "style", "noscript", "iframe"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/category/",
             "/tag/",
             "/author/",
@@ -940,15 +940,15 @@ PROFILE = {
     "skos": {
         "start_url": "https://skos.agh.edu.pl/",
         "folder": os.path.join("..", "data", "Baza_Wiedzy_AGH", "Skos_Strony"),
-        "wymaga_js": True,
-        "selektory_tresci": [
+        "requires_js": True,
+        "content_selectors": [
             "main"
         ],
-        "selektory_stopki": [
+        "footer_selectors": [
             "footer",
             ".sc-7bb83908-0"
         ],
-        "selektory_smieci_dodatkowe": [
+        "additional_junk_selectors": [
             "nav",
             ".sc-e826046d-0",
             "form",
@@ -956,7 +956,7 @@ PROFILE = {
             "script", "style", "noscript", "iframe",
             "#skip-to"
         ],
-        "wykluczone_sciezki": [
+        "excluded_paths": [
             "/search",
             "/advanced",
             "/tel",
@@ -966,9 +966,9 @@ PROFILE = {
 }
 
 # ==========================================
-# SESJA HTTP
+# HTTP SESSION
 # ==========================================
-def utworz_sesje():
+def create_session():
     s = requests.Session()
     s.verify = False
     s.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "pl,en;q=0.5"})
@@ -985,27 +985,27 @@ def utworz_sesje():
     return s
 
 
-session = utworz_sesje()
+session = create_session()
 log = logging.getLogger("crawler")
 
 
 # ==========================================
-# URL-E
+# URLS
 # ==========================================
-def netloc_bez_www(url):
+def netloc_without_www(url):
     n = urlsplit(url).netloc.lower()
     n = re.sub(r":(80|443)$", "", n)
     return n[4:] if n.startswith("www.") else n
 
 
-def czy_param_smieciowy(nazwa):
-    n = nazwa.lower()
-    return n in PARAMETRY_DO_USUNIECIA or n.startswith(PREFIKSY_DO_USUNIECIA)
+def is_junk_param(name):
+    n = name.lower()
+    return n in PARAMS_TO_REMOVE or n.startswith(PREFIXES_TO_REMOVE)
 
 
-def normalizuj_url(url):
-    """Ujednolica URL: https, bez #kotwicy, bez śledzących parametrów, posortowane query,
-    bez końcowego '/' i bez /index.html. Rzuca ValueError dla niepoprawnych adresów."""
+def normalize_url(url):
+    """Standardizes URL: https, no #anchors, no tracking params, sorted query,
+    no trailing '/' and no /index.html. Raises ValueError for invalid addresses."""
     p = urlsplit(url.strip())
     scheme = "https" if p.scheme.lower() in ("http", "https") else p.scheme.lower()
     netloc = re.sub(r":(80|443)$", "", p.netloc.lower())
@@ -1014,59 +1014,59 @@ def normalizuj_url(url):
     path = re.sub(r"/index\.(html?|php)$", "", path, flags=re.I)
     path = path.rstrip("/") or "/"
 
-    pary = [(k, v) for k, v in parse_qsl(p.query, keep_blank_values=True) if not czy_param_smieciowy(k)]
-    pary.sort()
-    return urlunsplit((scheme, netloc, path, urlencode(pary), ""))
+    pairs = [(k, v) for k, v in parse_qsl(p.query, keep_blank_values=True) if not is_junk_param(k)]
+    pairs.sort()
+    return urlunsplit((scheme, netloc, path, urlencode(pairs), ""))
 
 
-def czy_nalezy_do_domeny(url, domena_glowna):
-    """Dokładne porównanie hosta ORAZ wyjątki dla CDN WIMiR i COK."""
-    netloc = netloc_bez_www(url)
+def belongs_to_domain(url, main_domain):
+    """Exact host comparison PLUS exceptions for WIMiR CDN and COK."""
+    netloc = netloc_without_www(url)
     if netloc in ["cdn.imir.agh.edu.pl", "cok.agh.edu.pl", "www.cok.agh.edu.pl"]:
         return True
-    return netloc == netloc_bez_www(domena_glowna)
+    return netloc == netloc_without_www(main_domain)
 
 
-def czy_pominac_obcy_jezyk(url, cfg):
+def skip_foreign_language(url, cfg):
     p = urlsplit(url)
     path = p.path.lower()
-    for lang in cfg["jezyki_obce_prefiksy"]:
+    for lang in cfg["foreign_language_prefixes"]:
         if path == lang or path.startswith(lang + "/"):
             return True
     q = p.query.lower()
     return "lang=" in q and "lang=pl" not in q
 
 
-def czy_wykluczona_sciezka(url, cfg):
+def is_excluded_path(url, cfg):
     path = urlsplit(url).path.lower().rstrip("/")
-    for w in cfg["wykluczone_sciezki"]:
+    for w in cfg["excluded_paths"]:
         w = w.lower().rstrip("/")
         if path == w or path.startswith(w + "/") or (w.endswith(":") and path.startswith(w)):
             return True
     return False
 
 
-def ocen_url(url, cfg):
-    """'ok' | 'pdf' | powód odrzucenia."""
+def evaluate_url(url, cfg):
+    """'ok' | 'pdf' | rejection reason."""
     p = urlsplit(url)
     if p.scheme not in ("http", "https"):
-        return "schemat"
-    if not czy_nalezy_do_domeny(url, cfg["start_url"]):
-        return "obca_domena"
-    if czy_pominac_obcy_jezyk(url, cfg):
-        return "jezyk"
-    if czy_wykluczona_sciezka(url, cfg):
-        return "wykluczona"
-    if ROZSZERZENIA_PDF.search(p.path):
+        return "scheme"
+    if not belongs_to_domain(url, cfg["start_url"]):
+        return "foreign_domain"
+    if skip_foreign_language(url, cfg):
+        return "language"
+    if is_excluded_path(url, cfg):
+        return "excluded"
+    if PDF_EXTENSIONS.search(p.path):
         return "pdf"
-    if ROZSZERZENIA_BINARNE.search(p.path):
-        return "plik"
-    if {k.lower() for k, _ in parse_qsl(p.query)} & PARAMETRY_POMIJAJ_URL:
-        return "parametr_widoku"
+    if BINARY_EXTENSIONS.search(p.path):
+        return "file"
+    if {k.lower() for k, _ in parse_qsl(p.query)} & PARAMS_SKIP_URL:
+        return "view_parameter"
     return "ok"
 
 
-def generuj_nazwe_pliku(url):
+def generate_filename(url):
     p = urlsplit(url)
     slug = p.path.strip("/").replace("/", "__") or "_index"
     slug = re.sub(r"[^\w\-.]+", "_", slug)[:80].strip("_.") or "_index"
@@ -1074,195 +1074,195 @@ def generuj_nazwe_pliku(url):
 
 
 # ==========================================
-# CZYSZCZENIE HTML -> MARKDOWN
+# CLEANING HTML -> MARKDOWN
 # ==========================================
-def usun_elementy(root, selektory, ostroznie):
-    for sel in selektory:
+def remove_elements(root, selectors, cautious):
+    for sel in selectors:
         for el in root.select(sel):
             if getattr(el, "decomposed", False):
                 continue
-            if ostroznie and len(el.get_text(" ", strip=True)) > MAX_SMIEC_ZNAKOW:
+            if cautious and len(el.get_text(" ", strip=True)) > MAX_JUNK_CHARS:
                 continue
             el.decompose()
 
 
-def wybierz_tresc(soup, cfg):
-    """Zwraca (element, czy_fallback_do_body)."""
-    for sel in cfg["selektory_tresci"]:
+def select_content(soup, cfg):
+    """Returns (element, is_fallback_to_body)."""
+    for sel in cfg["content_selectors"]:
         el = soup.select_one(sel)
         if el is not None and el.get_text(strip=True):
             return el, False
     return soup.body, True
 
 
-def napraw_linki(root, baza):
-    """Linki względne -> bezwzględne (w chunku RAG '/kontakt' jest bezużyteczne).
-    Puste, #kotwice i javascript: zamieniamy na sam tekst; mailto:/tel: zostają."""
+def fix_links(root, base_url):
+    """Relative -> absolute links (in a RAG chunk '/contact' is useless).
+    Empty, #anchors and javascript: are replaced by text only; mailto:/tel: remain."""
     for a in root.find_all("a"):
         href = (a.get("href") or "").strip()
         if not href or href.startswith(("#", "javascript:")):
             a.unwrap()
         elif not href.startswith(("mailto:", "tel:")):
-            a["href"] = urljoin(baza, href)
+            a["href"] = urljoin(base_url, href)
 
 
-def czysc_tekst(t):
+def clean_text(t):
     t = t.replace("\u00ad", "")
     t = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", t)
     t = t.replace("\xa0", " ")
     t = re.sub(r"[ \t]+\n", "\n", t)
     t = re.sub(r"[ \t]{2,}", " ", t)
-    wynik, poprzednia = [], None
-    for linia in t.split("\n"):
-        if linia.strip() and linia.strip() == poprzednia:
+    result, previous = [], None
+    for line in t.split("\n"):
+        if line.strip() and line.strip() == previous:
             continue
-        wynik.append(linia)
-        if linia.strip():
-            poprzednia = linia.strip()
-    t = "\n".join(wynik)
+        result.append(line)
+        if line.strip():
+            previous = line.strip()
+    t = "\n".join(result)
     return re.sub(r"\n{3,}", "\n\n", t).strip()
 
 
-def html_do_markdown(root):
-    return czysc_tekst(md(str(root), heading_style="ATX", strip=["img"], bullets="-"))
+def html_to_markdown(root):
+    return clean_text(md(str(root), heading_style="ATX", strip=["img"], bullets="-"))
 
 
-def wyciagnij_linki(soup, baza):
-    """Linki zbieramy z PEŁNEJ strony (razem z menu) PRZED czyszczeniem – to menu prowadzi do podstron."""
-    return [urljoin(baza, a["href"].strip()) for a in soup.find_all("a", href=True)]
+def extract_links(soup, base_url):
+    """Links are gathered from the FULL page (including menu) BEFORE cleaning – the menu leads to subpages."""
+    return [urljoin(base_url, a["href"].strip()) for a in soup.find_all("a", href=True)]
 
 
-def wyciagnij_stopke(soup, cfg, baza):
-    """Stopka (adres, telefon, e-mail) jest na każdej stronie – zapisujemy ją RAZ, nie w każdym dokumencie."""
-    for sel in cfg["selektory_stopki"]:
+def extract_footer(soup, cfg, base_url):
+    """Footer (address, phone, e-mail) is on every page – we save it ONCE, not in every document."""
+    for sel in cfg["footer_selectors"]:
         el = soup.select_one(sel)
         if el is not None and el.get_text(strip=True):
-            kopia = BeautifulSoup(str(el), "html.parser")
-            usun_elementy(kopia, SMIECI_BEZWARUNKOWO, ostroznie=False)
-            napraw_linki(kopia, baza)
-            return html_do_markdown(kopia)
+            copy_soup = BeautifulSoup(str(el), "html.parser")
+            remove_elements(copy_soup, JUNK_UNCONDITIONAL, cautious=False)
+            fix_links(copy_soup, base_url)
+            return html_to_markdown(copy_soup)
     return ""
 
 
-def przetworz_strone(soup, cfg, url):
-    """Zwraca dict: tytul, jezyk, noindex, canonical, markdown. Modyfikuje soup!"""
+def process_page(soup, cfg, url):
+    """Returns dict: title, language, noindex, canonical, markdown. Modifies soup!"""
     html_tag = soup.find("html")
-    jezyk = ((html_tag.get("lang") or "").lower().split("-")[0]) if html_tag else ""
+    language = ((html_tag.get("lang") or "").lower().split("-")[0]) if html_tag else ""
     robots_meta = soup.find("meta", attrs={"name": re.compile("^robots$", re.I)})
     noindex = bool(robots_meta and "noindex" in (robots_meta.get("content") or "").lower())
     canon_tag = soup.find("link", rel="canonical")
     canonical = canon_tag.get("href") if canon_tag else None
-    tytul_tag = soup.title.get_text(strip=True) if soup.title else ""
+    title_tag = soup.title.get_text(strip=True) if soup.title else ""
 
-    root, fallback = wybierz_tresc(soup, cfg)
+    root, fallback = select_content(soup, cfg)
     if root is None:
-        return {"markdown": "", "tytul": tytul_tag, "jezyk": jezyk, "noindex": noindex, "canonical": canonical}
+        return {"markdown": "", "title": title_tag, "language": language, "noindex": noindex, "canonical": canonical}
 
-    usun_elementy(root, SMIECI_BEZWARUNKOWO, ostroznie=False)
+    remove_elements(root, JUNK_UNCONDITIONAL, cautious=False)
     if fallback:
-        usun_elementy(root, SMIECI_STRUKTURA, ostroznie=False)
-    usun_elementy(root, SMIECI_OSTROZNIE + cfg["selektory_smieci_dodatkowe"], ostroznie=True)
-    napraw_linki(root, url)
+        remove_elements(root, JUNK_STRUCTURE, cautious=False)
+    remove_elements(root, JUNK_CAUTIOUS + cfg["additional_junk_selectors"], cautious=True)
+    fix_links(root, url)
 
     h1 = root.find("h1")
-    tytul = (h1.get_text(" ", strip=True) if h1 else "") or tytul_tag or "Brak tytułu"
+    title = (h1.get_text(" ", strip=True) if h1 else "") or title_tag or "No title"
     return {
-        "markdown": html_do_markdown(root),
-        "tytul": czysc_tekst(tytul),
-        "jezyk": jezyk,
+        "markdown": html_to_markdown(root),
+        "title": clean_text(title),
+        "language": language,
         "noindex": noindex,
         "canonical": canonical,
     }
 
 
-def zbuduj_frontmatter(meta):
-    linie = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in meta.items()] + ["---", "", ""]
-    return "\n".join(linie)
+def build_frontmatter(meta):
+    lines = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in meta.items()] + ["---", "", ""]
+    return "\n".join(lines)
 
 
-def zapisz_atomowo(sciezka, tekst):
-    tmp = sciezka + ".tmp"
+def save_atomically(path, text):
+    tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        f.write(tekst)
-    os.replace(tmp, sciezka)
+        f.write(text)
+    os.replace(tmp, path)
 
 
 # ==========================================
-# STAN CRAWLERA
+# CRAWLER STATE
 # ==========================================
-class Stan:
+class State:
     def __init__(self):
-        self.odwiedzone = set()
-        self.kolejka = deque()
-        self.znane = set()
-        self.hashe = {}
-        self.warianty = defaultdict(set)
-        self.pdf = set()
-        self.stat = Counter()
+        self.visited = set()
+        self.queue = deque()
+        self.known = set()
+        self.hashes = {}
+        self.variants = defaultdict(set)
+        self.pdfs = set()
+        self.stats = Counter()
 
-    def zapisz(self, sciezka, sciezka_pdf):
-        dane = {
-            "odwiedzone": sorted(self.odwiedzone),
-            "kolejka": list(self.kolejka),
-            "hashe": self.hashe,
-            "warianty": {k: sorted(v) for k, v in self.warianty.items()},
-            "pdf": sorted(self.pdf),
-            "stat": dict(self.stat),
+    def save(self, path, pdf_path):
+        data = {
+            "visited": sorted(self.visited),
+            "queue": list(self.queue),
+            "hashes": self.hashes,
+            "variants": {k: sorted(v) for k, v in self.variants.items()},
+            "pdfs": sorted(self.pdfs),
+            "stats": dict(self.stats),
         }
-        zapisz_atomowo(sciezka, json.dumps(dane, ensure_ascii=False))
-        zapisz_atomowo(sciezka_pdf, "\n".join(sorted(self.pdf)) + "\n")
+        save_atomically(path, json.dumps(data, ensure_ascii=False))
+        save_atomically(pdf_path, "\n".join(sorted(self.pdfs)) + "\n")
 
     @classmethod
-    def wczytaj(cls, sciezka):
+    def load(cls, path):
         s = cls()
-        with open(sciezka, encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             d = json.load(f)
-        s.odwiedzone = set(d["odwiedzone"])
-        s.kolejka = deque((u, g) for u, g in d["kolejka"])
-        s.hashe = d["hashe"]
-        s.warianty = defaultdict(set, {k: set(v) for k, v in d["warianty"].items()})
-        s.pdf = set(d["pdf"])
-        s.stat = Counter(d["stat"])
-        s.znane = s.odwiedzone | {u for u, _ in s.kolejka}
+        s.visited = set(d["visited"])
+        s.queue = deque((u, g) for u, g in d["queue"])
+        s.hashes = d["hashes"]
+        s.variants = defaultdict(set, {k: set(v) for k, v in d["variants"].items()})
+        s.pdfs = set(d["pdfs"])
+        s.stats = Counter(d["stats"])
+        s.known = s.visited | {u for u, _ in s.queue}
         return s
 
 
-def dodaj_do_kolejki(stan, link, glebokosc, cfg, robots):
+def add_to_queue(state, link, depth, cfg, robots):
     try:
-        link = normalizuj_url(link)
+        link = normalize_url(link)
     except ValueError:
         return
-    if link in stan.znane:
+    if link in state.known:
         return
-    stan.znane.add(link)
+    state.known.add(link)
 
-    wynik = ocen_url(link, cfg)
-    if wynik == "pdf":
-        stan.pdf.add(link)
+    result = evaluate_url(link, cfg)
+    if result == "pdf":
+        state.pdfs.add(link)
         return
-    if wynik != "ok":
-        stan.stat["pominiete_" + wynik] += 1
+    if result != "ok":
+        state.stats["skipped_" + result] += 1
         return
-    if glebokosc > cfg["max_glebokosc"]:
-        stan.stat["pominiete_glebokosc"] += 1
+    if depth > cfg["max_depth"]:
+        state.stats["skipped_depth"] += 1
         return
     if not robots.can_fetch(USER_AGENT, link):
-        stan.stat["pominiete_robots"] += 1
+        state.stats["skipped_robots"] += 1
         return
     p = urlsplit(link)
     if p.query:
-        warianty = stan.warianty[p.path]
-        if p.query not in warianty and len(warianty) >= MAX_WARIANTOW_QUERY:
-            stan.stat["pominiete_pulapka_query"] += 1
+        variants = state.variants[p.path]
+        if p.query not in variants and len(variants) >= MAX_QUERY_VARIANTS:
+            state.stats["skipped_query_trap"] += 1
             return
-        warianty.add(p.query)
-    stan.kolejka.append((link, glebokosc))
+        variants.add(p.query)
+    state.queue.append((link, depth))
 
 
 # ==========================================
-# ROBOTS.TXT I SITEMAPY
+# ROBOTS.TXT AND SITEMAPS
 # ==========================================
-def zaladuj_robots(cfg):
+def load_robots(cfg):
     rp = RobotFileParser()
     try:
         r = session.get(urljoin(cfg["start_url"], "/robots.txt"), timeout=TIMEOUT)
@@ -1270,45 +1270,45 @@ def zaladuj_robots(cfg):
             rp.parse(r.text.splitlines())
         else:
             if r.status_code in (401, 403):
-                log.warning("robots.txt zwrócił %s – traktuję jak brak ograniczeń", r.status_code)
+                log.warning("robots.txt returned %s – treating as no restrictions", r.status_code)
             rp.allow_all = True
     except requests.RequestException as e:
-        log.warning("Nie udało się pobrać robots.txt (%s) – brak ograniczeń", e)
+        log.warning("Failed to fetch robots.txt (%s) – no restrictions", e)
         rp.allow_all = True
     return rp
 
 
-def wczytaj_sitemapy(adresy, glebokosc=0):
-    wynik = []
-    for adres in adresy:
+def load_sitemaps(urls, depth=0):
+    result = []
+    for url in urls:
         try:
-            r = session.get(adres, timeout=TIMEOUT)
+            r = session.get(url, timeout=TIMEOUT)
         except requests.RequestException:
             continue
         if r.status_code != 200:
             continue
         loc = [html.unescape(x) for x in re.findall(r"<loc>\s*(.*?)\s*</loc>", r.text, flags=re.S)]
-        if "<sitemapindex" in r.text and glebokosc < 2:
-            wynik += wczytaj_sitemapy(loc, glebokosc + 1)
+        if "<sitemapindex" in r.text and depth < 2:
+            result += load_sitemaps(loc, depth + 1)
         else:
-            wynik += loc
-    return wynik
+            result += loc
+    return result
 
 
 # ==========================================
-# POBIERANIE
+# DOWNLOADING
 # ==========================================
 
 class DummyResponse:
-    """Atrapa obiektu requests.Response na potrzeby Playwrighta."""
+    """Mock requests.Response object for Playwright."""
     def __init__(self, url, status_code=200):
         self.url = url
         self.status_code = status_code
         self.headers = {}
 
-def pobierz(url, wymaga_js=False):
-    """Zwraca (res, bytes, None) albo (None, None, powód)."""
-    if wymaga_js:
+def download(url, requires_js=False):
+    """Returns (res, bytes, None) or (None, None, reason)."""
+    if requires_js:
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -1324,45 +1324,45 @@ def pobierz(url, wymaga_js=False):
                 ct = response.headers.get("content-type", "").lower() if response else "text/html"
                 if "html" not in ct:
                     browser.close()
-                    return None, None, f"nie HTML ({ct})"
+                    return None, None, f"not HTML ({ct})"
                 
                 final_url = page.url
                 html_content = page.content().encode("utf-8")
                 browser.close()
                 
-                if len(html_content) > MAX_BAJTOW:
-                    return None, None, "za duży plik"
+                if len(html_content) > MAX_BYTES:
+                    return None, None, "file too large"
                     
                 return DummyResponse(final_url), html_content, None
         except Exception as e:
-            return None, None, f"błąd Playwright: {e}"
+            return None, None, f"Playwright error: {e}"
 
     try:
         res = session.get(url, timeout=TIMEOUT, stream=True)
     except requests.RequestException as e:
-        return None, None, f"błąd sieci: {e}"
+        return None, None, f"network error: {e}"
     try:
         if res.status_code >= 400:
             return None, None, f"HTTP {res.status_code}"
         ct = res.headers.get("Content-Type", "").lower()
         if "html" not in ct:
-            return None, None, f"nie HTML ({ct or 'brak Content-Type'})"
-        if int(res.headers.get("Content-Length") or 0) > MAX_BAJTOW:
-            return None, None, "za duży plik"
-        czesci, rozmiar = [], 0
-        for kawalek in res.iter_content(65536):
-            rozmiar += len(kawalek)
-            if rozmiar > MAX_BAJTOW:
-                return None, None, "za duży plik"
-            czesci.append(kawalek)
-        return res, b"".join(czesci), None
+            return None, None, f"not HTML ({ct or 'missing Content-Type'})"
+        if int(res.headers.get("Content-Length") or 0) > MAX_BYTES:
+            return None, None, "file too large"
+        chunks, size = [], 0
+        for chunk in res.iter_content(65536):
+            size += len(chunk)
+            if size > MAX_BYTES:
+                return None, None, "file too large"
+            chunks.append(chunk)
+        return res, b"".join(chunks), None
     except requests.RequestException as e:
-        return None, None, f"błąd sieci: {e}"
+        return None, None, f"network error: {e}"
     finally:
         res.close()
 
 
-def parsuj_html(content):
+def parse_html(content):
     try:
         return BeautifulSoup(content, "lxml")
     except Exception:
@@ -1370,16 +1370,16 @@ def parsuj_html(content):
 
 
 # ==========================================
-# GŁÓWNY PROCES (BFS)
+# MAIN CRAWL PROCESS (BFS)
 # ==========================================
-def crawl(cfg, reset=False, max_stron=None):
+def crawl(cfg, reset=False, max_pages=None):
     folder = cfg["folder"]
     meta_folder = folder + "_meta"
     os.makedirs(folder, exist_ok=True)
     os.makedirs(meta_folder, exist_ok=True)
-    sciezka_stanu = os.path.join(meta_folder, "stan.json")
-    sciezka_pdf = os.path.join(meta_folder, "pdf_linki.txt")
-    sciezka_manifestu = os.path.join(meta_folder, "manifest.jsonl")
+    state_path = os.path.join(meta_folder, "stan.json")
+    pdf_path = os.path.join(meta_folder, "pdf_linki.txt")
+    manifest_path = os.path.join(meta_folder, "manifest.jsonl")
 
     logging.basicConfig(
         level=logging.INFO,
@@ -1388,82 +1388,82 @@ def crawl(cfg, reset=False, max_stron=None):
         handlers=[logging.StreamHandler(), logging.FileHandler(os.path.join(meta_folder, "crawler.log"), encoding="utf-8")],
     )
 
-    robots = zaladuj_robots(cfg)
-    opoznienie = max(OPOZNIENIE, float(robots.crawl_delay(USER_AGENT) or 0)) if robots.last_checked else OPOZNIENIE
+    robots = load_robots(cfg)
+    delay = max(DELAY, float(robots.crawl_delay(USER_AGENT) or 0)) if robots.last_checked else DELAY
 
-    if os.path.exists(sciezka_stanu) and not reset:
-        stan = Stan.wczytaj(sciezka_stanu)
-        log.info("Wznawiam: %d odwiedzonych, %d w kolejce", len(stan.odwiedzone), len(stan.kolejka))
+    if os.path.exists(state_path) and not reset:
+        state = State.load(state_path)
+        log.info("Resuming: %d visited, %d in queue", len(state.visited), len(state.queue))
     else:
-        stan = Stan()
-        if os.path.exists(sciezka_manifestu):
-            os.remove(sciezka_manifestu)
-        start = normalizuj_url(cfg["start_url"])
-        stan.znane.add(start)
-        stan.kolejka.append((start, 0))
+        state = State()
+        if os.path.exists(manifest_path):
+            os.remove(manifest_path)
+        start = normalize_url(cfg["start_url"])
+        state.known.add(start)
+        state.queue.append((start, 0))
         try:
-            mapy = robots.site_maps() or []
+            maps = robots.site_maps() or []
         except AttributeError:
-            mapy = []
-        mapy = mapy or [urljoin(cfg["start_url"], "/sitemap.xml")]
-        for u in wczytaj_sitemapy(mapy):
-            dodaj_do_kolejki(stan, u, 1, cfg, robots)
-        log.info("Start: %d adresów w kolejce (po sitemapach)", len(stan.kolejka))
+            maps = []
+        maps = maps or [urljoin(cfg["start_url"], "/sitemap.xml")]
+        for u in load_sitemaps(maps):
+            add_to_queue(state, u, 1, cfg, robots)
+        log.info("Start: %d addresses in queue (after sitemaps)", len(state.queue))
 
-    stopka_zapisana = os.path.exists(os.path.join(folder, "_stopka.md")) and not reset
-    przetworzone_w_sesji = 0
-    biezacy = None
-    teraz = lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
+    footer_saved = os.path.exists(os.path.join(folder, "_stopka.md")) and not reset
+    processed_in_session = 0
+    current = None
+    now = lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
 
-    log.info("🕷 Crawler startuje: %s", cfg["start_url"])
+    log.info("🕷 Crawler starting: %s", cfg["start_url"])
     try:
-        while stan.kolejka:
-            if max_stron and przetworzone_w_sesji >= max_stron:
-                log.info("Osiągnięto limit --max-stron=%d", max_stron)
+        while state.queue:
+            if max_pages and processed_in_session >= max_pages:
+                log.info("Reached --max-pages=%d limit", max_pages)
                 break
-            url, glebokosc = stan.kolejka.popleft()
-            biezacy = (url, glebokosc)
-            if url in stan.odwiedzone:
+            url, depth = state.queue.popleft()
+            current = (url, depth)
+            if url in state.visited:
                 continue
-            stan.odwiedzone.add(url)
-            przetworzone_w_sesji += 1
+            state.visited.add(url)
+            processed_in_session += 1
 
-            res, content, powod = pobierz(url, wymaga_js=cfg.get("wymaga_js", False))
-            time.sleep(opoznienie)
+            res, content, reason = download(url, requires_js=cfg.get("requires_js", False))
+            time.sleep(delay)
             if res is None:
-                stan.stat["bledy_lub_nie_html"] += 1
-                log.info("⏩ %s – %s", url, powod)
+                state.stats["errors_or_not_html"] += 1
+                log.info("⏩ %s – %s", url, reason)
                 continue
 
             try:
-                final = normalizuj_url(res.url)
+                final = normalize_url(res.url)
             except ValueError:
                 continue
             if final != url:
-                if final in stan.odwiedzone or ocen_url(final, cfg) != "ok":
-                    stan.stat["pominiete_przekierowanie"] += 1
+                if final in state.visited or evaluate_url(final, cfg) != "ok":
+                    state.stats["skipped_redirect"] += 1
                     continue
-                stan.odwiedzone.add(final)
-                stan.znane.add(final)
+                state.visited.add(final)
+                state.known.add(final)
                 url = final
 
-            soup = parsuj_html(content)
+            soup = parse_html(content)
 
             if "historia" in url:
-                rocznice = soup.find(id="Rocznice")
-                if rocznice:
-                    poj = rocznice.parent if rocznice.parent and "mw-heading" in (rocznice.parent.get("class") or []) else rocznice
-                    if poj and poj.parent and poj.parent.name == "div":
-                        poj.parent.decompose()
+                anniversaries = soup.find(id="Rocznice")
+                if anniversaries:
+                    single = anniversaries.parent if anniversaries.parent and "mw-heading" in (anniversaries.parent.get("class") or []) else anniversaries
+                    if single and single.parent and single.parent.name == "div":
+                        single.parent.decompose()
                 for hdr in soup.find_all(id=re.compile("^(Bibliografia|Źródła)", re.I)):
-                    poj = hdr.parent if hdr.parent and "mw-heading" in (hdr.parent.get("class") or []) else hdr
-                    if poj:
-                        for sibling in poj.find_next_siblings():
+                    single = hdr.parent if hdr.parent and "mw-heading" in (hdr.parent.get("class") or []) else hdr
+                    if single:
+                        for sibling in single.find_next_siblings():
                             for a in sibling.find_all("a"):
                                 a.unwrap()
 
             if "imir" in url and url.rstrip("/") == cfg["start_url"].rstrip("/"):
-                ukryte_strefy = [
+                hidden_zones = [
                     "https://imir.agh.edu.pl/pl/studenci/blankiety_dokumenty/blankiety",
                     "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/komunikaty_prodziekana_ds_nauki/",
                     "https://imir.agh.edu.pl/pl/studia/stacjonarne_i-st/",
@@ -1476,98 +1476,98 @@ def crawl(cfg, reset=False, max_stron=None):
                     "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/oferta_naukowo_badawcza/",
                     "https://imir.agh.edu.pl/pl/dzialalnosc_naukowa/projekty_wspolfinansowane_z_funduszy_ue/"
                 ]
-                for strefa in ukryte_strefy:
-                    log.info("Wstrzykuję ukrytą strefę WIMiR: %s", strefa)
-                    dodaj_do_kolejki(stan, strefa, glebokosc + 1, cfg, robots)
+                for zone in hidden_zones:
+                    log.info("Injecting WIMiR hidden zone: %s", zone)
+                    add_to_queue(state, zone, depth + 1, cfg, robots)
 
-            for link in wyciagnij_linki(soup, url):
-                dodaj_do_kolejki(stan, link, glebokosc + 1, cfg, robots)
+            for link in extract_links(soup, url):
+                add_to_queue(state, link, depth + 1, cfg, robots)
 
-            if not stopka_zapisana:
-                stopka = wyciagnij_stopke(soup, cfg, url)
-                if stopka:
-                    meta = {"url": url, "tytul": "Stopka serwisu (adres, telefon, e-mail)", "typ_dokumentu": "stopka",
-                            "data_pobrania": teraz()}
-                    zapisz_atomowo(os.path.join(folder, "_stopka.md"), zbuduj_frontmatter(meta) + stopka)
-                    log.info("Zapisano stopkę serwisu")
-                stopka_zapisana = True
+            if not footer_saved:
+                footer = extract_footer(soup, cfg, url)
+                if footer:
+                    meta = {"url": url, "title": "Site footer (address, phone, e-mail)", "document_type": "footer",
+                            "download_date": now()}
+                    save_atomically(os.path.join(folder, "_stopka.md"), build_frontmatter(meta) + footer)
+                    log.info("Site footer saved")
+                footer_saved = True
 
-            dok = przetworz_strone(soup, cfg, url)
-            jez_ok = cfg["jezyki_dozwolone"] is None or not dok["jezyk"] or dok["jezyk"] in cfg["jezyki_dozwolone"]
-            if not jez_ok:
-                stan.stat["pominiete_jezyk_html"] += 1
-                log.info("⏩ %s – język strony: %s", url, dok["jezyk"])
+            doc = process_page(soup, cfg, url)
+            lang_ok = cfg["allowed_languages"] is None or not doc["language"] or doc["language"] in cfg["allowed_languages"]
+            if not lang_ok:
+                state.stats["skipped_html_language"] += 1
+                log.info("⏩ %s – page language: %s", url, doc["language"])
                 continue
-            if dok["noindex"]:
-                stan.stat["pominiete_noindex"] += 1
+            if doc["noindex"]:
+                state.stats["skipped_noindex"] += 1
                 continue
-            body = dok["markdown"]
-            if len(body) < cfg["min_znakow"]:
-                stan.stat["pominiete_za_krotkie"] += 1
-                log.info("⏩ %s – za mało treści (%d zn.)", url, len(body))
+            body = doc["markdown"]
+            if len(body) < cfg["min_chars"]:
+                state.stats["skipped_too_short"] += 1
+                log.info("⏩ %s – not enough content (%d char.)", url, len(body))
                 continue
 
-            tekst_do_hasha = re.sub(r"\]\([^)]*\)", "]", body).lower()
-            skrot = hashlib.sha1(re.sub(r"\W+", " ", tekst_do_hasha).encode("utf-8")).hexdigest()
-            if skrot in stan.hashe and stan.hashe[skrot] != url:
-                stan.stat["pominiete_duplikaty"] += 1
-                log.info("⏩ %s – duplikat treści %s", url, stan.hashe[skrot])
+            text_for_hash = re.sub(r"\]\([^)]*\)", "]", body).lower()
+            hash_val = hashlib.sha1(re.sub(r"\W+", " ", text_for_hash).encode("utf-8")).hexdigest()
+            if hash_val in state.hashes and state.hashes[hash_val] != url:
+                state.stats["skipped_duplicates"] += 1
+                log.info("⏩ %s – content duplicate %s", url, state.hashes[hash_val])
                 continue
-            stan.hashe[skrot] = url
+            state.hashes[hash_val] = url
 
-            nazwa = generuj_nazwe_pliku(url)
-            czesci_sciezki = [s for s in urlsplit(url).path.split("/") if s]
+            filename = generate_filename(url)
+            path_parts = [s for s in urlsplit(url).path.split("/") if s]
             meta = {
                 "url": url,
-                "tytul": dok["tytul"],
-                "typ_dokumentu": "html",
-                "jezyk": dok["jezyk"] or "pl",
-                "sciezka_url": czesci_sciezki,
-                "data_modyfikacji": res.headers.get("Last-Modified", ""),
-                "data_pobrania": teraz(),
-                "liczba_znakow": len(body),
+                "title": doc["title"],
+                "document_type": "html",
+                "language": doc["language"] or "pl",
+                "url_path": path_parts,
+                "modification_date": res.headers.get("Last-Modified", ""),
+                "download_date": now(),
+                "char_count": len(body),
             }
-            zapisz_atomowo(os.path.join(folder, nazwa), zbuduj_frontmatter(meta) + body)
-            with open(sciezka_manifestu, "a", encoding="utf-8") as mf:
-                mf.write(json.dumps({"url": url, "plik": nazwa, "tytul": dok["tytul"], "znaki": len(body),
-                                     "hash": skrot, "data": meta["data_pobrania"]}, ensure_ascii=False) + "\n")
-            stan.stat["zapisane"] += 1
-            log.info("🔍 Zapisano [%d]: %s (%d zn.) | kolejka: %d",
-                     stan.stat["zapisane"], url, len(body), len(stan.kolejka))
-            biezacy = None
+            save_atomically(os.path.join(folder, filename), build_frontmatter(meta) + body)
+            with open(manifest_path, "a", encoding="utf-8") as mf:
+                mf.write(json.dumps({"url": url, "file": filename, "title": doc["title"], "chars": len(body),
+                                     "hash": hash_val, "date": meta["download_date"]}, ensure_ascii=False) + "\n")
+            state.stats["saved"] += 1
+            log.info("🔍 Saved [%d]: %s (%d chars.) | queue: %d",
+                     state.stats["saved"], url, len(body), len(state.queue))
+            current = None
 
-            if przetworzone_w_sesji % ZAPIS_STANU_CO == 0:
-                stan.zapisz(sciezka_stanu, sciezka_pdf)
+            if processed_in_session % SAVE_STATE_EVERY == 0:
+                state.save(state_path, pdf_path)
 
     except KeyboardInterrupt:
-        log.info("Przerwano (Ctrl+C) – zapisuję stan, można wznowić tym samym poleceniem.")
-        if biezacy and biezacy[0] in stan.odwiedzone and biezacy[0] not in {u for u, _ in stan.kolejka}:
-            stan.odwiedzone.discard(biezacy[0])
-            stan.kolejka.appendleft(biezacy)
+        log.info("Interrupted (Ctrl+C) – saving state, can be resumed with the same command.")
+        if current and current[0] in state.visited and current[0] not in {u for u, _ in state.queue}:
+            state.visited.discard(current[0])
+            state.queue.appendleft(current)
     finally:
-        stan.zapisz(sciezka_stanu, sciezka_pdf)
+        state.save(state_path, pdf_path)
 
-    s = stan.stat
+    s = state.stats
     print("\n" + "=" * 50)
-    print("📊 RAPORT KOŃCOWY SCRAPERA")
+    print("📊 FINAL SCRAPER REPORT")
     print("=" * 50)
-    print(f"🌐 Odwiedzone podstrony:        {len(stan.odwiedzone)}")
-    print(f"📝 Zapisane pliki .md:          {s['zapisane']}")
-    print(f"📄 Znalezione linki do PDF:     {len(stan.pdf)}  (-> {sciezka_pdf})")
-    print(f"⏩ Za krótkie:                  {s['pominiete_za_krotkie']}")
-    print(f"⏩ Duplikaty treści:            {s['pominiete_duplikaty']}")
-    print(f"⏩ Błędy / nie-HTML:            {s['bledy_lub_nie_html']}")
-    print(f"⏩ Wykluczone ścieżki (linki):  {s['pominiete_wykluczona']}")
-    print(f"⏩ Pułapki query/paginacja:     {s['pominiete_pulapka_query']}")
-    print(f"⏳ Pozostało w kolejce:         {len(stan.kolejka)}")
+    print(f"🌐 Visited subpages:          {len(state.visited)}")
+    print(f"📝 Saved .md files:           {s['saved']}")
+    print(f"📄 Found PDF links:           {len(state.pdfs)}  (-> {pdf_path})")
+    print(f"⏩ Too short:                 {s['skipped_too_short']}")
+    print(f"⏩ Content duplicates:        {s['skipped_duplicates']}")
+    print(f"⏩ Errors / non-HTML:         {s['errors_or_not_html']}")
+    print(f"⏩ Excluded paths (links):    {s['skipped_excluded']}")
+    print(f"⏩ Query traps/pagination:    {s['skipped_query_trap']}")
+    print(f"⏳ Remaining in queue:        {len(state.queue)}")
     print("=" * 50)
-    return stan
+    return state
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Crawler HTML -> Markdown dla RAG")
-    ap.add_argument("profil", nargs="?", default="bg", choices=sorted(PROFILE))
-    ap.add_argument("--reset", action="store_true", help="zignoruj zapisany stan i zacznij od nowa")
-    ap.add_argument("--max-stron", type=int, default=None, help="limit stron w tej sesji (do testów)")
+    ap = argparse.ArgumentParser(description="HTML -> Markdown Crawler for RAG")
+    ap.add_argument("profile", nargs="?", default="bg", choices=sorted(PROFILES))
+    ap.add_argument("--reset", action="store_true", help="ignore saved state and start from scratch")
+    ap.add_argument("--max-pages", dest="max_pages", type=int, default=None, help="page limit for this session (for testing)")
     a = ap.parse_args()
-    crawl({**KONFIG_DOMYSLNY, **PROFILE[a.profil]}, reset=a.reset, max_stron=a.max_stron)
+    crawl({**DEFAULT_CONFIG, **PROFILES[a.profile]}, reset=a.reset, max_pages=a.max_pages)

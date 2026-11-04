@@ -21,7 +21,7 @@ export async function sendChatMessage(
     });
 
     if (!response.ok) {
-      let errorMessage = `Błąd serwera: ${response.status}`;
+      let errorMessage = `Server error: ${response.status}`;
       try {
         const errorData = await response.json();
         if (errorData.detail) {
@@ -32,7 +32,7 @@ export async function sendChatMessage(
       throw new Error(errorMessage);
     }
 
-    if (!response.body) throw new Error('Brak strumienia w odpowiedzi.');
+    if (!response.body) throw new Error('No stream in the response.');
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
@@ -62,17 +62,17 @@ export async function sendChatMessage(
               } else if (data.type === 'status' && onStatus) {
                 onStatus(data.content); 
               } else if (data.type === 'error') {
-                onChunk(`\n\n**[Błąd]:** ${data.content}`);
+                onChunk(`\n\n**[Error]:** ${data.content}`);
               }
             } catch (e) {
-              console.warn('Błąd parsowania fragmentu JSON:', dataStr);
+              console.warn('Error parsing JSON fragment:', dataStr);
             }
           }
         }
       }
     }
   } catch (error: any) {
-    console.error('Błąd komunikacji z API:', error);
-    onChunk(`\n\n**[Błąd]:** ${error.message || 'Nie udało się nawiązać połączenia z serwerem wiedzy AGH.'}`);
+    console.error('Failed to communicate with API', error);
+    onChunk(`\n\n**[Error]:** ${error.message || 'Failed to connect with the server'}`);
   }
 }

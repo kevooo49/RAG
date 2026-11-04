@@ -1,45 +1,45 @@
 import { describe, it, expect } from 'vitest';
 import { escapeHTML, formatText } from '../../src/utils/formatters';
 
-describe('Logika Tekstowa i Bezpieczeństwo (formatters.ts)', () => {
+describe('Text Logic and Security (formatters.ts)', () => {
   
-  describe('Funkcja escapeHTML', () => {
+  describe('escapeHTML function', () => {
     
-    it('powinna neutralizować złośliwe tagi HTML (Ochrona przed XSS)', () => {
-      const zlosliwyKod = `<script>alert("XSS" & 'Hacked')</script>`;
-      const oczekiwany = `&lt;script&gt;alert(&quot;XSS&quot; &amp; &#39;Hacked&#39;)&lt;/script&gt;`;
+    it('should neutralize malicious HTML tags (XSS Protection)', () => {
+      const maliciousCode = `<script>alert("XSS" & 'Hacked')</script>`;
+      const expected = `&lt;script&gt;alert(&quot;XSS&quot; &amp; &#39;Hacked&#39;)&lt;/script&gt;`;
       
-      expect(escapeHTML(zlosliwyKod)).toBe(oczekiwany);
+      expect(escapeHTML(maliciousCode)).toBe(expected);
     });
 
-    it('powinna zostawiać bezpieczny tekst w spokoju', () => {
-      const bezpiecznyTekst = `Dziekanat czynny od 8 do 15.`;
+    it('should leave safe text alone', () => {
+      const safeText = `The Dean's office is open from 8 to 15.`;
       
-      expect(escapeHTML(bezpiecznyTekst)).toBe(bezpiecznyTekst);
+      expect(escapeHTML(safeText)).toBe(safeText);
     });
   });
 
-  describe('Funkcja formatText', () => {
+  describe('formatText function', () => {
     
-    it('powinna poprawnie parsować pogrubienia w stylu Markdown', () => {
-      const tekst = `To jest **niezwykle** ważne.`;
-      const oczekiwany = `<p>To jest <strong>niezwykle</strong> ważne.</p>`;
+    it('should properly parse Markdown-style bolding', () => {
+      const text = `This is **extremely** important.`;
+      const expected = `<p>This is <strong>extremely</strong> important.</p>`;
       
-      expect(formatText(tekst)).toBe(oczekiwany);
+      expect(formatText(text)).toBe(expected);
     });
 
-    it('powinna przekształcać znaki nowej linii w tagi <br>', () => {
-      const tekst = `Punkt 1\nPunkt 2\nPunkt 3`;
-      const oczekiwany = `<p>Punkt 1<br>Punkt 2<br>Punkt 3</p>`;
+    it('should convert newline characters into <br> tags', () => {
+      const text = `Point 1\nPoint 2\nPoint 3`;
+      const expected = `<p>Point 1<br>Point 2<br>Point 3</p>`;
       
-      expect(formatText(tekst)).toBe(oczekiwany);
+      expect(formatText(text)).toBe(expected);
     });
 
-    it('scenariusz hybrydowy: ucieczka XSS zachodząca razem z prawidłowymi tagami', () => {
-      const skomplikowanyTekst = `**Tytuł:**\nUwaga na tag <iframe src="virus">.`;
-      const oczekiwany = `<p><strong>Tytuł:</strong><br>Uwaga na tag &lt;iframe src=&quot;virus&quot;&gt;.</p>`;
+    it('hybrid scenario: XSS escaping occurring alongside valid tags', () => {
+      const complexText = `**Title:**\nWatch out for the <iframe src="virus"> tag.`;
+      const expected = `<p><strong>Title:</strong><br>Watch out for the &lt;iframe src=&quot;virus&quot;&gt; tag.</p>`;
       
-      expect(formatText(skomplikowanyTekst)).toBe(oczekiwany);
+      expect(formatText(complexText)).toBe(expected);
     });
   });
 });

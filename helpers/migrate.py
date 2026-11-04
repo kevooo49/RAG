@@ -1,4 +1,3 @@
-
 import chromadb
 import json
 import os
@@ -6,10 +5,10 @@ import time
 from datetime import timedelta
 
 # =========================
-# KONFIGURACJA
+# CONFIGURATION
 # =========================
 
-SOURCE_PATH = "./data/Baza_Wektorowa_Chroma_ASYM"
+SOURCE_PATH = "../data/Baza_Wektorowa_Chroma_ASYM"
 COLLECTION_NAME = "agh_wiedza_asym"
 
 TARGET_HOST = "127.0.0.1"
@@ -20,7 +19,7 @@ MAX_RETRIES = 4
 CHECKPOINT_FILE = "./chroma_migration_checkpoint.json"
 
 # =========================
-# POMOCNICZE
+# UTILITIES
 # =========================
 
 def format_time(seconds):
@@ -28,7 +27,7 @@ def format_time(seconds):
 
 
 def save_checkpoint(next_offset, total):
-    """Zapisuje postęp atomowo, aby łatwiej wznowić migrację."""
+    """Saves progress atomically to easily resume the migration."""
     temp_file = CHECKPOINT_FILE + ".tmp"
 
     checkpoint = {
@@ -45,7 +44,7 @@ def save_checkpoint(next_offset, total):
 
 
 def load_checkpoint(total):
-    """Wczytuje postęp tylko dla tej samej bazy i kolekcji."""
+    """Loads progress only for the same database and collection."""
     if not os.path.exists(CHECKPOINT_FILE):
         return 0
 
@@ -58,21 +57,21 @@ def load_checkpoint(total):
         or checkpoint.get("total") != total
     ):
         raise RuntimeError(
-            "Checkpoint nie pasuje do aktualnej bazy lub liczby "
-            "rekordów. Zmień nazwę pliku checkpoint albo sprawdź "
-            "konfigurację przed kontynuacją."
+            "The checkpoint does not match the current database or "
+            "record count. Change the checkpoint file name or check "
+            "the configuration before continuing."
         )
 
     offset = checkpoint["next_offset"]
 
     if not isinstance(offset, int) or not 0 <= offset <= total:
-        raise RuntimeError("Nieprawidłowy offset w checkpoint.")
+        raise RuntimeError("Invalid offset in the checkpoint.")
 
     return offset
 
 
 def retry_operation(operation, description):
-    """Ponawia operację po błędzie, z rosnącym opóźnieniem."""
+    """Retries an operation after an error, with increasing delay."""
     for attempt in range(MAX_RETRIES + 1):
         try:
             return operation()
@@ -82,32 +81,32 @@ def retry_operation(operation, description):
 
             delay = 2 ** attempt
             print(
-                f"\nBłąd: {description}. "
-                f"Ponowienie {attempt + 1}/{MAX_RETRIES} "
-                f"za {delay} s..."
+                f"\nError: {description}. "
+                f"Retrying {attempt + 1}/{MAX_RETRIES} "
+                f"in {delay} s..."
             )
             time.sleep(delay)
 
 
 # =========================
-# MIGRACJA
+# MIGRATION
 # =========================
 
 def main():
     print("=" * 65)
-    print("MIGRACJA CHROMADB")
+    print("CHROMADB MIGRATION")
     print("=" * 65)
 
-    print("\n[1/4] Otwieranie lokalnej bazy...")
+    print("\n[1/4] Opening local database...")
 
     old_client = chromadb.PersistentClient(path=SOURCE_PATH)
     old_col = old_client.get_collection(COLLECTION_NAME)
     total = old_col.count()
 
-    print(f"Źródłowa kolekcja: {COLLECTION_NAME}")
-    print(f"Liczba rekordów:   {total:,}")
+    print(f"Source collection: {COLLECTION_NAME}")
+    print(f"Record count:      {total:,}")
 
-    print("\n[2/4] Łączenie z serwerem Docker...")
+    print("\n[2/4] Connecting to Docker server...")
 
     new_client = chromadb.HttpClient(
         host=TARGET_HOST,
@@ -121,21 +120,21 @@ def main():
 
     initial_target_count = new_col.count()
 
-    print(f"Rekordy w celu przed migracją: {initial_target_count:,}")
+    print(f"Target records before migration: {initial_target_count:,}")
 
     if initial_target_count:
         print(
-            "Uwaga: kolekcja docelowa nie jest pusta. "
-            "Istniejące rekordy mogą zostać nadpisane przez upsert."
+            "Warning: the target collection is not empty. "
+            "Existing records might be overwritten by upsert."
         )
 
-    print("\n[3/4] Kopiowanie danych...")
+    print("\n[3/4] Copying data...")
 
     offset = load_checkpoint(total)
     started_at = time.monotonic()
     copied_this_run = 0
 
-    print(f"Wznawianie od offsetu: {offset:,} / {total:,}")
+    print(f"Resuming from offset: {offset:,} / {total:,}")
 
     while offset < total:
         batch_started = time.monotonic()
@@ -147,15 +146,15 @@ def main():
                 offset=offset,
                 include=["embeddings", "documents", "metadatas"],
             ),
-            "odczyt partii ze źródła",
+            "reading batch from source",
         )
 
         ids = data["ids"]
 
         if not ids:
             raise RuntimeError(
-                f"Źródło zwróciło pustą partię przy offsecie {offset}. "
-                "Migracja została przerwana, aby uniknąć pominięcia danych."
+                f"Source returned an empty batch at offset {offset}. "
+                "Migration aborted to prevent skipping data."
             )
 
         def upsert_batch():
@@ -172,14 +171,14 @@ def main():
 
             new_col.upsert(**kwargs)
 
-        retry_operation(upsert_batch, "zapis partii do celu")
+        retry_operation(upsert_batch, "writing batch to target")
 
         result = retry_operation(
             lambda: new_col.get(
                 ids=ids,
                 include=["metadatas"],
             ),
-            "weryfikacja partii",
+            "verifying batch",
         )
 
         found_ids = set(result["ids"])
@@ -187,9 +186,9 @@ def main():
 
         if missing_ids:
             raise RuntimeError(
-                f"Weryfikacja nie powiodła się: "
-                f"{len(missing_ids)} brakujących identyfikatorów. "
-                "Checkpoint nie został przesunięty."
+                f"Verification failed: "
+                f"{len(missing_ids)} missing identifiers. "
+                "The checkpoint was not advanced."
             )
 
         offset += len(ids)
@@ -204,41 +203,41 @@ def main():
         batch_time = time.monotonic() - batch_started
 
         print(
-            f"\rPostęp: {percent:6.2f}% | "
+            f"\rProgress: {percent:6.2f}% | "
             f"{offset:,}/{total:,} | "
-            f"{speed:,.0f} rekordów/s | "
-            f"partia: {batch_time:.1f} s | "
-            f"pozostało: {format_time(remaining)}",
+            f"{speed:,.0f} records/s | "
+            f"batch: {batch_time:.1f} s | "
+            f"remaining: {format_time(remaining)}",
             end="",
             flush=True,
         )
 
-    print("\n\n[4/4] Kontrola końcowa...")
+    print("\n\n[4/4] Final check...")
 
     target_count = new_col.count()
 
-    print(f"Źródło: {total:,}")
-    print(f"Cel:    {target_count:,}")
+    print(f"Source: {total:,}")
+    print(f"Target: {target_count:,}")
 
     if target_count < total:
         raise RuntimeError(
-            "Liczba rekordów w celu jest mniejsza niż w źródle. "
-            "Nie usuwaj checkpointu; sprawdź przyczynę."
+            "Record count in the target is less than the source. "
+            "Do not remove the checkpoint; investigate the cause."
         )
 
     if target_count > total:
         print(
-            "UWAGA: cel zawiera więcej rekordów niż źródło. "
-            "Dodatkowe rekordy nie zostały usunięte."
+            "WARNING: the target contains more records than the source. "
+            "Additional records were not removed."
         )
 
     os.remove(CHECKPOINT_FILE)
 
     print("\n" + "=" * 65)
-    print("MIGRACJA ZAKOŃCZONA")
-    print(f"Zweryfikowane identyfikatory źródłowe: {total:,}")
-    print(f"Czas tej sesji: {format_time(time.monotonic() - started_at)}")
-    print("Wszystkie partie zostały zapisane i sprawdzone.")
+    print("MIGRATION COMPLETED")
+    print(f"Verified source identifiers: {total:,}")
+    print(f"Time of this session: {format_time(time.monotonic() - started_at)}")
+    print("All batches were saved and verified.")
     print("=" * 65)
 
 
