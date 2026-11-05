@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 """
-Ewaluacja WZBOGACANIA CHUNKÓW O METADANE przed embeddingiem (breadcrumbs / kontekst).
+Evaluation of CHUNK METADATA ENRICHMENT before embedding (breadcrumbs / context).
 
-Chunkowanie, wyszukiwanie i modele embeddingów badasz osobno – tutaj zmienia się TYLKO to,
-jaki tekst trafia do wektora (i do BM25). Podział na chunki jest identyczny dla wszystkich wariantów.
+Chunking, search, and embedding models are evaluated separately – here we change ONLY what
+text goes into the vector (and into BM25). Chunk splitting is identical for all variants.
 
-    python eval_metadata_enrichment.py --list              # lista wariantów
-    python eval_metadata_enrichment.py --dry-run           # liczba chunków, tokeny, koszt – bez API
-    python eval_metadata_enrichment.py                     # warianty deterministyczne (tanie)
-    python eval_metadata_enrichment.py --llm               # + warianty z generowanym kontekstem (LLM)
+    python eval_metadata_enrichment.py --list              # list of variants
+    python eval_metadata_enrichment.py --dry-run           # chunk count, tokens, cost – without API
+    python eval_metadata_enrichment.py                     # deterministic variants (cheap)
+    python eval_metadata_enrichment.py --llm               # + variants with generated context (LLM)
     python eval_metadata_enrichment.py --variants raw breadcrumb prod_header --retrievers dense
 
-Co badamy (każdy wariant porównywany jest z 'raw' testem sparowanym + poprawka Holma):
-  CO wstrzykujemy:   title | section | breadcrumb | prod_header | breadcrumb+url
-  JAK to zapisujemy: breadcrumb | labelled | sentence
-  GDZIE:             breadcrumb (przed treścią) vs suffix (po treści)
-  KONTEKST Z LLM:    llm_context | breadcrumb+llm_context | breadcrumb+summary | doc2query   (--llm)
+What we test (each variant is compared to 'raw' via paired test + Holm correction):
+  WHAT we inject:      title | section | breadcrumb | prod_header | breadcrumb+url
+  HOW we format it:    breadcrumb | labelled | sentence
+  WHERE:               breadcrumb (before content) vs suffix (after content)
+  CONTEXT FROM LLM:    llm_context | breadcrumb+llm_context | breadcrumb+summary | doc2query   (--llm)
 
-Dlaczego wyniki są wiarygodniejsze niż zwykłe "raw vs enriched":
-  * statystyka: bootstrap po PLIKACH (3 pytania do jednego pliku nie są niezależne), CI, p-value, korekta Holma,
-  * analiza "tytuł w zapytaniu": pytania zawierające tytuł dokumentu zawyżają zysk z wstrzyknięcia tytułu
-    (realni użytkownicy rzadko go wpisują) – wynik jest raportowany osobno dla obu grup,
-  * wyszukiwanie dokładne (brute-force), bez szumu ANN; dense + BM25 + hybrydowe (RRF),
-  * cache na dysku (SQLite): ten sam tekst/zapytanie/odpowiedź LLM liczone raz – powtórki nic nie kosztują.
+Why these results are more reliable than standard "raw vs enriched":
+  * statistics: bootstrap by FILES (3 queries per file are not independent), CI, p-value, Holm correction,
+  * "title in query" analysis: queries containing the document title inflate the gain of injecting the title
+    (real users rarely type it) – results are reported separately for both groups,
+  * exact search (brute-force), no ANN noise; dense + BM25 + hybrid (RRF),
+  * disk cache (SQLite): the same text/query/LLM response computed once – reruns cost nothing.
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ from urllib.parse import urlsplit
 import numpy as np
 
 # =====================================================================
-# 1. KONFIGURACJA
+# 1. CONFIGURATION
 # =====================================================================
 SCRIPT_DIR = Path(__file__).resolve().parent
 EVAL_DATA_DIR = os.getenv("EVAL_DATA_DIR", r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka")
@@ -56,20 +56,19 @@ CACHE_PATH = SCRIPT_DIR / "meta_eva_cache.sqlite"
 
 EMBED_MODEL = "text-embedding-3-small"
 LLM_MODEL = "gpt-4o-mini"
-PRICE_PER_1M_EMBED_USD = 0.02     # tylko szacunek w --dry-run; sprawdź aktualny cennik
+PRICE_PER_1M_EMBED_USD = 0.02
 K_VALUES = (1, 3, 5, 10)
-POOL = 40                         # chunków pobieranych przez każdy retriever (potem zwijane do plików)
+POOL = 40
 N_BOOTSTRAP = 5000
 SEED = 42
 BASELINE = "raw"
 RETRIEVERS = ("dense", "bm25", "hybrid")
-BM25_PREFIX = 5                   # prosty "stemmer": skrót słowa do N znaków (fizyka/fizyki -> fizyk); parametr do strojenia
+BM25_PREFIX = 5
 RET_NAMES = {"dense": "Dense (embeddingi, cosine, brute-force)", "bm25": f"BM25 (lokalny, stemming {BM25_PREFIX}-znakowy)",
              "hybrid": "Hybrid (RRF dense + BM25)"}
 QUERY_TYPES = ("lexical", "semantic", "colloquial")
-MAX_DOC_CHARS = 20_000            # ile dokumentu widzi LLM przy generowaniu kontekstu
+MAX_DOC_CHARS = 20_000
 
-# Etykiety źródeł wg hosta z frontmattera (url). Uzupełnij o pozostałe serwisy; to samo co w build_database.KOLEKCJE.
 SOURCE_BY_HOST = {"bg.agh.edu.pl": "Biblioteka Główna AGH", 
                   "css.agh.edu.pl": "Centrum Spraw Studenckich AGH",
                   "rekrutacja.agh.edu.pl": "Rekrutacja AGH",
@@ -87,14 +86,14 @@ STOP = set("jaki jaka jakie jaką który która które kiedy gdzie czego czemu j
 
 
 # =====================================================================
-# 2. DANE: ZBIÓR TESTOWY, CHUNKI
+# 2. DATA: TEST SET, CHUNKS
 # =====================================================================
 def norm_name(s: str) -> str:
     return unicodedata.normalize("NFC", Path(str(s)).name).strip().lower()
 
 
 def stems(text: str, n: int = 4) -> set:
-    """Gruby stemming (prefiks n znaków) – wystarcza do heurystyk typu 'czy zapytanie zawiera tytuł'."""
+    """Coarse stemming (prefix of n characters) – sufficient for heuristics like 'does query contain title'."""
     return {w[:n] for w in re.findall(r"\w{4,}", text.lower()) if w not in STOP}
 
 
@@ -102,13 +101,13 @@ def stems(text: str, n: int = 4) -> set:
 class Item:
     query: str
     qtype: str
-    expected: List[str]          # znormalizowane nazwy plików
+    expected: List[str]
     expected_disp: List[str]
 
 
 def load_dataset(path: Path) -> List[Item]:
     if not Path(path).exists():
-        sys.exit(f"Brak zbioru testowego: {path}")
+        sys.exit(f"Test dataset missing: {path}")
     raw = json.loads(Path(path).read_text(encoding="utf-8"))
     items = []
     for r in raw:
@@ -130,20 +129,20 @@ class DocRec:
 @dataclass
 class ChunkRec:
     idx: int
-    file: str                    # klucz pliku (znormalizowana nazwa)
+    file: str
     title: str
     section: str
     source: str
     url_words: str
-    body: str                    # tekst chunku BEZ nagłówka kontekstowego
+    body: str
     llm_context: str = ""
     doc_summary: str = ""
     questions: str = ""
 
 
 def import_chunker():
-    """build_database (kod chunkowania). Moduł może importować elasticsearch na starcie, a tutaj ES nie jest
-    potrzebny – dlatego (jak w poprzedniej wersji skryptu) podstawiamy atrapę."""
+    """build_database (chunking code). The module might import elasticsearch on startup, and here ES is not
+    needed – so (as in the previous version of the script) we substitute a mock."""
     from unittest.mock import MagicMock
     for p in (SCRIPT_DIR, SCRIPT_DIR.parent):
         if str(p) not in sys.path:
@@ -155,7 +154,7 @@ def import_chunker():
 
 
 def cfg_for_file(path: Path, meta: dict, data_dir: Path) -> dict:
-    """Konfiguracja chunkowania zbliżona do produkcyjnej (typ dokumentu i etykieta źródła z frontmattera)."""
+    """Chunking config close to production (document type and source label from frontmatter)."""
     t = str(meta.get("typ_dokumentu") or meta.get("typ") or "").lower()
     kind = "sylabus" if "sylab" in t else "dokument" if t in ("pdf", "docx", "doc", "odt", "dokument") else "strona"
     host = urlsplit(str(meta.get("url") or "")).netloc.lower()
@@ -164,14 +163,14 @@ def cfg_for_file(path: Path, meta: dict, data_dir: Path) -> dict:
             "pogrubienia_jako_naglowki": True}
 
 
-def split_header(tekst_emb: str, md: dict) -> str:
-    """Zwraca treść chunku bez nagłówka kontekstowego. Najpierw dokładnie (odtworzony nagłówek), potem awaryjnie."""
+def split_header(text_emb: str, md: dict) -> str:
+    """Returns chunk content without the contextual header. Accurately first (reconstructed header), then fallback."""
     title, section, source = (str(md.get(k) or "") for k in ("tytul", "sekcja", "zrodlo"))
     header = f"[{source}] {title}" + (f" › {section}" if section else "")
-    if tekst_emb.startswith(header + "\n\n"):
-        return tekst_emb[len(header) + 2:]
-    parts = tekst_emb.split("\n\n", 1)
-    return parts[1] if len(parts) > 1 else tekst_emb
+    if text_emb.startswith(header + "\n\n"):
+        return text_emb[len(header) + 2:]
+    parts = text_emb.split("\n\n", 1)
+    return parts[1] if len(parts) > 1 else text_emb
 
 
 def url_words(md: dict) -> str:
@@ -183,14 +182,14 @@ def load_chunks(data_dir: Path, bd) -> tuple:
     chunks: List[ChunkRec] = []
     docs: Dict[str, DocRec] = {}
     for p in sorted(Path(data_dir).rglob("*.md")):
-        dok = bd.przygotuj_dokument(p, {})
-        if not dok:
+        doc = bd.przygotuj_dokument(p, {})
+        if not doc:
             continue
-        meta, body, title = dok
+        meta, body, title = doc
         cfg = cfg_for_file(p, meta, data_dir)
         key = norm_name(p.name)
         docs[key] = DocRec(key, p.name, title, body)
-        for _, c, md in bd.chunkuj_plik(p, cfg, dok):
+        for _, c, md in bd.chunkuj_plik(p, cfg, doc):
             chunks.append(ChunkRec(len(chunks), key, str(md.get("tytul") or title), str(md.get("sekcja") or ""),
                                    str(md.get("zrodlo") or cfg["zrodlo"]), url_words(md),
                                    split_header(c.tekst_emb, md)))
@@ -200,19 +199,19 @@ def load_chunks(data_dir: Path, bd) -> tuple:
 def validate(items: List[Item], docs: Dict[str, DocRec]) -> None:
     missing = sorted({d for it in items for d, e in zip(it.expected_disp, it.expected) if e not in docs})
     if missing:
-        sys.exit("❌ Pliki z zbioru testowego, których nie ma w korpusie (każde zapytanie do nich dałoby wynik 0):\n  "
+        sys.exit("Files from the test dataset that are missing in the corpus (any query for them would yield 0):\n  "
                  + "\n  ".join(missing))
 
 
 # =====================================================================
-# 3. WARIANTY WZBOGACANIA
+# 3. ENRICHMENT VARIANTS
 # =====================================================================
 @dataclass(frozen=True)
 class Variant:
     name: str
     desc: str
     build: Callable[[ChunkRec], str]
-    needs: str = ""             # "" | llm_context | doc_summary | questions  (pola wymagające LLM)
+    needs: str = ""
 
 
 def _bc(c: ChunkRec) -> str:
@@ -220,25 +219,25 @@ def _bc(c: ChunkRec) -> str:
 
 
 VARIANTS: List[Variant] = [
-    Variant("raw", "sam tekst chunku – bez metadanych (baseline)", lambda c: c.body),
-    Variant("title", "tylko tytuł dokumentu", lambda c: f"{c.title}\n\n{c.body}"),
-    Variant("section", "tylko ścieżka sekcji (bez tytułu)", lambda c: (f"{c.section}\n\n" if c.section else "") + c.body),
-    Variant("breadcrumb", "Tytuł › Sekcja › Podsekcja", lambda c: f"{_bc(c)}\n\n{c.body}"),
-    Variant("prod_header", "[Źródło] Tytuł › Sekcja (format z build_database)", lambda c: f"[{c.source}] {_bc(c)}\n\n{c.body}"),
-    Variant("breadcrumb+url", "breadcrumb + słowa ze ścieżki URL",
+    Variant("raw", "chunk text only – no metadata (baseline)", lambda c: c.body),
+    Variant("title", "document title only", lambda c: f"{c.title}\n\n{c.body}"),
+    Variant("section", "section path only (without title)", lambda c: (f"{c.section}\n\n" if c.section else "") + c.body),
+    Variant("breadcrumb", "Title › Section › Subsection", lambda c: f"{_bc(c)}\n\n{c.body}"),
+    Variant("prod_header", "[Source] Title › Section (build_database format)", lambda c: f"[{c.source}] {_bc(c)}\n\n{c.body}"),
+    Variant("breadcrumb+url", "breadcrumb + words from URL path",
             lambda c: f"{_bc(c)}" + (f"\n{c.url_words}" if c.url_words else "") + f"\n\n{c.body}"),
-    Variant("labelled", "pola z etykietami (Dokument: / Sekcja:)",
+    Variant("labelled", "labelled fields (Dokument: / Sekcja:)",
             lambda c: f"Dokument: {c.title}\n" + (f"Sekcja: {c.section}\n" if c.section else "") + f"\n{c.body}"),
-    Variant("sentence", "zdanie opisowe po polsku",
+    Variant("sentence", "descriptive sentence in Polish",
             lambda c: f"Fragment dokumentu „{c.title}”" + (f", sekcja „{c.section}”" if c.section else "") + f".\n\n{c.body}"),
-    Variant("suffix", "breadcrumb PO treści (pozycja)", lambda c: f"{c.body}\n\n{_bc(c)}"),
-    Variant("llm_context", "kontekst z LLM (Contextual Retrieval) + treść",
+    Variant("suffix", "breadcrumb AFTER content (position)", lambda c: f"{c.body}\n\n{_bc(c)}"),
+    Variant("llm_context", "LLM context (Contextual Retrieval) + content",
             lambda c: f"{c.llm_context}\n\n{c.body}", "llm_context"),
-    Variant("breadcrumb+llm_context", "breadcrumb + kontekst z LLM",
+    Variant("breadcrumb+llm_context", "breadcrumb + LLM context",
             lambda c: f"{_bc(c)}\n{c.llm_context}\n\n{c.body}", "llm_context"),
-    Variant("breadcrumb+summary", "breadcrumb + streszczenie dokumentu (LLM)",
+    Variant("breadcrumb+summary", "breadcrumb + document summary (LLM)",
             lambda c: f"{_bc(c)}\n{c.doc_summary}\n\n{c.body}", "doc_summary"),
-    Variant("doc2query", "treść + 3 pytania z LLM  ⚠ ryzyko kręgu: LLM generował też pytania testowe",
+    Variant("doc2query", "content + 3 LLM generated questions  risk of loop: LLM also generated test queries",
             lambda c: f"{c.body}\n\nPytania: {c.questions}", "questions"),
 ]
 VARIANT_BY_NAME = {v.name: v for v in VARIANTS}
@@ -281,18 +280,18 @@ def add_llm_fields(chunks: List[ChunkRec], docs: Dict[str, DocRec], llm, needs: 
             c.questions = one_line(llm.complete(
                 P_QUESTIONS.replace("{TITLE}", c.title).replace("{CHUNK}", c.body), "q_v1"))
         if n % 200 == 0:
-            log(f"   [LLM] {n}/{len(chunks)} chunków")
+            log(f"   [LLM] {n}/{len(chunks)} chunks")
 
 
 # =====================================================================
-# 4. CACHE, EMBEDDINGI, LLM
+# 4. CACHE, EMBEDDINGS, LLM
 # =====================================================================
 def h(*parts: str) -> str:
     return hashlib.sha1("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
 class Cache:
-    """SQLite klucz->bajty. Wektory zapisujemy jako float32 (6 KB zamiast ~20 KB w JSON)."""
+    """SQLite key->bytes. We save vectors as float32 (6 KB instead of ~20 KB in JSON)."""
 
     def __init__(self, path):
         self.con = sqlite3.connect(str(path))
@@ -313,7 +312,7 @@ class Cache:
 
 class Embedder:
     def __init__(self, client, model: str, cache: Cache, batch: int = 128):
-        self.client, self.model, self.cache, self.batch = client, model, cache, batch
+        self.client, self.model, self.cache, self.batch = client, model, cache
         self.api_calls = 0
 
     def embed(self, texts: Sequence[str]) -> np.ndarray:
@@ -376,7 +375,7 @@ def load_settings() -> dict:
 
 
 # =====================================================================
-# 5. RETRIEVERY (lokalne, deterministyczne)
+# 5. RETRIEVERS (local, deterministic)
 # =====================================================================
 class DenseIndex:
     def __init__(self, vecs: np.ndarray):
@@ -384,14 +383,14 @@ class DenseIndex:
 
     def search(self, q: np.ndarray, k: int) -> List[int]:
         scores = self.v @ q
-        return list(np.lexsort((np.arange(len(scores)), -scores))[:k])   # remisy rozstrzyga indeks – wynik deterministyczny
+        return list(np.lexsort((np.arange(len(scores)), -scores))[:k])
 
 
 _TOK = re.compile(r"\w+", re.U)
 
 
 def bm25_tokens(text: str) -> List[str]:
-    return [w[:BM25_PREFIX] for w in _TOK.findall(text.lower()) if len(w) > 1]   # obcięcie do prefiksu ≈ prosty stemmer polski
+    return [w[:BM25_PREFIX] for w in _TOK.findall(text.lower()) if len(w) > 1]
 
 
 class BM25:
@@ -427,12 +426,12 @@ def rrf(lists: Sequence[Sequence[int]], k: int = 60) -> List[int]:
 
 
 # =====================================================================
-# 6. EWALUACJA
+# 6. EVALUATION
 # =====================================================================
 @dataclass
 class Run:
-    ranks: np.ndarray                 # pozycja pierwszego trafnego PLIKU (1..10), 0 = brak
-    p5: np.ndarray                    # odsetek top-5 chunków pochodzących z trafnego pliku
+    ranks: np.ndarray
+    p5: np.ndarray
     top3: List[List[str]] = field(default_factory=list)
 
 
@@ -455,7 +454,7 @@ def run_evaluation(variants: List[Variant], retrievers: Sequence[str], chunks: L
         texts = [v.build(c) for c in chunks]
         dense = DenseIndex(embedder.embed(texts)) if ({"dense", "hybrid"} & set(retrievers)) else None
         bm25 = BM25(texts) if ({"bm25", "hybrid"} & set(retrievers)) else None
-        log(f"   [+] {v.name}: {len(texts)} chunków")
+        log(f"   [+] {v.name}: {len(texts)} chunks")
         for ret in retrievers:
             ranks, p5, top3 = [], [], []
             for it, qv in zip(items, qvecs):
@@ -476,7 +475,7 @@ def run_evaluation(variants: List[Variant], retrievers: Sequence[str], chunks: L
 
 
 # =====================================================================
-# 7. STATYSTYKA
+# 7. STATISTICS
 # =====================================================================
 METRICS = ["Hit@1", "Hit@3", "Hit@5", "MRR@10", "P@5chunks"]
 
@@ -491,7 +490,7 @@ def metric_arrays(run: Run) -> Dict[str, np.ndarray]:
 
 
 class Boot:
-    """Bootstrap po klastrach (plikach). Te same próby dla wszystkich porównań => testy sparowane."""
+    """Bootstrap by clusters (files). Same samples for all comparisons => paired tests."""
 
     def __init__(self, groups: Sequence[str], n_boot: int, seed: int):
         uniq, self.inv = np.unique(np.asarray(groups, dtype=str), return_inverse=True)
@@ -533,7 +532,7 @@ def holm(pvals: Dict[str, float]) -> Dict[str, float]:
 
 
 def title_mentioned(item: Item, docs: Dict[str, DocRec]) -> bool:
-    """Czy zapytanie zawiera (większość słów) tytuł oczekiwanego dokumentu? Heurystyka na 4-znakowych rdzeniach."""
+    """Does the query contain (most of the words from) the expected document title? Heuristics on 4-char stems."""
     q = stems(item.query)
     for f in item.expected:
         t = stems(docs[f].title) or stems(Path(docs[f].disp).stem)
@@ -567,7 +566,7 @@ def analyze(runs, items: List[Item], docs: Dict[str, DocRec], n_boot: int, seed:
                                        "delta": boot.paired(arr["MRR@10"], base["MRR@10"], msk) if msk.any() else None}
                                   for sg, msk in subgroups.items()}
             res[v] = e
-        for m in METRICS:                                           # korekta Holma osobno dla każdej metryki
+        for m in METRICS:
             adj = holm({v: res[v]["delta"][m]["p"] for v in res if v != BASELINE})
             for v, p in adj.items():
                 res[v]["delta"][m]["p_holm"] = p
@@ -576,7 +575,7 @@ def analyze(runs, items: List[Item], docs: Dict[str, DocRec], n_boot: int, seed:
 
 
 # =====================================================================
-# 8. RAPORT, CSV, WYKRESY
+# 8. REPORT, CSV, PLOTS
 # =====================================================================
 def md_table(headers: List[str], rows: List[List[str]]) -> str:
     return "\n".join(["| " + " | ".join(headers) + " |", "|" + "|".join("---" for _ in headers) + "|"]
@@ -653,7 +652,6 @@ def make_plots(an: dict, variants: List[Variant], out_dir: Path) -> None:
     names = [v.name for v in variants]
     others = [n for n in names if n != BASELINE]
 
-    # 1) MRR@10 bezwzględnie, z CI
     fig, axes = plt.subplots(1, len(rets), figsize=(5.6 * len(rets), 0.42 * len(names) + 2), sharey=True, squeeze=False)
     for ax, ret in zip(axes[0], rets):
         m = [an["retrievers"][ret][n]["metrics"]["MRR@10"] for n in names]
@@ -670,7 +668,6 @@ def make_plots(an: dict, variants: List[Variant], out_dir: Path) -> None:
     fig.savefig(out_dir / "wykres_mrr.png", dpi=200)
     plt.close(fig)
 
-    # 2) forest plot: ΔMRR@10 vs raw
     fig, axes = plt.subplots(1, len(rets), figsize=(5.6 * len(rets), 0.42 * len(others) + 2), sharey=True, squeeze=False)
     for ax, ret in zip(axes[0], rets):
         for y, n in enumerate(others):
@@ -688,7 +685,6 @@ def make_plots(an: dict, variants: List[Variant], out_dir: Path) -> None:
     fig.savefig(out_dir / "wykres_delta_forest.png", dpi=200)
     plt.close(fig)
 
-    # 3) mapa cieplna: gdzie pomaga (ΔMRR@10 w podgrupach)
     sgs = list(an["subgroup_sizes"])
     fig, axes = plt.subplots(1, len(rets), figsize=(1.35 * len(sgs) * len(rets) + 2, 0.42 * len(others) + 3), sharey=True, squeeze=False)
     for ax, ret in zip(axes[0], rets):
@@ -710,43 +706,43 @@ def make_plots(an: dict, variants: List[Variant], out_dir: Path) -> None:
 
 
 # =====================================================================
-# 9. DRY-RUN I URUCHOMIENIE
+# 9. DRY-RUN AND EXECUTION
 # =====================================================================
 def dry_run(variants: List[Variant], chunks: List[ChunkRec], docs: Dict[str, DocRec], items: List[Item], bd) -> None:
     n = len(chunks)
-    print(f"\nKorpus: {len(docs)} plików, {n} chunków | zapytań testowych: {len(items)}")
+    print(f"\nCorpus: {len(docs)} files, {n} chunks | test queries: {len(items)}")
     tok_raw = sum(bd.tokeny(c.body) for c in chunks)
     tot = 0
-    print(f"\n{'wariant':<26}{'tokeny do embeddingu':>22}")
+    print(f"\n{'variant':<26}{'tokens for embedding':>22}")
     for v in variants:
         if v.needs:
             extra = {"llm_context": 60, "doc_summary": 80, "questions": 45}[v.needs]
             t = tok_raw + n * (extra + 25)
-            note = "  (szacunek)"
+            note = "  (estimate)"
         else:
             t = sum(bd.tokeny(v.build(c)) for c in chunks)
             note = ""
         tot += t
         print(f"{v.name:<26}{t:>22,}{note}")
-    print(f"\nŁącznie ≈ {tot:,} tokenów ≈ ${tot / 1e6 * PRICE_PER_1M_EMBED_USD:.3f} "
-          f"(bez cache; identyczne teksty są liczone raz). Cena z ustawień: ${PRICE_PER_1M_EMBED_USD}/1M.")
+    print(f"\nTotal ≈ {tot:,} tokens ≈ ${tot / 1e6 * PRICE_PER_1M_EMBED_USD:.3f} "
+          f"(no cache; identical texts are counted once). Price from settings: ${PRICE_PER_1M_EMBED_USD}/1M.")
     needs = {v.needs for v in variants if v.needs}
     if needs:
         doc_tok = {k: bd.tokeny(d.body[:MAX_DOC_CHARS]) for k, d in docs.items()}
         ctx_in = sum(doc_tok[c.file] + bd.tokeny(c.body) + 150 for c in chunks)
-        print(f"LLM: {n} wywołań/wariant kontekstowy (≈ {ctx_in / 1e6:.1f}M tokenów wejściowych dla llm_context), "
-              f"{len(docs)} wywołań dla streszczeń, {n} dla doc2query. Wyniki trafiają do cache.")
+        print(f"LLM: {n} calls/contextual variant (≈ {ctx_in / 1e6:.1f}M input tokens for llm_context), "
+              f"{len(docs)} calls for summaries, {n} for doc2query. Results will be cached.")
 
 
 def parse_args(argv=None):
-    ap = argparse.ArgumentParser(description="Ewaluacja wzbogacania chunków o metadane")
+    ap = argparse.ArgumentParser(description="Evaluation of chunk metadata enrichment")
     ap.add_argument("--data-dir", default=EVAL_DATA_DIR)
     ap.add_argument("--dataset", default=str(DATASET_PATH))
     ap.add_argument("--out", default=str(OUT_ROOT))
     ap.add_argument("--cache", default=str(CACHE_PATH))
-    ap.add_argument("--variants", nargs="+", help="podzbiór wariantów (raw jest dodawany automatycznie)")
+    ap.add_argument("--variants", nargs="+", help="subset of variants (raw is added automatically)")
     ap.add_argument("--retrievers", nargs="+", default=list(RETRIEVERS), choices=RETRIEVERS)
-    ap.add_argument("--llm", action="store_true", help="dołącz warianty z kontekstem generowanym przez LLM (kosztuje)")
+    ap.add_argument("--llm", action="store_true", help="include variants with context generated by LLM (incurs cost)")
     ap.add_argument("--llm-model", default=LLM_MODEL)
     ap.add_argument("--n-boot", type=int, default=N_BOOTSTRAP)
     ap.add_argument("--dry-run", action="store_true")
@@ -758,11 +754,11 @@ def select_variants(args) -> List[Variant]:
     if args.variants:
         unknown = [n for n in args.variants if n not in VARIANT_BY_NAME]
         if unknown:
-            sys.exit(f"Nieznane warianty: {unknown}. Dostępne: {list(VARIANT_BY_NAME)}")
+            sys.exit(f"Unknown variants: {unknown}. Available: {list(VARIANT_BY_NAME)}")
         names = list(dict.fromkeys([BASELINE] + args.variants))
         chosen = [VARIANT_BY_NAME[n] for n in names]
         if any(v.needs for v in chosen) and not args.llm:
-            sys.exit("Wybrane warianty wymagają LLM – dodaj --llm.")
+            sys.exit("Selected variants require LLM – add --llm.")
         return chosen
     return [v for v in VARIANTS if args.llm or not v.needs]
 
@@ -779,9 +775,9 @@ def main(argv=None) -> None:
     validate(items, docs)
     variants = select_variants(args)
     mention = np.array([title_mentioned(it, docs) for it in items])
-    print(f"Korpus: {len(docs)} plików, {len(chunks)} chunków | zapytań: {len(items)} "
+    print(f"Corpus: {len(docs)} files, {len(chunks)} chunks | queries: {len(items)} "
           f"({', '.join(f'{k}: {v}' for k, v in Counter(it.qtype for it in items).items())}) | "
-          f"z tytułem w zapytaniu: {int(mention.sum())}")
+          f"with title in query: {int(mention.sum())}")
     if args.dry_run:
         dry_run(variants, chunks, docs, items, bd)
         return
@@ -789,17 +785,17 @@ def main(argv=None) -> None:
     from openai import OpenAI
     key = load_settings()["openai_key"]
     if not key:
-        sys.exit("Brak OPENAI_API_KEY (zmienna środowiskowa / .env / settings).")
+        sys.exit("Missing OPENAI_API_KEY (environment variable / .env / settings).")
     client = OpenAI(api_key=key, max_retries=6)
     cache = Cache(args.cache)
     embedder = Embedder(client, EMBED_MODEL, cache)
     needs = {v.needs for v in variants if v.needs}
     if needs:
-        print(f"🧠 Generowanie kontekstu LLM ({args.llm_model}) – wyniki są cache'owane...")
+        print(f" LLM context generation ({args.llm_model}) – results are cached...")
         add_llm_fields(chunks, docs, LLM(client, args.llm_model, cache), needs)
     qvecs = embedder.embed([it.query for it in items])
 
-    print("\n🔍 EWALUACJA WARIANTÓW WZBOGACANIA\n")
+    print("\n ENRICHMENT VARIANTS EVALUATION\n")
     runs = run_evaluation(variants, args.retrievers, chunks, items, docs, embedder, qvecs)
     an = analyze(runs, items, docs, args.n_boot, SEED)
 
@@ -813,11 +809,11 @@ def main(argv=None) -> None:
     try:
         make_plots(an, variants, out_dir)
     except ImportError:
-        print("⚠️ matplotlib niedostępny – pominięto wykresy")
+        print(" matplotlib unavailable – skipped plotting")
     print(report)
-    print(f"\n💾 cache: embeddingi API: {cache.misses['emb']} nowych / {cache.hits['emb']} z cache | "
-          f"LLM: {cache.misses['llm']} nowych / {cache.hits['llm']} z cache")
-    print(f"✅ Zapisano raport, per_query.csv, wyniki.json i wykresy w: {out_dir}")
+    print(f"\n cache: API embeddings: {cache.misses['emb']} new / {cache.hits['emb']} cached | "
+          f"LLM: {cache.misses['llm']} new / {cache.hits['llm']} cached")
+    print(f" Saved report, per_query.csv, wyniki.json, and plots in: {out_dir}")
 
 
 if __name__ == "__main__":

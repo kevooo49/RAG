@@ -1,18 +1,16 @@
 import type { ChatRequestPayload, SourceDocument } from '../types';
 
-const API_URL = 'http://localhost:8000/api/chat';
+const API_URL = '/api/chat';
 
 export async function sendChatMessage(
   payload: ChatRequestPayload,
   onChunk: (text: string) => void,
   onSources: (sources: SourceDocument[]) => void,
-  onStatus?: (status: string) => void
+  onStatus?: (status: string) => void,
+  onError?: (error: string) => void
 ): Promise<void> {
   try {
-    const safePayload = {
-      ...payload,
-      history: payload.history ? payload.history.slice(-6) : []
-    };
+    const safePayload = { ...payload };
 
     const response = await fetch(API_URL, {
       method: 'POST',
@@ -62,7 +60,8 @@ export async function sendChatMessage(
               } else if (data.type === 'status' && onStatus) {
                 onStatus(data.content); 
               } else if (data.type === 'error') {
-                onChunk(`\n\n**[Error]:** ${data.content}`);
+                if (onError) onError(data.content);
+                else onChunk(`\n\n[Błąd serwera]: ${data.content}`);
               }
             } catch (e) {
               console.warn('Error parsing JSON fragment:', dataStr);
@@ -73,6 +72,7 @@ export async function sendChatMessage(
     }
   } catch (error: any) {
     console.error('Failed to communicate with API', error);
-    onChunk(`\n\n**[Error]:** ${error.message || 'Failed to connect with the server'}`);
+    if (onError) onError(error.message || 'Wystąpił problem z połączeniem do serwera.');
+    else onChunk(`\n\n[Błąd połączenia]: ${error.message || 'Brak odpowiedzi.'}`);
   }
 }

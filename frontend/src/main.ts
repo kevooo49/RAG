@@ -37,13 +37,22 @@ if (DEV_MODE_SWITCHER) {
   }
 }
 
-const savedHistory = sessionStorage.getItem('chatHistory');
-let chatHistory: Message[] = savedHistory ? JSON.parse(savedHistory) : [
+let chatHistory: Message[] = [
   { id: Date.now().toString(), role: 'assistant', content: 'Cześć! Jestem asystentem Akademii Górniczo-Hutniczej. W czym mogę Ci pomóc?' }
 ];
+const savedHistory = sessionStorage.getItem('chatHistory');
+if (savedHistory) {
+  try {
+    chatHistory = JSON.parse(savedHistory);
+  } catch (e) {
+    console.error("Uszkodzona historia w sessionStorage, resetuję.", e);
+    sessionStorage.removeItem('chatHistory');
+  }
+}
 
 function saveHistory() {
-  sessionStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+  const historyToSave = chatHistory.map(m => ({ id: m.id, role: m.role, content: m.content }));
+  sessionStorage.setItem('chatHistory', JSON.stringify(historyToSave));
 }
 
 function appendMessage(message: Message): HTMLElement {
@@ -126,6 +135,12 @@ form.addEventListener('submit', async (e) => {
     },
     (status) => {
       loadingText.textContent = status;
+    },
+    (err) => {
+      handleFirstEvent();
+      if (botContentDiv) {
+        botContentDiv.innerHTML += `<div class="error-msg" style="color: red; margin-top: 10px;">${err}</div>`;
+      }
     }
   );
 

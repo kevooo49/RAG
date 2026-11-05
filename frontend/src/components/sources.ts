@@ -1,4 +1,5 @@
 import type { SourceDocument } from '../types';
+import { escapeHTML } from '../utils/formatters';
 
 export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
   const container = document.createElement('div');
@@ -16,14 +17,19 @@ export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
   const list = document.createElement('div');
   list.className = 'sources-list';
 
-  sources.forEach((source, index) => {
+sources.forEach((source, index) => {
     const card = document.createElement('div');
     card.className = 'source-card';
-    
-    const title = source.meta?.tytul || 'Dokument AGH';
-    const section = source.meta?.sekcja || 'Baza główna';
-    const url = source.meta?.url || '#';
+
+    const title = escapeHTML(source.meta?.tytul || 'Dokument AGH');
+    const section = escapeHTML(source.meta?.sekcja || 'Baza główna');
+    const safeText = escapeHTML(source.text);
     const score = source.score ? source.score.toFixed(5) : 'N/A';
+
+    let url = source.meta?.url || '#';
+    if (url !== '#' && !url.startsWith('http://') && !url.startsWith('https://')) {
+      url = '#';
+    }
 
     card.innerHTML = `
       <div class="source-header">
@@ -31,10 +37,22 @@ export function createSourcesComponent(sources: SourceDocument[]): HTMLElement {
         <span class="rrf-badge">RRF: ${score}</span>
       </div>
       <div class="source-meta">
-        Sekcja: <i>${section}</i> | <a href="${url}" target="_blank">🔗 Otwórz stronę</a>
+        Sekcja: <i>${section}</i> | <span class="link-placeholder"></span>
       </div>
-      <div class="source-text">${source.text}</div>
+      <div class="source-text">${safeText}</div>
     `;
+    
+    const linkEl = document.createElement('a');
+    linkEl.href = url;
+    linkEl.target = '_blank';
+    linkEl.rel = 'noopener noreferrer';
+    linkEl.textContent = '🔗 Otwórz stronę';
+    
+    const placeholder = card.querySelector('.link-placeholder');
+    if (placeholder) {
+      placeholder.replaceWith(linkEl);
+    }
+    
     list.appendChild(card);
   });
 

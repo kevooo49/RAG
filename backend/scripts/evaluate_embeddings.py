@@ -1,9 +1,9 @@
 """
-Ewaluacja Modeli Osadzeń (Embeddings) dla systemu RAG.
-Skrypt izoluje wyszukiwanie wektorowe i mierzy:
-- Czas budowania indeksu (koszt embedowania całego korpusu).
-- Czas inferencji (opóźnienie zapytania do modelu + wyszukiwanie w ChromaDB).
-- Precyzję (Hit@K, MRR@10) z przedziałami ufności.
+Evaluation of Embeddings Models for the RAG system.
+The script isolates vector search and measures:
+- Index building time (cost of embedding the entire corpus).
+- Inference time (latency of querying the model + searching in ChromaDB).
+- Precision (Hit@K, MRR@10) with confidence intervals.
 """
 from __future__ import annotations
 
@@ -24,15 +24,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from dotenv import load_dotenv
 
-katalog_skryptu = os.path.dirname(__file__)
-sys.path.append(os.path.abspath(os.path.join(katalog_skryptu, '..')))
-load_dotenv(os.path.join(katalog_skryptu, '..', '.env'))
+script_dir = os.path.dirname(__file__)
+sys.path.append(os.path.abspath(os.path.join(script_dir, '..')))
+load_dotenv(os.path.join(script_dir, '..', '.env'))
 
 import chromadb
 from chromadb.utils import embedding_functions
 from app.core.config import settings
 
-# Mockowanie ES, bo w tym teście interesuje nas wyłącznie ChromaDB
 from unittest.mock import MagicMock
 sys.modules['elasticsearch'] = MagicMock()
 sys.modules['elasticsearch.helpers'] = MagicMock()
@@ -40,7 +39,7 @@ sys.modules['elasticsearch.helpers'] = MagicMock()
 import build_database
 
 # =====================================================================
-# 1. KONFIGURACJA
+# 1. CONFIGURATION
 # =====================================================================
 
 EVAL_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
@@ -48,7 +47,6 @@ DATASET_PATH = os.path.join(SCRIPT_DIR := os.path.dirname(__file__), "test_datas
 CACHE_DIR = os.path.join(SCRIPT_DIR, ".eval_cache")
 OUT_ROOT = os.path.join(SCRIPT_DIR, "embed_eva_stats")
 
-# Zestawienie modeli
 MODELS = {
     "OAI-Small": {"provider": "openai", "name": "text-embedding-3-small"},
     "OAI-Large": {"provider": "openai", "name": "text-embedding-3-large"},
@@ -63,7 +61,7 @@ N_BOOTSTRAP = 2000
 SEED = 42
 
 # =====================================================================
-# 2. STRUKTURY DANYCH
+# 2. DATA STRUCTURES
 # =====================================================================
 
 @dataclass
@@ -84,14 +82,14 @@ class QueryResult:
 
 def load_dataset() -> List[Query]:
     if not os.path.exists(DATASET_PATH):
-        sys.exit(f"Brak zbioru danych: {DATASET_PATH}. Uruchom najpierw generator pytań.")
+        sys.exit(f"Dataset missing: {DATASET_PATH}. Run the question generator first.")
     with open(DATASET_PATH, "r", encoding="utf-8") as f:
         raw = json.load(f)
 
     files = {f for f in os.listdir(EVAL_DATA_DIR) if f.endswith(".md")}
     missing = sorted({r["expected_file"] for r in raw if r["expected_file"] not in files})
     if missing:
-        print("Brak plików referencyjnych (sprawdź literówki w nazwach):")
+        print("Missing reference files (check for typos in file names):")
         for m in missing:
             print("   -", m)
         sys.exit(1)
@@ -99,7 +97,7 @@ def load_dataset() -> List[Query]:
     return [Query(r["query"], r["expected_file"], r.get("type", "unknown")) for r in raw]
 
 # =====================================================================
-# 3. PRZYGOTOWANIE BAZY I POMIAR CZASU BUDOWY (BUILD TIME)
+# 3. PREPARING THE DATABASE AND MEASURING BUILD TIME
 # =====================================================================
 
 def chunk_advanced_production(filepath: str) -> List[Dict[str, Any]]:
@@ -110,10 +108,10 @@ def chunk_advanced_production(filepath: str) -> List[Dict[str, Any]]:
         "naglowki_prawne": True,
         "pogrubienia_jako_naglowki": True
     }
-    dok = build_database.przygotuj_dokument(filepath, cfg_mock)
-    if not dok:
+    doc = build_database.przygotuj_dokument(filepath, cfg_mock)
+    if not doc:
         return []
-    return [{"text": c.tekst_emb, "metadata": md} for _cid, c, md in build_database.chunkuj_plik(filepath, cfg_mock, dok)]
+    return [{"text": c.tekst_emb, "metadata": md} for _cid, c, md in build_database.chunkuj_plik(filepath, cfg_mock, doc)]
 
 def corpus_fingerprint(model_name: str) -> str:
     h = hashlib.sha256()
@@ -138,7 +136,7 @@ def get_embedding_function(model_info: Dict[str, str]):
         return embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name=model_info["name"]
         )
-    raise ValueError("Nieznany provider modelu")
+    raise ValueError("Unknown model provider")
 
 def load_or_build_collection(chroma_client, model_key: str, model_info: Dict[str, str], force: bool) -> Tuple[Any, float]:
     fp_path = os.path.join(CACHE_DIR, f"fp_{model_key.lower()}.txt")
@@ -162,12 +160,12 @@ def load_or_build_collection(chroma_client, model_key: str, model_info: Dict[str
         try:
             collection = chroma_client.get_collection(collection_name, embedding_function=embedding_fn)
             if collection.count() > 0:
-                print(f"   [=] Wczytano z cache dla {model_key} (Build Time: {build_times[model_key]:.2f}s).")
+                print(f"   [=] Loaded from cache for {model_key} (Build Time: {build_times[model_key]:.2f}s).")
                 return collection, build_times[model_key]
         except Exception:
             pass
 
-    print(f"   [+] Budowanie indeksu od zera dla {model_key} (mierzenie czasu)...")
+    print(f"   [+] Building index from scratch for {model_key} (measuring time)...")
     try:
         chroma_client.delete_collection(collection_name)
     except Exception:
@@ -192,17 +190,16 @@ def load_or_build_collection(chroma_client, model_key: str, model_info: Dict[str
             metadatas.append(c["metadata"])
             counter += 1
 
-    # Mierzenie czasu embedowania całego korpusu
     t0 = time.perf_counter()
-    batch_size = 16  # Zmniejszamy paczkę, żeby zmieścić się w 4GB VRAM
+    batch_size = 16
     for i in range(0, len(documents), batch_size):
         collection.add(
             ids=doc_ids[i:i+batch_size],
             documents=documents[i:i+batch_size],
             metadatas=metadatas[i:i+batch_size]
         )
-        print(f"      Postęp wektoryzacji: {min(i+batch_size, len(documents))}/{len(documents)}", end="\r")
-    print() # Nowa linia po zakończeniu pętli
+        print(f"      Vectorization progress: {min(i+batch_size, len(documents))}/{len(documents)}", end="\r")
+    print()
     build_time = time.perf_counter() - t0
 
     build_times[model_key] = build_time
@@ -214,13 +211,13 @@ def load_or_build_collection(chroma_client, model_key: str, model_info: Dict[str
     return collection, build_time
 
 # =====================================================================
-# 4. SILNIK EWALUACYJNY
+# 4. EVALUATION ENGINE
 # =====================================================================
 
 def evaluate_model(model_key: str, queries: List[Query], collection: Any) -> List[QueryResult]:
     results = []
     
-    # Warm-up (nie mierzymy pierwszego strzału)
+    # Warm-up (we do not measure the first shot)
     collection.query(query_texts=[queries[0].text], n_results=1)
     
     for i, q in enumerate(queries, start=1):
@@ -248,7 +245,7 @@ def evaluate_model(model_key: str, queries: List[Query], collection: Any) -> Lis
     return results
 
 # =====================================================================
-# 5. METRYKI (BOOTSTRAP I PODSUMOWANIE)
+# 5. METRICS (BOOTSTRAP AND SUMMARY)
 # =====================================================================
 
 def per_query_scores(results: List[QueryResult]) -> Dict[str, np.ndarray]:
@@ -307,7 +304,7 @@ def fmt_ci(m: Dict[str, float]) -> str:
     return f"{m['mean']:.3f} [{m['ci_low']:.2f}-{m['ci_high']:.2f}]"
 
 # =====================================================================
-# 6. GENEROWANIE RAPORTÓW I WYKRESÓW
+# 6. GENERATING REPORTS AND PLOTS
 # =====================================================================
 
 def build_report(summary, types, n_queries, n_files) -> str:
@@ -398,29 +395,29 @@ def plot_tradeoffs(summary, path):
     plt.close(fig)
 
 # =====================================================================
-# 7. GŁÓWNY BLOK URUCHOMIENIOWY
+# 7. MAIN EXECUTION BLOCK
 # =====================================================================
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--rebuild", action="store_true", help="Wymusza pobranie wektorów przez API na nowo.")
+    ap.add_argument("--rebuild", action="store_true", help="Forces fetching vectors via API again.")
     args = ap.parse_args()
 
     if not os.path.isdir(EVAL_DATA_DIR):
-        sys.exit(f"Brak folderu danych: {EVAL_DATA_DIR}")
+        sys.exit(f"Data folder missing: {EVAL_DATA_DIR}")
     os.makedirs(CACHE_DIR, exist_ok=True)
 
     queries = load_dataset()
     n_files = len({q.expected_file for q in queries})
 
-    print("🔌 Uruchamianie ChromaDB (Persistent)...")
+    print("Starting ChromaDB (Persistent)...")
     chroma_client = chromadb.PersistentClient(path=os.path.join(CACHE_DIR, "chroma_embeds"))
 
     results_by_mod, build_times = {}, {}
 
-    print("\n🔍 ROZPOCZYNAM EWALUACJĘ MODELI EMBEDDINGOWYCH\n")
+    print("\nSTARTING EMBEDDINGS MODELS EVALUATION\n")
     for key, info in MODELS.items():
-        print(f"-> Ładowanie modelu: {key} ({info['name']})")
+        print(f"-> Loading model: {key} ({info['name']})")
         collection, b_time = load_or_build_collection(chroma_client, key, info, args.rebuild)
         build_times[key] = b_time
         results_by_mod[key] = evaluate_model(key, queries, collection)
@@ -446,7 +443,7 @@ def main():
 
     plot_metrics(summary, os.path.join(out_dir, "wykres_precyzji.png"))
     plot_tradeoffs(summary, os.path.join(out_dir, "wykres_kosztow.png"))
-    print(f"\n✅ Zapisano raport i wykresy w folderze: {out_dir}")
+    print(f"\nSaved report and plots in folder: {out_dir}")
 
 if __name__ == "__main__":
     main()

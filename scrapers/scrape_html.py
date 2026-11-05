@@ -29,7 +29,6 @@ from markdownify import markdownify as md
 from requests.adapters import HTTPAdapter
 import urllib3
 from urllib3.util.retry import Retry
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # ==========================================
 # GLOBAL SETTINGS
@@ -970,7 +969,6 @@ PROFILES = {
 # ==========================================
 def create_session():
     s = requests.Session()
-    s.verify = False
     s.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "pl,en;q=0.5"})
     retry = Retry(
         total=3,

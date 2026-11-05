@@ -2,10 +2,9 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/public/favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="./public/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Asystent AGH | Inteligentny RAG</title>
-    <!-- Ładowanie stylów w odpowiedniej kolejności -->
     <link rel="stylesheet" href="/src/styles/variables.css" />
     <link rel="stylesheet" href="/src/styles/main.css" />
     <link rel="stylesheet" href="/src/styles/chat.css" />
@@ -13,15 +12,9 @@
   </head>
   <body>
     <div id="app">
-      <!-- Nagłówek aplikacji -->
       <header class="app-header">
         <div class="logo-container">
-          <!-- Jeśli dodasz logo_agh.png do folderu public/, odkomentuj znacznik img -->
           <img src="agh_logo.jpg" alt="Logo AGH" class="logo" />
-          <!-- <div class="logo-fallback">
-            <h2>AGH</h2>
-            <p>Akademia Górniczo-Hutnicza</p>
-          </div> -->
         </div>
         <div class="header-titles">
           <h1>Wirtualny Asystent Wiedzy</h1>
@@ -29,14 +22,10 @@
         </div>
       </header>
 
-      <!-- Główny obszar czatu -->
       <main class="chat-container">
-        <!-- Lista wiadomości -->
         <div id="chat-messages" class="messages-area">
-          <!-- Tutaj TypeScript będzie dynamicznie wstrzykiwał dymki czatu -->
         </div>
 
-        <!-- Animacja ładowania (domyślnie ukryta) -->
         <div id="loading-indicator" class="loading-indicator hidden">
           <div class="loader-container">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -44,7 +33,6 @@
           </div>
         </div>
 
-        <!-- Pole wprowadzania -->
         <form id="chat-form" class="input-area">
           <input
             type="text"
@@ -54,7 +42,6 @@
             required
           />
           <button type="submit" id="send-button" aria-label="Wyślij">
-            <!-- Ikona papierowego samolotu SVG -->
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -64,7 +51,6 @@
       </main>
     </div>
     
-    <!-- Wejście do logiki TypeScript -->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

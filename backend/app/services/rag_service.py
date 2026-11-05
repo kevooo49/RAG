@@ -22,7 +22,6 @@ from app.core.config import settings
 log = logging.getLogger("agh_rag.rag")
 
 CHUNK_POOL = 40
-RRF_K = 60
 DEFAULT_TOP_K = 5
 MAX_INPUT_QUERY_CHARS = 1000
 MAX_EXPANDED_QUERY_CHARS = 300
@@ -32,6 +31,9 @@ ES_TIMEOUT_S = 10
 
 class RetrievalError(RuntimeError):
     """Raised when both retrieval paths (dense and BM25) fail entirely."""
+
+class DependencyError(RuntimeError):
+    """Raised when underlying databases (Chroma, ES) are down."""
 
 class _TTLCache:
     def __init__(self, ttl_s: float, maxsize: int = 2048, clock=time.monotonic):
@@ -67,28 +69,20 @@ _vector_cache = _TTLCache(CACHE_TTL_S, maxsize=512)
 
 
 def _generate_key(text: str) -> str:
-    """Normalizes a query to generate a deterministic cache key."""
     return re.sub(r"\s+", " ", text.strip().casefold())
 
 
-
-# def _es_client() -> Elasticsearch:
-#     return Elasticsearch(settings.ES_URL, request_timeout=ES_TIMEOUT_S, max_retries=2, retry_on_timeout=True)
 @functools.lru_cache(maxsize=1)
 def _es_client() -> Elasticsearch:
-    # return Elasticsearch("http://elasticsearch:9200", request_timeout=ES_TIMEOUT_S, max_retries=2, retry_on_timeout=True)
-    clean_url = settings.ES_URL.encode("ascii", "ignore").decode("ascii").strip()
-    return Elasticsearch(clean_url, request_timeout=ES_TIMEOUT_S, max_retries=2, retry_on_timeout=True)
+    return Elasticsearch(settings.ES_URL, request_timeout=ES_TIMEOUT_S, max_retries=2, retry_on_timeout=True)
 
 
 def _validate_collection(col: Any) -> None:
-    """Ensures the vector database was built with the matching embedding model."""
     meta = col.metadata or {}
     embedded_model = meta.get("model_embeddingow")
     
     if embedded_model and embedded_model != settings.EMBED_MODEL:
-        raise RuntimeError(f"Chroma collection built with '{embedded_model}', but service uses '{settings.EMBED_MODEL}'. "
-                           "Vectors from different models are not comparable – rebuild the database or change EMBED_MODEL.")
+        raise RuntimeError(f"Chroma collection built with '{embedded_model}', but service uses '{settings.EMBED_MODEL}'.")
         
     dimensions = meta.get("wymiary")
     if dimensions and settings.EMBED_DIMENSIONS and int(dimensions) != int(settings.EMBED_DIMENSIONS):
@@ -100,8 +94,7 @@ def _validate_collection(col: Any) -> None:
 
 @functools.lru_cache(maxsize=1)
 def _get_collection() -> Any:
-    # client = chromadb.PersistentClient(path=settings.CHROMA_DIR)
-    client = chromadb.HttpClient(host="chromadb", port=8000)
+    client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
     col = client.get_collection(name=settings.CHROMA_COLLECTION)
     _validate_collection(col)
     return col
@@ -110,8 +103,6 @@ def _get_collection() -> Any:
 def _get_distance_space() -> str:
     meta = _get_collection().metadata or {}
     space = meta.get("hnsw:space") or (meta.get("hnsw") or {}).get("space") or "unknown"
-    if space not in ("cosine", "unknown") and settings.RAG_MIN_DENSE_SIM is not None:
-        log.warning(f"rag: Collection uses space '{space}'. RAG_MIN_DENSE_SIM threshold may not work correctly.")
     return space
 
 
@@ -129,32 +120,28 @@ def _get_expansion_llm() -> ChatOpenAI:
 
 
 def initialize() -> None:
-    """Pre-warms the connections on application startup."""
     _get_collection()
     _get_embeddings()
     _get_expansion_llm()
-    # if not _es_client().ping():
-    #     raise RuntimeError(f"Elasticsearch is not responding: {settings.ES_URL}")
     try:
         _es_client().info()
     except Exception as e:
-        hosts = _es_client().transport.node_pool.all()
-        raise RuntimeError(f"Krytyczny błąd ES. Wyczyszczony Host: {hosts}. Szczegóły: {e}")
+        raise RuntimeError(f"Krytyczny błąd ES: {e}")
 
 
 def check_dependencies() -> Dict[str, str]:
-    """Health check for external databases."""
-    status = {}
-    for name, fn in (("elasticsearch", lambda: _es_client().ping()), ("chroma", lambda: _get_collection().count())):
-        try:
-            fn()
-            status[name] = "ok"
-        except Exception as e:
-            status[name] = f"error: {e}"
-    return status
+    try:
+        if not _es_client().ping():
+            raise Exception("ES ping failed")
+        _get_collection().count()
+        return {"elasticsearch": "ok", "chroma": "ok"}
+    except Exception as e:
+        log.error(f"Healthcheck failed: {e}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail="Database dependency unavailable")
 
 # ==============================================================================
-# PROMPTS FOR QUERY EXPANSION & REFORMULATION (Maintained in Polish)
+# PROMPTS FOR QUERY EXPANSION & REFORMULATION
 # ==============================================================================
 
 _AGH_SHORTCUTS = (
@@ -295,7 +282,7 @@ def _embed_query(query: str) -> List[float]:
 def _search_dense(query: str, pool_size: int) -> Tuple[List[str], Dict[str, float], Dict[str, Dict[str, Any]]]:
     col = _get_collection()
     vector = _embed_query(query)
-    res = col.query(query_embeddings=[vector], n_results=max(1, min(pool_size, col.count())), include=["distances", "documents", "metadatas"])
+    res = col.query(query_embeddings=[vector], n_results=pool_size, include=["distances", "documents", "metadatas"])
     
     ids = list((res.get("ids") or [[]])[0])
     dist = list((res.get("distances") or [[]])[0])
@@ -314,21 +301,7 @@ def _search_bm25(query: str, pool_size: int) -> Tuple[List[str], Dict[str, Dict[
     return [h["_id"] for h in hits], {h["_id"]: (h.get("_source") or {}) for h in hits}
 
 
-def _fetch_missing_sources(ids: Sequence[str], known_sources: Dict[str, Dict[str, Any]]) -> None:
-    """Fetches full documents from ES for IDs that Chroma only returned metadata for."""
-    missing = [i for i in ids if i not in known_sources]
-    if not missing:
-        return
-    try:
-        response = _get_body(_es_client().mget(index=settings.ES_INDEX, ids=missing))
-        for doc in response.get("docs", []):
-            if doc.get("found"):
-                known_sources[doc["_id"]] = doc.get("_source") or {}
-    except Exception as e:
-        log.warning("rag: MGET fallback failed (using Chroma metadata if available): %s", e)
-
-
-def _reciprocal_rank_fusion(lists: Sequence[Sequence[str]], k: int = RRF_K) -> List[Tuple[str, float]]:
+def _reciprocal_rank_fusion(lists: Sequence[Sequence[str]], k: int = settings.RRF_K) -> List[Tuple[str, float]]:
     """Combines multiple ranked lists into a single ranked list."""
     scores: Dict[str, float] = defaultdict(float)
     best_rank: Dict[str, int] = {}
@@ -373,19 +346,13 @@ async def search_by_query(query: str, top_k: int = DEFAULT_TOP_K) -> List[Tuple[
     ids_bm25, sources_bm25 = bm25_data if bm25_data else ([], {})
     
     if settings.RAG_MIN_DENSE_SIM is not None and sim and max(sim.values()) < settings.RAG_MIN_DENSE_SIM:
-        log.info("rag: Best similarity %.3f < %.3f – skipping context injection.", max(sim.values()), settings.RAG_MIN_DENSE_SIM)
-        return []
+        log.info("rag: Best similarity %.3f < %.3f – skipping DENSE results.", max(sim.values()), settings.RAG_MIN_DENSE_SIM)
+        ids_dense = []
 
     fusion_ranks = _reciprocal_rank_fusion([ids_dense, ids_bm25])
     candidates = [doc_id for doc_id, _ in fusion_ranks[: top_k * 2]]
 
     combined_sources = {**sources_chroma, **sources_bm25}
-    
-    t1 = time.perf_counter()
-    if not err_bm25: 
-        _fetch_missing_sources(candidates, combined_sources)
-    ms_fetch = (time.perf_counter() - t1) * 1000
-
     results: List[Tuple[str, Dict[str, Any]]] = []
     missing_docs = 0
     
@@ -407,7 +374,7 @@ async def search_by_query(query: str, top_k: int = DEFAULT_TOP_K) -> List[Tuple[
     if missing_docs:
         log.warning("rag: %d candidate chunks are missing full text in both ES and Chroma.", missing_docs)
         
-    log.info("rag: dense=%.0fms bm25=%.0fms fetch=%.0fms total=%.0fms hits=%d%s", ms_dense, ms_bm25, ms_fetch,
+    log.info("rag: dense=%.0fms bm25=%.0fms total=%.0fms hits=%d%s", ms_dense, ms_bm25,
              (time.perf_counter() - t0) * 1000, len(results),
              " [BM25 fallback]" if err_dense else " [Dense fallback]" if err_bm25 else "")
              

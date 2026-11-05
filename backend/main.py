@@ -1,17 +1,19 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app.api.routers import chat
 from app.services import rag_service
-
 from app.core.limiter import limiter
+from app.core.logging import setup_logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging()
     rag_service.initialize()
     yield
 
@@ -22,12 +24,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 app.state.limiter = limiter
+
+ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:4173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

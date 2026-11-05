@@ -50,10 +50,10 @@ def _prepare_history(history: Sequence[Any]) -> List[Tuple[str, str]]:
             continue
             
         role = "assistant" if str(getattr(msg, "role", "")).lower() in ("assistant", "ai", "bot", "model") else "user"
-        
-        # Remove hallucinated citations like [1] or [2][3] from the assistant's previous messages
+
         if role == "assistant":
-            content = re.sub(r'\[\d+\]', '', content).replace('  ', ' ').strip()
+            content = re.sub(r'\s*\[\d+\]', '', content)
+            content = re.sub(r'\s+([.,?!])', r'\1', content).strip()
             
         result.append((role, content))
     return result
@@ -76,8 +76,7 @@ def _build_context(chunks: List[Tuple[str, Dict[str, Any]]]) -> str:
     for i, (text, info) in enumerate(chunks, 1):
         meta = info.get("meta", {})
         attr = f'id="{i}"' + "".join(f' {k}="{html.escape(str(meta[k]), quote=True)}"' for k in ("tytul", "url") if meta.get(k))
-        
-        safe_text = text.replace("</source", "<\\/source")
+        safe_text = re.sub(r'</source', r'<\\/source', text, flags=re.IGNORECASE)
         blocks.append(f"<source {attr}>\n{safe_text}\n</source>")
         
     return "\n\n".join(blocks)
@@ -130,9 +129,20 @@ def _build_messages(payload: ChatRequestPayload, history: List[Tuple[str, str]],
 def _get_llm(model_name: str) -> Any:
     """Returns a cached LangChain chat model instance."""
     if model_name == "bielik":
-        return ChatOllama(model=settings.BIELIK_MODEL, temperature=0.1, num_ctx=settings.BIELIK_NUM_CTX)
-    return ChatOpenAI(model=model_name, temperature=0.1, streaming=True, openai_api_key=settings.OPENAI_API_KEY,
-                      timeout=60, max_retries=2)
+        return ChatOllama(
+            base_url=settings.OLLAMA_BASE_URL, 
+            model=settings.BIELIK_MODEL, 
+            temperature=0.1, 
+            num_ctx=settings.BIELIK_NUM_CTX
+        )
+    return ChatOpenAI(
+        model=model_name, 
+        temperature=0.1, 
+        streaming=True, 
+        openai_api_key=settings.OPENAI_API_KEY,
+        timeout=60, 
+        max_retries=2
+    )
 
 
 def _extract_chunk_text(chunk: Any) -> str:
@@ -166,13 +176,13 @@ async def generate_streamed_response(payload: ChatRequestPayload) -> AsyncGenera
 
         chunks = _trim_context(await rag_service.search_by_query(search_query))
 
-        yield _sse("sources", [{"id": i, "text": doc, "score": info["score"], "meta": info["meta"]}
-                               for i, (doc, info) in enumerate(chunks, 1)])
-
         if not chunks:
             yield _sse("token", NO_ANSWER_FALLBACK)
             yield DONE_PAYLOAD
             return
+
+        yield _sse("sources", [{"id": i, "text": doc, "score": info["score"], "meta": info["meta"]}
+                               for i, (doc, info) in enumerate(chunks, 1)])
 
         messages = _build_messages(payload, history, standalone_query, _build_context(chunks))
         

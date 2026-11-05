@@ -69,6 +69,14 @@
   margin-left: 6px;
 }
 
+.citation { 
+    font-size: 0.8em; 
+    color: var(--accent, #007bff);
+    cursor: pointer; 
+    padding: 0 3px; 
+    vertical-align: super;
+}
+
 .dot {
   width: 8px;
   height: 8px;

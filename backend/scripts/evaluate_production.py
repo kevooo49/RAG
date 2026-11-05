@@ -1,11 +1,11 @@
 """
-Ostateczna Ewaluacja Systemu RAG (Production Stack - Asymmetric Context).
-Testuje zintegrowany rurociąg docelowy:
-- Chunking: autorski (Production_Asymmetric) zachowujący spójność tabel i list.
-- Metadane (Asymetryczne): ChromaDB dostaje czysty 'breadcrumb', Elasticsearch pełny nagłówek.
-- Embeddings: text-embedding-3-small (optymalizacja Cost/Benefit).
-- Retrieval: Hybrid Search (ChromaDB + Elasticsearch) połączone przez RRF.
-- LLM: Query Expansion (gpt-4o-mini) dla zapytań użytkownika.
+Final Evaluation of the RAG System (Production Stack - Asymmetric Context).
+Tests the integrated final pipeline:
+- Chunking: custom (Production_Asymmetric) preserving table and list consistency.
+- Metadata (Asymmetric): ChromaDB gets a clean 'breadcrumb', Elasticsearch gets the full header.
+- Embeddings: text-embedding-3-small (Cost/Benefit optimization).
+- Retrieval: Hybrid Search (ChromaDB + Elasticsearch) fused via RRF.
+- LLM: Query Expansion (gpt-4o-mini) for user queries.
 """
 from __future__ import annotations
 
@@ -28,9 +28,9 @@ from dotenv import load_dotenv
 from elasticsearch import Elasticsearch, helpers
 from openai import OpenAI
 
-katalog_skryptu = os.path.dirname(__file__)
-sys.path.append(os.path.abspath(os.path.join(katalog_skryptu, '..')))
-load_dotenv(os.path.join(katalog_skryptu, '..', '.env'))
+script_dir = os.path.dirname(__file__)
+sys.path.append(os.path.abspath(os.path.join(script_dir, '..')))
+load_dotenv(os.path.join(script_dir, '..', '.env'))
 
 import chromadb
 from chromadb.utils import embedding_functions
@@ -38,17 +38,16 @@ from app.core.config import settings
 import build_database
 
 # =====================================================================
-# 1. KONFIGURACJA PRODUKCYJNA
+# 1. PRODUCTION CONFIGURATION
 # =====================================================================
 
 EVAL_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
-DATASET_PATH = os.path.join(katalog_skryptu, "test_dataset_balanced.json")
-CACHE_DIR = os.path.join(katalog_skryptu, ".eval_cache_production_2")
-OUT_ROOT = os.path.join(katalog_skryptu, "production_eva_stats_2")
+DATASET_PATH = os.path.join(script_dir, "test_dataset_balanced.json")
+CACHE_DIR = os.path.join(script_dir, ".eval_cache_production_2")
+OUT_ROOT = os.path.join(script_dir, "production_eva_stats_2")
 
-# Zwycięski stos technologiczny po optymalizacjach budżetowych i architektonicznych
 EMBED_MODEL = "text-embedding-3-small"
-REWRITE_MODEL = "gpt-4o-mini"
+REWRITE_MODEL = "gpt-4o"
 COLLECTION_NAME = "eval_production_2"
 ES_INDEX = "eval_production_2_idx"
 
@@ -70,7 +69,7 @@ Zwróć TYLKO jeden ciąg znaków w formacie:
 """
 
 # =====================================================================
-# 2. STRUKTURY DANYCH
+# 2. DATA STRUCTURES
 # =====================================================================
 
 @dataclass
@@ -91,13 +90,13 @@ class QueryResult:
 
 def load_dataset() -> List[Query]:
     if not os.path.exists(DATASET_PATH):
-        sys.exit(f"Brak zbioru danych: {DATASET_PATH}.")
+        sys.exit(f"Missing dataset: {DATASET_PATH}.")
     with open(DATASET_PATH, "r", encoding="utf-8") as f:
         raw = json.load(f)
     return [Query(r["query"], r["expected_file"], r.get("type", "unknown")) for r in raw]
 
 # =====================================================================
-# 3. INDEKSOWANIE (Z CACHE) I LLM REWRITER
+# 3. INDEXING (WITH CACHE) AND LLM REWRITER
 # =====================================================================
 
 def corpus_fingerprint() -> str:
@@ -112,29 +111,28 @@ def corpus_fingerprint() -> str:
     return h.hexdigest()
 
 def chunk_file_asymmetric(filepath: str) -> List[Dict[str, Any]]:
-    """Tnie plik i zwraca dwie wersje tekstu: czysty breadcrumb (dla wektora) i pełny nagłówek (dla ES/LLM)."""
+    """Splits a file and returns two versions of text: clean breadcrumb (for vector) and full header (for ES/LLM)."""
     cfg = {"sciezka": filepath, "zrodlo": "Zbior_Ewaluacyjny", "typ": "dokument", "naglowki_prawne": True, "pogrubienia_jako_naglowki": True}
-    dok = build_database.przygotuj_dokument(filepath, cfg)
-    if not dok: return []
+    doc = build_database.przygotuj_dokument(filepath, cfg)
+    if not doc: return []
     
     chunks = []
-    for _cid, c, md in build_database.chunkuj_plik(filepath, cfg, dok):
-        tytul = str(md.get("tytul") or "")
-        sekcja = str(md.get("sekcja") or "")
+    for _cid, c, md in build_database.chunkuj_plik(filepath, cfg, doc):
+        title = str(md.get("tytul") or "")
+        section = str(md.get("sekcja") or "")
         
-        # Odtworzenie czystego wariantu "breadcrumb" wyłonionego w testach ewaluacyjnych
-        bc_parts = [x for x in (tytul, sekcja) if x]
+        bc_parts = [x for x in (title, section) if x]
         breadcrumb = " › ".join(bc_parts)
         
         parts = c.tekst_emb.split("\n\n", 1)
-        tresc = parts[1] if len(parts) > 1 else c.tekst_emb
+        content = parts[1] if len(parts) > 1 else c.tekst_emb
         
-        tekst_wektor = f"{breadcrumb}\n\n{tresc}" if breadcrumb else tresc
-        tekst_es = c.tekst_emb # pełny `prod_header` z build_database
+        text_vector = f"{breadcrumb}\n\n{content}" if breadcrumb else content
+        text_es = c.tekst_emb
         
         chunks.append({
-            "text_vector": tekst_wektor,
-            "text_es": tekst_es,
+            "text_vector": text_vector,
+            "text_es": text_es,
             "metadata": md
         })
     return chunks
@@ -146,7 +144,7 @@ def build_or_load_index(chroma_client, embedding_fn, es: Elasticsearch, force: b
             return chroma_client.get_collection(COLLECTION_NAME, embedding_function=embedding_fn)
         except Exception: pass
 
-    print("   [+] Inicjalizacja baz Asymetrycznych (ChromaDB + Elasticsearch)...")
+    print("   [+] Initializing Asymmetric databases (ChromaDB + Elasticsearch)...")
     doc_ids, vector_docs, es_docs, metadatas = [], [], [], []
     for fn in sorted(os.listdir(EVAL_DATA_DIR)):
         filepath = os.path.join(EVAL_DATA_DIR, fn)
@@ -191,7 +189,7 @@ class QueryRewriter:
         return self.cache[key]["text"], self.cache[key]["latency_ms"]
 
 # =====================================================================
-# 4. SILNIK WYSZUKIWANIA I EWALUACJI
+# 4. SEARCH AND EVALUATION ENGINE
 # =====================================================================
 
 def evaluate_production_stack(queries: List[Query], collection, es, rewriter) -> List[QueryResult]:
@@ -204,7 +202,7 @@ def evaluate_production_stack(queries: List[Query], collection, es, rewriter) ->
         t0 = time.perf_counter()
         
         v_res = collection.query(query_texts=[search_q], n_results=CHUNK_POOL)
-        v_hits = [{"id": i, "source_file": m["source_file"]} for i, m in zip(v_res["ids"][0], v_res["metadatas"][0])]
+        v_hits = [{"id": j, "source_file": m["source_file"]} for j, m in zip(v_res["ids"][0], v_res["metadatas"][0])]
         
         k_resp = es.search(index=ES_INDEX, body={"query": {"match": {"text": search_q}}, "size": CHUNK_POOL})
         k_hits = [{"id": h["_id"], "source_file": h["_source"].get("source_file", "")} for h in k_resp["hits"]["hits"]]
@@ -216,7 +214,7 @@ def evaluate_production_stack(queries: List[Query], collection, es, rewriter) ->
                 meta[item["id"]] = item["source_file"]
         
         ordered = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:K_MAX]
-        hits = [{"id": i, "source_file": meta[i]} for i, _ in ordered]
+        hits = [{"id": j, "source_file": meta[j]} for j, _ in ordered]
         
         retrieval_ms = (time.perf_counter() - t0) * 1000
 
@@ -228,12 +226,12 @@ def evaluate_production_stack(queries: List[Query], collection, es, rewriter) ->
                 
         rank = files.index(q.expected_file) + 1 if q.expected_file in files else 0
         results.append(QueryResult(q.text, q.qtype, q.expected_file, rank, files[:3], retrieval_ms, rewrite_ms))
-        if i % 10 == 0 or i == len(queries): print(f"      Przetworzono: {i}/{len(queries)}", end="\r")
+        if i % 10 == 0 or i == len(queries): print(f"      Processed: {i}/{len(queries)}", end="\r")
     print()
     return results
 
 # =====================================================================
-# 5. METRYKI, BOOTSTRAP, RAPORT
+# 5. METRICS, BOOTSTRAP, REPORT
 # =====================================================================
 
 def make_bootstrap_samples(queries: List[Query], n_boot: int, seed: int) -> List[np.ndarray]:
@@ -247,7 +245,7 @@ def main():
     queries = load_dataset()
     n_files = len({q.expected_file for q in queries})
     
-    print("\n🚀 ROZPOCZYNAM EWALUACJĘ OSTATECZNEGO STOSU PRODUKCYJNEGO RAG (Asymetryczny)\n")
+    print("\n STARTING EVALUATION OF THE FINAL RAG PRODUCTION STACK (Asymmetric)\n")
     
     chroma_client = chromadb.PersistentClient(path=os.path.join(CACHE_DIR, "chroma_prod_final"))
     llm_client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -278,8 +276,7 @@ def main():
 
     hard_queries = [r for r in results if r.rank == 0 or r.rank > 5][:5]
 
-    # Generowanie Raportu
-    L = ["", "=" * 90, f"🌟 WYNIKI OSTATECZNEGO STOSU PRODUKCYJNEGO RAG | {len(queries)} zapytań, {n_files} dokumentów", "=" * 90]
+    L = ["", "=" * 90, f" WYNIKI OSTATECZNEGO STOSU PRODUKCYJNEGO RAG | {len(queries)} zapytań, {n_files} dokumentów", "=" * 90]
     L.append(f"Architektura: {EMBED_MODEL} + Asymmetric Context + Hybrid Search (RRF) + LLM Query Expansion")
     L.append("-" * 90)
     
@@ -296,7 +293,7 @@ def main():
         L.append(f"  • {t.capitalize():<12} (n={d['n']}): {d['Hit@1']:.2f} / {d['MRR@10']:.3f}")
 
     if hard_queries:
-        L.append("\n⚠️ PRZYKŁADY ZAPYTAŃ POZA TOP 5 (Błędy docelowego systemu):")
+        L.append("\n PRZYKŁADY ZAPYTAŃ POZA TOP 5 (Błędy docelowego systemu):")
         for r in hard_queries:
             L.append(f"  [{r.qtype}] {r.query[:80]}...")
             L.append(f"      Oczekiwano: {r.expected_file} | Zwrócono: {' | '.join(r.top_files)}")
@@ -305,7 +302,6 @@ def main():
     report_text = "\n".join(L)
     print(report_text)
 
-    # Zapis
     out_dir = os.path.join(OUT_ROOT, time.strftime("run_%Y%m%d_%H%M%S"))
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "report_production_final.txt"), "w", encoding="utf-8") as f: f.write(report_text)
@@ -315,7 +311,7 @@ def main():
         wr.writerow(["qtype", "query", "expected_file", "rank", "top3_files", "retrieval_ms"])
         for r in results: wr.writerow([r.qtype, r.query, r.expected_file, r.rank, " | ".join(r.top_files), f"{r.retrieval_ms:.1f}"])
         
-    print(f"\n✅ Zapisano ostateczny raport w folderze: {out_dir}")
+    print(f"\n Saved final report in folder: {out_dir}")
 
 if __name__ == "__main__":
     main()

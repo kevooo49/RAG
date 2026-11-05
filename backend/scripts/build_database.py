@@ -32,26 +32,27 @@ import sys
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-from dotenv import load_dotenv
 import yaml
 
-load_dotenv()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from app.core.config import settings
 
 # ==========================================
 # SETTINGS
 # ==========================================
 BASE_DIR = Path(__file__).resolve().parent
 DB_DIR = str((BASE_DIR / "../../data/Baza_Wektorowa_Chroma_ASYM").resolve())
-COLLECTION_NAME = "agh_wiedza_asym"
-ES_INDEX = COLLECTION_NAME
-ES_URL = os.getenv("ES_URL", "http://localhost:9200")
 MANIFEST_PATH = os.path.join(DB_DIR, "_manifest_indeksu.json")
+
+COLLECTION_NAME = settings.CHROMA_COLLECTION
+ES_INDEX = settings.ES_INDEX
+ES_URL = settings.ES_URL
+MODEL = settings.EMBED_MODEL
+DIMENSIONS = settings.EMBED_DIMENSIONS
 
 FORMAT_VERSION = "asym-v2"
 MAX_DELETED_PERCENT = 20
 
-MODEL = "text-embedding-3-small"
-DIMENSIONS = None
 PRICE_PER_1M_TOKENS_USD = 0.02
 
 MAX_TOKENS = 450
@@ -622,13 +623,13 @@ def prepare_document(file_path, cfg):
     return meta, body, title
 
 
-def get_file_signature(body, title, cfg):
-    """Changes when content OR chunking parameters change - forcing re-processing.
-    Fetch dates from frontmatter are NOT included - a fresh crawl without content changes costs $0."""
+def get_file_signature(meta, body, title, cfg):
+    """Changes when content OR chunking parameters OR url change."""
     params = [MAX_TOKENS, MIN_TOKENS, TOKEN_MARGIN, SENTENCE_OVERLAP, MAX_INTRO_TOKENS, TOKENIZER, MODEL, DIMENSIONS,
-             cfg["source"], cfg["type"], bool(cfg.get("legal_headers")),
-             cfg.get("bold_as_headers", True), 4, FORMAT_VERSION]
-    return hashlib.sha1(f"{body}\x00{title}\x00{params}".encode("utf-8")).hexdigest()
+              cfg["source"], cfg["type"], bool(cfg.get("legal_headers")),
+              cfg.get("bold_as_headers", True), 4, FORMAT_VERSION]
+    url = meta.get("url") or meta.get("zrodlo") or ""
+    return hashlib.sha1(f"{url}\x00{body}\x00{title}\x00{params}".encode("utf-8")).hexdigest()
 
 
 def chunk_file(file_path, cfg, doc=None, rel=None):
@@ -636,6 +637,9 @@ def chunk_file(file_path, cfg, doc=None, rel=None):
     if doc is None:
         return []
     meta, body, title = doc
+    extra_meta = clean_metadata(meta)
+    if "zrodlo" in extra_meta and str(extra_meta["zrodlo"]).startswith("http"):
+        extra_meta["url"] = extra_meta.pop("zrodlo")
     blocks = parse_blocks(body, title, legal=bool(cfg.get("legal_headers")),
                           bold_headers=cfg.get("bold_as_headers", True))
     chunks = assemble_chunks(blocks, title, cfg["source"])
@@ -714,13 +718,11 @@ def save_manifest(manifest):
 # OPENAI + CHROMA (lazy imports)
 # ==========================================
 def create_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = settings.OPENAI_API_KEY
 
     if not api_key:
         sys.exit(
-            "Missing OPENAI_API_KEY environment variable in .env file.\n"
-            "Add to .env:\n"
-            "OPENAI_API_KEY=sk-..."
+            "Missing OPENAI_API_KEY in .env file."
         )
 
     from openai import OpenAI
@@ -755,8 +757,7 @@ def perform_embedding(client, texts):
 
 def open_collection(rebuild=False):
     import chromadb
-    # client = chromadb.PersistentClient(path=DB_DIR)
-    client = chromadb.HttpClient(host="localhost", port=8001)
+    client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
     if rebuild:
         try:
             client.delete_collection(COLLECTION_NAME)
@@ -881,10 +882,14 @@ def run_indexing(dry_run=False, rebuild=False, confirm_deletion=False, allow_mis
         if not rebuild:
             check_es_consistency(es, manifest)
 
-    print(f"🚀 Indexing: {len(files)} Markdown files | tokenizer: {TOKENIZER}"
-          + ("  (⚠️ approximation - install tiktoken)" if TOKENIZER != "tiktoken" else ""))
+            expected = sum(len(v["ids"]) for v in manifest["pliki"].values())
+            if expected > 0 and col.count() == 0:
+                print("WARNING: ChromaDB is empty, but the manifest claims that data exists. Forcing a full reindexing!")
+                manifest["pliki"] = {}
 
-    # 1) files deleted from disk -> remove their chunks
+    print(f"Indexing: {len(files)} Markdown files | tokenizer: {TOKENIZER}"
+          + ("  (approximation - install tiktoken)" if TOKENIZER != "tiktoken" else ""))
+
     current = {rel for _, _, rel in files}
     deleted = [r for r in manifest["pliki"] if r not in current]
     limit = max(5, len(manifest["pliki"]) * MAX_DELETED_PERCENT // 100)
@@ -897,7 +902,7 @@ def run_indexing(dry_run=False, rebuild=False, confirm_deletion=False, allow_mis
             remove_ids(col, manifest["pliki"][rel]["ids"], es)
             del manifest["pliki"][rel]
     if deleted:
-        print(f"🗑️  Deleted files: {len(deleted)} (chunks {'to delete' if dry_run else 'deleted from DB'})")
+        print(f"Deleted files: {len(deleted)} (chunks {'to delete' if dry_run else 'deleted from DB'})")
         if not dry_run:
             save_manifest(manifest)
 
@@ -921,15 +926,21 @@ def run_indexing(dry_run=False, rebuild=False, confirm_deletion=False, allow_mis
                            metadatas=[md for _, _, md in part])
                 bulk_es(es, build_index_actions(part))
 
-        for rel, sig, all_ids, old_ids, _, kept in buffer:
-            for i in range(0, len(kept), 256):
-                col.update(ids=[c for c, _ in kept[i:i + 256]], metadatas=[m for _, m in kept[i:i + 256]])
+        all_kept = [x for (_, _, _, _, _, kept) in buffer for x in kept]
+        if all_kept:
+            for i in range(0, len(all_kept), 2000):
+                batch = all_kept[i:i + 2000]
+                col.update(ids=[cid for cid, _, _ in batch], metadatas=[md for _, _, md in batch])
+                bulk_es(es, build_index_actions(batch))
+                print(f"    ⚡ Odzyskiwanie linków: {min(i+2000, len(all_kept))}/{len(all_kept)}...")
+        for rel, sig, all_ids, old_ids, _, _ in buffer:
             orphans = set(old_ids) - set(all_ids)
             if orphans:
                 remove_ids(col, orphans, es)
             manifest["pliki"][rel] = {"sygnatura": sig, "ids": all_ids}
         save_manifest(manifest)
-        print(f"   💾 saved {len(to_emb)} new chunks ({stats['processed']} files processed)")
+        if to_emb:
+            print(f"    💾 Zapisano {len(to_emb)} nowych wektorów.")   
         buffer, buffer_chunks = [], 0
 
     try:
@@ -938,7 +949,7 @@ def run_indexing(dry_run=False, rebuild=False, confirm_deletion=False, allow_mis
             if doc is None:
                 stats["empty"] += 1
                 continue
-            sig = get_file_signature(doc[1], doc[2], cfg)
+            sig = get_file_signature(doc[0], doc[1], doc[2], cfg)
             old = manifest["pliki"].get(rel, {})
             if old.get("sygnatura") == sig:
                 stats["unchanged"] += 1
@@ -956,14 +967,14 @@ def run_indexing(dry_run=False, rebuild=False, confirm_deletion=False, allow_mis
 
             if dry_run:
                 continue
-            kept = [(cid, md) for cid, _, md in chunks if cid in old_ids]
+            kept = [(cid, c, md) for cid, c, md in chunks if cid in old_ids]
             buffer.append((rel, sig, [cid for cid, _, _ in chunks], old_ids, new_chunks, kept))
             buffer_chunks += len(new_chunks)
             if buffer_chunks >= 256:
                 flush_buffer()
         flush_buffer()
     except KeyboardInterrupt:
-        print("\n⏹️  Aborted - what was saved is consistent; run again to continue.")
+        print("\nAborted - what was saved is consistent; run again to continue.")
         return
 
     generate_report(stats, sizes, with_table, dry_run)

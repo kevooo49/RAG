@@ -1,11 +1,11 @@
 """
-Ostateczny skrypt ewaluacyjny systemu RAG dla AGH.
-Zawiera: 
-- ewaluację na poziomie plików (nie chunków),
-- przedziały ufności (cluster bootstrap),
-- wymuszony Cosine Similarity w ChromaDB,
-- rozdzielone i rzetelne pomiary czasu (Retrieval vs LLM),
-- solidny cache uwzględniający parametry bazy i modeli.
+Final RAG evaluation script for AGH.
+Contains: 
+- file-level evaluation (not chunks),
+- confidence intervals (cluster bootstrap),
+- forced Cosine Similarity in ChromaDB,
+- separated and reliable timing (Retrieval vs LLM),
+- solid cache taking into account DB and model parameters.
 """
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ from app.core.config import settings
 import build_database
 
 # =====================================================================
-# 1. KONFIGURACJA
+# 1. CONFIGURATION
 # =====================================================================
 
 EVAL_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
@@ -72,7 +72,7 @@ Zwróć TYLKO jeden ciąg znaków w formacie:
 """
 
 # =====================================================================
-# 2. STRUKTURY DANYCH
+# 2. DATA STRUCTURES
 # =====================================================================
 
 @dataclass
@@ -102,14 +102,14 @@ class Ctx:
 
 def load_dataset() -> List[Query]:
     if not os.path.exists(DATASET_PATH):
-        sys.exit(f"Brak zbioru danych: {DATASET_PATH}. Uruchom najpierw generator.")
+        sys.exit(f"Missing dataset: {DATASET_PATH}. Run the generator first.")
     with open(DATASET_PATH, "r", encoding="utf-8") as f:
         raw = json.load(f)
 
     files = {f for f in os.listdir(EVAL_DATA_DIR) if f.endswith(".md")}
     missing = sorted({r["expected_file"] for r in raw if r["expected_file"] not in files})
     if missing:
-        print("Brak plików referencyjnych (sprawdź literówki w nazwach):")
+        print("Missing reference files (check for typos in names):")
         for m in missing:
             print("   -", m)
         sys.exit(1)
@@ -118,7 +118,7 @@ def load_dataset() -> List[Query]:
 
 
 # =====================================================================
-# 3. INDEKSOWANIE (Z CACHE)
+# 3. INDEXING (WITH CACHE)
 # =====================================================================
 
 def corpus_fingerprint() -> str:
@@ -131,8 +131,7 @@ def corpus_fingerprint() -> str:
                 h.update(f.read())
     with open(build_database.__file__, "rb") as f:
         h.update(f.read())
-    
-    # PEŁNY FINGERPRINT Z USTAWIENIAMI (odporność na zmiany konfiguracji)
+
     config_str = f"embed:{EMBED_MODEL}|metric:cosine|reranker:{RERANKER_MODEL}|rrf:{RRF_K}"
     h.update(config_str.encode("utf-8"))
     return h.hexdigest()
@@ -145,11 +144,11 @@ def chunk_file(filepath: str) -> List[Dict[str, Any]]:
         "naglowki_prawne": True,
         "pogrubienia_jako_naglowki": True,
     }
-    dok = build_database.przygotuj_dokument(filepath, cfg)
-    if not dok:
+    doc = build_database.przygotuj_dokument(filepath, cfg)
+    if not doc:
         return []
     return [{"text": c.tekst_emb, "metadata": md}
-            for _cid, c, md in build_database.chunkuj_plik(filepath, cfg, dok)]
+            for _cid, c, md in build_database.chunkuj_plik(filepath, cfg, doc)]
 
 def build_or_load_index(chroma_client, embedding_fn, es: Elasticsearch, force: bool):
     fp_path = os.path.join(CACHE_DIR, "fingerprint.txt")
@@ -166,12 +165,12 @@ def build_or_load_index(chroma_client, embedding_fn, es: Elasticsearch, force: b
                 data = collection.get(include=["documents", "metadatas"])
                 doc_store = {i: {"text": d, "source_file": m["source_file"]}
                              for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])}
-                print(f"   [=] Wczytano z cache ({len(doc_store)} chunków). Użyj --rebuild aby wymusić ponowne liczenie.")
+                print(f"   [=] Loaded from cache ({len(doc_store)} chunks). Use --rebuild to force recalculation.")
                 return collection, doc_store
         except Exception:
             pass
 
-    print("   [+] Chunkowanie plików ewaluacyjnych...")
+    print("   [+] Chunking evaluation files...")
     doc_ids, documents, metadatas, doc_store = [], [], [], {}
     for filename in sorted(os.listdir(EVAL_DATA_DIR)):
         filepath = os.path.join(EVAL_DATA_DIR, filename)
@@ -185,15 +184,14 @@ def build_or_load_index(chroma_client, embedding_fn, es: Elasticsearch, force: b
             metadatas.append(c["metadata"])
             doc_store[d_id] = {"text": c["text"], "source_file": filename}
     if not documents:
-        sys.exit("Chunker nie wyprodukował danych. Sprawdź pliki.")
+        sys.exit("Chunker produced no data. Check your files.")
 
-    print(f"   [+] Wrzucanie {len(documents)} chunków do ChromaDB i Elasticsearch...")
+    print(f"   [+] Pushing {len(documents)} chunks to ChromaDB and Elasticsearch...")
     try:
         chroma_client.delete_collection(COLLECTION_NAME)
     except Exception:
         pass
         
-    # Wymuszenie metryki Cosine w bazie wektorowej
     collection = chroma_client.create_collection(
         name=COLLECTION_NAME, 
         embedding_function=embedding_fn,
@@ -260,7 +258,7 @@ class QueryRewriter:
 
 
 # =====================================================================
-# 5. STRATEGIE WYSZUKIWANIA
+# 5. RETRIEVAL STRATEGIES
 # =====================================================================
 
 def vector_search(ctx: Ctx, query: str, k: int) -> List[Dict]:
@@ -335,7 +333,7 @@ MODALITIES = [
 ]
 
 # =====================================================================
-# 6. EWALUACJA
+# 6. EVALUATION
 # =====================================================================
 
 def run_modality(mod: Modality, queries: List[Query], ctx: Ctx, rewriter: QueryRewriter) -> List[QueryResult]:
@@ -365,7 +363,7 @@ def run_modality(mod: Modality, queries: List[Query], ctx: Ctx, rewriter: QueryR
 
 
 # =====================================================================
-# 7. METRYKI I STATYSTYKA
+# 7. METRICS AND STATISTICS
 # =====================================================================
 
 def per_query_scores(results: List[QueryResult]) -> Dict[str, np.ndarray]:
@@ -442,7 +440,7 @@ def find_hard_queries(queries: List[Query], results_by_mod: Dict[str, List[Query
     return hard
 
 # =====================================================================
-# 8. RAPORTY I WYKRESY
+# 8. REPORTS AND PLOTS
 # =====================================================================
 
 def fmt_ci(m: Dict[str, float]) -> str:
@@ -545,18 +543,18 @@ def plot_pareto(summary, path):
     plt.close(fig)
 
 # =====================================================================
-# 9. GŁÓWNY BLOK URUCHOMIENIOWY
+# 9. MAIN EXECUTION BLOCK
 # =====================================================================
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--rebuild", action="store_true", help="Wymusza re-indeksację baz z plików.")
-    ap.add_argument("--only", type=str, default="", help="Filtrowanie używanych modalności")
-    ap.add_argument("--baseline", type=str, default="hybrid", help="Modalność referencyjna do testów")
+    ap.add_argument("--rebuild", action="store_true", help="Forces re-indexing databases from files.")
+    ap.add_argument("--only", type=str, default="", help="Filter used modalities")
+    ap.add_argument("--baseline", type=str, default="hybrid", help="Reference modality for testing")
     args = ap.parse_args()
 
     if not os.path.isdir(EVAL_DATA_DIR):
-        sys.exit(f"Brak folderu danych: {EVAL_DATA_DIR}")
+        sys.exit(f"Data folder missing: {EVAL_DATA_DIR}")
     os.makedirs(CACHE_DIR, exist_ok=True)
 
     queries = load_dataset()
@@ -564,11 +562,11 @@ def main():
     type_counts = defaultdict(int)
     for q in queries:
         type_counts[q.qtype] += 1
-    print(f"Dataset: {len(queries)} zapytań, {n_files} plików, typy: {dict(type_counts)}")
+    print(f"Dataset: {len(queries)} queries, {n_files} files, types: {dict(type_counts)}")
 
     selected = [m for m in MODALITIES if not args.only or m.key in args.only.split(",")]
     
-    print("🔌 Łączenie z bazami danych...")
+    print("Connecting to databases...")
     chroma_client = chromadb.PersistentClient(path=os.path.join(CACHE_DIR, "chroma"))
     embedding_fn = embedding_functions.OpenAIEmbeddingFunction(
         api_key=settings.OPENAI_API_KEY, model_name=EMBED_MODEL)
@@ -577,7 +575,7 @@ def main():
 
     reranker = None
     if any(m.needs_reranker for m in selected):
-        print(f"🧠 Ładowanie wielojęzycznego modelu Cross-Encoder {RERANKER_MODEL}...")
+        print(f" Loading multilingual Cross-Encoder model {RERANKER_MODEL}...")
         reranker = CrossEncoder(RERANKER_MODEL, max_length=512)
 
     collection, doc_store = build_or_load_index(chroma_client, embedding_fn, es, args.rebuild)
@@ -585,9 +583,9 @@ def main():
     rewriter = QueryRewriter(llm_client)
 
     results_by_mod: Dict[str, List[QueryResult]] = {}
-    print("\n🚀 ROZPOCZĘCIE EWALUACJI METOD WYSZUKIWANIA\n")
+    print("\n STARTING EVALUATION OF SEARCH METHODS\n")
     for mod in selected:
-        print(f"-> Testuję: {mod.name}")
+        print(f"-> Testing: {mod.name}")
         results_by_mod[mod.name] = run_modality(mod, queries, ctx, rewriter)
 
     samples = make_bootstrap_samples(queries, N_BOOTSTRAP, SEED)
@@ -623,7 +621,7 @@ def main():
 
     plot_overall(summary, os.path.join(out_dir, "plot_effectiveness.png"))
     plot_pareto(summary, os.path.join(out_dir, "plot_accuracy_vs_latency.png"))
-    print(f"\n✅ Zapisano raport, wykresy i pliki .csv w folderze: {out_dir}")
+    print(f"\n Saved report, plots and .csv files in folder: {out_dir}")
 
 if __name__ == "__main__":
     main()

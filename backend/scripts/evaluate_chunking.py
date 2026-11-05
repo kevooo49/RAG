@@ -1,30 +1,30 @@
 """
-Ewaluacja strategii chunkowania (retrieval wektorowy, poziom plików + poziom chunków).
+Evaluation of chunking strategies (vector retrieval, file-level + chunk-level).
 
-Co ten skrypt robi inaczej niż pierwsza wersja
+What this script does differently than the first version
 ----------------------------------------------
-* Wyszukiwanie "brute-force" w numpy (dokładny cosinus) po WSZYSTKICH chunkach -
-  brak limitu FETCH_POOL, który po deduplikacji do plików faworyzował strategie
-  z małą liczbą chunków na plik (Hit@10 był zaniżony dla drobnego chunkowania).
-* Cache embeddingów na dysku (SQLite): ponowne uruchomienia są darmowe i szybkie,
-  a zmiana jednej strategii nie wymusza ponownego liczenia pozostałych.
-* Kontrolowane porównanie. Stare porównanie mieszało TRZY rzeczy naraz:
-  granice chunków, rozmiar chunków oraz preprocessing / kontekst (tekst_emb).
-  Dodane warianty rozdzielają te efekty:
-    - Fixed_500 / Fixed_1000 / Fixed_2000        -> wpływ rozmiaru
-    - Fixed_Matched / Paragraphs_Matched          -> rozmiar = średnia produkcyjna
-    - *_Matched+Title                             -> baseline + tytuł dokumentu
-      (czy przewaga produkcji to tylko "dopisany tytuł/nagłówek"?)
-* Metryki na poziomie plików (Hit@k, MRR@10, nDCG@10) ORAZ na poziomie chunków
-  (CHit@5, CPrec@5): do LLM trafiają chunki, a nie pliki, więc strategia, która
-  zapycha top-5 duplikatami jednego pliku, jest tu karana.
-* Poprawki baseline'ów: brak zduplikowanego ogona w Fixed_Size, brak pustych
-  chunków (puste inputy wywalają API OpenAI), zbyt długie akapity są dzielone,
-  separator liczony do limitu rozmiaru.
-* p-value w porównaniach sparowanych, statystyki długości (mediana/p95/max),
-  liczba chunków na plik, kontrola plików referencyjnych bez chunków.
+* "Brute-force" numpy search (exact cosine) across ALL chunks -
+  no FETCH_POOL limit, which after file deduplication favored strategies
+  with a small number of chunks per file (Hit@10 was underestimated for fine-grained chunking).
+* Disk-based embedding cache (SQLite): subsequent runs are free and fast,
+  and changing one strategy doesn't force recomputation of the others.
+* Controlled comparison. The old comparison mixed THREE things at once:
+  chunk boundaries, chunk sizes, and preprocessing/context (text_emb).
+  The added variants separate these effects:
+    - Fixed_500 / Fixed_1000 / Fixed_2000        -> effect of size
+    - Fixed_Matched / Paragraphs_Matched         -> size = production mean
+    - *_Matched+Title                            -> baseline + document title
+      (is the production advantage just the "added title/header"?)
+* Metrics at the file level (Hit@k, MRR@10, nDCG@10) AND at the chunk level
+  (CHit@5, CPrec@5): the LLM receives chunks, not files, so a strategy that
+  clogs the top-5 with duplicates from one file is penalized here.
+* Baseline fixes: no duplicated tail in Fixed_Size, no empty chunks
+  (empty inputs crash the OpenAI API), excessively long paragraphs are split,
+  separators are counted towards the size limit.
+* p-value in paired comparisons, length statistics (median/p95/max),
+  number of chunks per file, verification of reference files without chunks.
 
-Użycie
+Usage
 ------
     python evaluate_chunking.py
     python evaluate_chunking.py --only Fixed_1000,Paragraphs_2500,Production_Advanced
@@ -55,7 +55,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, "..")))
 
 # =====================================================================
-# 1. KONFIGURACJA
+# 1. CONFIGURATION
 # =====================================================================
 
 DEFAULT_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
@@ -82,7 +82,7 @@ INK, INK_2, SURFACE, GRID = "#0b0b0b", "#52514e", "#fcfcfb", "#e4e3df"
 
 
 # =====================================================================
-# 2. STRUKTURY DANYCH
+# 2. DATA STRUCTURES
 # =====================================================================
 
 @dataclass
@@ -124,14 +124,14 @@ class ChunkingStats:
 
 def load_dataset(data_dir: str, dataset_path: str) -> List[Query]:
     if not os.path.exists(dataset_path):
-        sys.exit(f"Brak zbioru danych: {dataset_path}. Uruchom najpierw generator pytań.")
+        sys.exit(f"Dataset missing: {dataset_path}. Run the question generator first.")
     with open(dataset_path, "r", encoding="utf-8") as f:
         raw = json.load(f)
 
     files = {f for f in os.listdir(data_dir) if f.endswith(".md")}
     missing = sorted({r["expected_file"] for r in raw if r["expected_file"] not in files})
     if missing:
-        print("Brak plików referencyjnych w folderze ewaluacyjnym:")
+        print("Missing reference files in the evaluation folder:")
         for m in missing:
             print("   -", m)
         sys.exit(1)
@@ -149,11 +149,11 @@ def read_corpus(data_dir: str) -> List[Tuple[str, str, str]]:
 
 
 # =====================================================================
-# 3. EMBEDDINGI (cache SQLite) I WYSZUKIWANIE
+# 3. EMBEDDINGS (SQLite cache) AND SEARCH
 # =====================================================================
 
 class OpenAIEmbedder:
-    """Embeddingi z trwałym cache'em: klucz = sha256(model + tekst)."""
+    """Embeddings with persistent cache: key = sha256(model + text)."""
 
     def __init__(self, api_key: str, model: str, cache_path: str):
         from openai import OpenAI
@@ -219,12 +219,12 @@ def normalize(m: np.ndarray) -> np.ndarray:
 
 
 # =====================================================================
-# 4. STRATEGIE CHUNKOWANIA
+# 4. CHUNKING STRATEGIES
 # =====================================================================
 
 def chunk_fixed(text: str, size: int, overlap_ratio: float = 0.1) -> List[str]:
-    """Okno stałej długości; zatrzymuje się po oknie, które sięga końca tekstu
-    (stara wersja dodawała jeszcze ogon będący w całości powtórzeniem overlapu)."""
+    """Fixed-length window; stops after a window that reaches the end of the text
+    (the old version also added a tail that was entirely a repetition of the overlap)."""
     overlap = int(size * overlap_ratio)
     step = max(1, size - overlap)
     out, start = [], 0
@@ -275,7 +275,7 @@ class Strategy:
 
 
 def load_production():
-    """build_database importuje Elasticsearch, którego tu nie potrzebujemy."""
+    """build_database imports Elasticsearch, which we don't need here."""
     from unittest.mock import MagicMock
     sys.modules["elasticsearch"] = MagicMock()
     sys.modules["elasticsearch.helpers"] = MagicMock()
@@ -291,32 +291,32 @@ def chunk_production(bd, filepath: str) -> List[str]:
         "naglowki_prawne": True,
         "pogrubienia_jako_naglowki": True,
     }
-    dok = bd.przygotuj_dokument(filepath, cfg)
-    if not dok:
+    doc = bd.przygotuj_dokument(filepath, cfg)
+    if not doc:
         return []
-    return [c.tekst_emb for _cid, c, _md in bd.chunkuj_plik(filepath, cfg, dok)]
+    return [c.tekst_emb for _cid, c, _md in bd.chunkuj_plik(filepath, cfg, doc)]
 
 def chunk_production_asymmetric(bd, filepath: str) -> List[str]:
-    """Wersja hybrydowa: zachowuje strukturę z autorskiego parsera, ale używa czystszego nagłówka."""
+    """Hybrid version: preserves structure from the custom parser but uses a cleaner header."""
     cfg = {
         "sciezka": filepath, "zrodlo": "Zbior_Ewaluacyjny", "typ": "dokument",
         "naglowki_prawne": True, "pogrubienia_jako_naglowki": True,
     }
-    dok = bd.przygotuj_dokument(filepath, cfg)
-    if not dok: return []
+    doc = bd.przygotuj_dokument(filepath, cfg)
+    if not doc: return []
     
     out = []
-    for _cid, c, md in bd.chunkuj_plik(filepath, cfg, dok):
-        tytul = md.get("tytul", "")
-        sekcja = md.get("sekcja", "")
+    for _cid, c, md in bd.chunkuj_plik(filepath, cfg, doc):
+        title = md.get("tytul", "")
+        section = md.get("sekcja", "")
 
         parts = c.tekst_emb.split("\n\n", 1)
-        raw_tresc = parts[1] if len(parts) > 1 else c.tekst_emb
+        raw_content = parts[1] if len(parts) > 1 else c.tekst_emb
         
-        prefiks = sekcja.split(" › ") if sekcja else []
-        nowy_naglowek = f"{tytul}" + (f" - {prefiks[-1]}" if prefiks else "")
+        prefix = section.split(" › ") if section else []
+        new_header = f"{title}" + (f" - {prefix[-1]}" if prefix else "")
         
-        out.append(f"{nowy_naglowek}\n\n{raw_tresc}")
+        out.append(f"{new_header}\n\n{raw_content}")
     return out
 
 
@@ -329,6 +329,7 @@ def build_strategies(prod_mean: Optional[int]) -> List[Strategy]:
     ]
     if prod_mean:
         m = max(200, prod_mean)
+        # Notatki ("note") pozostawiam po polsku, gdyż trafiają one wprost do polskiego raportu.
         s += [
             Strategy("Fixed_Matched", lambda t: chunk_fixed(t, m), note=f"rozmiar={m}"),
             Strategy("Paragraphs_Matched", lambda t: chunk_paragraphs(t, m), note=f"max={m}"),
@@ -360,7 +361,7 @@ def build_chunks(strat: Strategy, corpus, bd, prod_cache: Dict[str, List[str]]) 
 
 
 # =====================================================================
-# 5. EWALUACJA JEDNEJ STRATEGII
+# 5. EVALUATION OF A SINGLE STRATEGY
 # =====================================================================
 
 def evaluate_strategy(name: str, chunks: List[Chunk], queries: List[Query],
@@ -401,7 +402,7 @@ def compute_chunk_stats(chunks: List[Chunk], corpus, queries: List[Query]) -> Ch
 
 
 # =====================================================================
-# 6. METRYKI I STATYSTYKI
+# 6. METRICS AND STATISTICS
 # =====================================================================
 
 def per_query_scores(results: List[QueryResult]) -> Dict[str, np.ndarray]:
@@ -418,7 +419,7 @@ def per_query_scores(results: List[QueryResult]) -> Dict[str, np.ndarray]:
 
 
 def make_bootstrap_samples(queries: List[Query], n_boot: int, seed: int) -> List[np.ndarray]:
-    """Cluster bootstrap: losujemy PLIKI (każdy ma 3 skorelowane pytania)."""
+    """Cluster bootstrap: we sample FILES (each has 3 correlated queries)."""
     by_file: Dict[str, List[int]] = defaultdict(list)
     for i, q in enumerate(queries):
         by_file[q.expected_file].append(i)
@@ -464,7 +465,7 @@ def summarize(results_by_strat, stats_by_strat, queries, samples):
 
 
 # =====================================================================
-# 7. RAPORT I WYKRESY
+# 7. REPORT AND PLOTS
 # =====================================================================
 
 def fmt_ci(m: Dict[str, float]) -> str:
@@ -569,7 +570,7 @@ def plot_metrics(summary, path):
         ax.bar(x + (j - 1) * width, means, width - 0.03, label=m, color=color,
                yerr=[np.clip(means - lo, 0, None), np.clip(hi - means, 0, None)],
                capsize=2, error_kw={"ecolor": INK_2, "elinewidth": 1})
-        for xi, mean_v, hi_v in zip(x + (j - 1) * width, means, hi):   # etykieta nad końcem CI
+        for xi, mean_v, hi_v in zip(x + (j - 1) * width, means, hi):   # label above CI end
             ax.text(xi, max(hi_v, mean_v) + 0.012, f"{mean_v:.2f}", ha="center", va="bottom",
                     fontsize=7, color=INK)
     ax.set_xticks(x)
@@ -605,7 +606,7 @@ def plot_size_vs_quality(summary, path):
 
 
 # =====================================================================
-# 8. URUCHOMIENIE
+# 8. EXECUTION
 # =====================================================================
 
 def run(data_dir: str, dataset_path: str, only: List[str], baseline: str,
@@ -613,7 +614,7 @@ def run(data_dir: str, dataset_path: str, only: List[str], baseline: str,
     queries = load_dataset(data_dir, dataset_path)
     corpus = read_corpus(data_dir)
     n_files = len({q.expected_file for q in queries})
-    print(f"Zbiór: {len(queries)} zapytań, {n_files} plików referencyjnych, {len(corpus)} plików w bazie")
+    print(f"Dataset: {len(queries)} queries, {n_files} reference files, {len(corpus)} files in the database")
 
     bd, prod_cache, prod_mean = None, {}, None
     try:
@@ -622,41 +623,41 @@ def run(data_dir: str, dataset_path: str, only: List[str], baseline: str,
         prod_chunks = build_chunks(probe, corpus, bd, prod_cache)
         if prod_chunks:
             prod_mean = int(np.mean([len(c.text) for c in prod_chunks]))
-            print(f"Produkcyjny chunker: {len(prod_chunks)} chunków, średnia długość {prod_mean} znaków")
+            print(f"Production chunker: {len(prod_chunks)} chunks, avg. length {prod_mean} characters")
     except Exception as e:
-        print(f"UWAGA: nie udało się użyć build_database ({e!r}) - pomijam strategie produkcyjne i *_Matched")
+        print(f"WARNING: failed to use build_database ({e!r}) - skipping production and *_Matched strategies")
 
     strategies = build_strategies(prod_mean)
     if only:
         unknown = set(only) - {s.name for s in strategies}
         if unknown:
-            sys.exit(f"Nieznane strategie: {sorted(unknown)}. Dostępne: {[s.name for s in strategies]}")
+            sys.exit(f"Unknown strategies: {sorted(unknown)}. Available: {[s.name for s in strategies]}")
         strategies = [s for s in strategies if s.name in only]
     if not strategies:
-        sys.exit("Brak strategii do uruchomienia.")
+        sys.exit("No strategies to run.")
 
     query_vecs = normalize(embedder.embed([q.text for q in queries]))
 
     results_by_strat: Dict[str, List[QueryResult]] = {}
     stats_by_strat: Dict[str, ChunkingStats] = {}
     notes: Dict[str, str] = {}
-    print("\nROZPOCZYNAM EWALUACJĘ STRATEGII CHUNKOWANIA\n")
+    print("\nSTARTING CHUNKING STRATEGY EVALUATION\n")
     for strat in strategies:
         print(f"-> {strat.name}")
         chunks = build_chunks(strat, corpus, bd, prod_cache)
         if not chunks:
-            print("   [!] 0 chunków - pomijam")
+            print("   [!] 0 chunks - skipping")
             continue
         stats = compute_chunk_stats(chunks, corpus, queries)
         if stats.expected_files_without_chunks:
-            print(f"   [!] {stats.expected_files_without_chunks} plików referencyjnych bez chunków")
+            print(f"   [!] {stats.expected_files_without_chunks} reference files without chunks")
         vecs = normalize(embedder.embed([c.text for c in chunks]))
         results_by_strat[strat.name] = evaluate_strategy(strat.name, chunks, queries, vecs, query_vecs)
         stats_by_strat[strat.name] = stats
         notes[strat.name] = strat.note
-        print(f"   {len(chunks)} chunków, śr. długość {stats.mean_len:.0f}")
+        print(f"   {len(chunks)} chunks, avg. length {stats.mean_len:.0f}")
     if hasattr(embedder, "api_texts"):
-        print(f"\nEmbeddingi: {embedder.api_texts} z API, {embedder.cached_texts} z cache")
+        print(f"\nEmbeddings: {embedder.api_texts} from API, {embedder.cached_texts} from cache")
 
     samples = make_bootstrap_samples(queries, N_BOOTSTRAP, SEED)
     summary, scores, types = summarize(results_by_strat, stats_by_strat, queries, samples)
@@ -694,7 +695,7 @@ def run(data_dir: str, dataset_path: str, only: List[str], baseline: str,
 
     plot_metrics(summary, os.path.join(out_dir, "wykres_chunkowania.png"))
     plot_size_vs_quality(summary, os.path.join(out_dir, "wykres_rozmiar_vs_jakosc.png"))
-    print(f"\nZapisano raport, CSV, JSON i wykresy w folderze: {out_dir}")
+    print(f"\nSaved report, CSV, JSON, and plots in folder: {out_dir}")
     return out_dir
 
 
@@ -702,7 +703,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
     ap.add_argument("--dataset", default=DEFAULT_DATASET)
-    ap.add_argument("--only", default="", help="lista strategii po przecinku")
+    ap.add_argument("--only", default="", help="comma-separated list of strategies")
     ap.add_argument("--baseline", default="Production_Advanced")
     args = ap.parse_args()
 
@@ -714,9 +715,9 @@ def main():
     except ImportError:
         api_key = os.getenv("OPENAI_API_KEY", "")
     if not api_key:
-        sys.exit("Brak OPENAI_API_KEY.")
+        sys.exit("Missing OPENAI_API_KEY.")
     if not os.path.isdir(args.data_dir):
-        sys.exit(f"Brak folderu ewaluacyjnego: {args.data_dir}")
+        sys.exit(f"Missing evaluation folder: {args.data_dir}")
 
     embedder = OpenAIEmbedder(api_key, EMBED_MODEL, os.path.join(CACHE_DIR, "embeddings.sqlite"))
     run(args.data_dir, args.dataset, [s for s in args.only.split(",") if s], args.baseline, embedder)
