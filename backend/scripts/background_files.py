@@ -15,7 +15,7 @@ def sample_balanced_background_files():
 
     files_by_category = {}
 
-    print("🔍 Scanning database categories...")
+    print("Scanning database categories...")
     for category_name in os.listdir(MAIN_DATABASE_DIRECTORY):
         category_path = os.path.join(MAIN_DATABASE_DIRECTORY, category_name)
 
@@ -29,14 +29,14 @@ def sample_balanced_background_files():
     files_by_category = {k: v for k, v in files_by_category.items() if v}
 
     if not files_by_category:
-        print("⚠️ No new files to collect.")
+        print("No new files to collect.")
         return
 
     category_count = len(files_by_category)
     files_per_category = TOTAL_BACKGROUND_FILE_COUNT // category_count
     remainder = TOTAL_BACKGROUND_FILE_COUNT % category_count
 
-    print(f"📊 Detected {category_count} main categories. Collecting approximately {files_per_category} files from each.")
+    print(f"Detected {category_count} main categories. Collecting approximately {files_per_category} files from each.")
 
     selected_paths = []
     for category, files in files_by_category.items():
@@ -47,7 +47,7 @@ def sample_balanced_background_files():
         selected_paths.extend(sampled_files)
         print(f" -> {category}: selected {len(sampled_files)} files")
 
-    print(f"\n🚀 Copying a total of {len(selected_paths)} files...")
+    print(f"\nCopying a total of {len(selected_paths)} files...")
     for source_path in selected_paths:
         destination_path = os.path.join(EVALUATION_DIRECTORY, os.path.basename(source_path))
         if not os.path.exists(destination_path):
@@ -56,4 +56,4 @@ def sample_balanced_background_files():
 
 if __name__ == "__main__":
     sample_balanced_background_files()
-    print("✅ Balanced background file collection completed.")
+    print("Balanced background file collection completed.")

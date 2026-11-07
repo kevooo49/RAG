@@ -10,7 +10,7 @@ try:
     DOCX_SUPPORT = True
 except ImportError:
     DOCX_SUPPORT = False
-    print("⚠️ docx2pdf is missing. .docx files will be skipped. (Install: pip install docx2pdf)")
+    print("docx2pdf is missing. .docx files will be skipped. (Install: pip install docx2pdf)")
 
 load_dotenv()
 API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
@@ -33,7 +33,7 @@ def requires_advanced_parsing(pdf_path: str) -> bool:
                     return True
         return False
     except Exception as e:
-        print(f"⚠️ Local analysis error for {pdf_path}: {e}. Forcing LlamaParse.")
+        print(f"Local analysis error for {pdf_path}: {e}. Forcing LlamaParse.")
         return True
 
 
@@ -104,7 +104,7 @@ def process_directory(raw_folder: str, processed_folder: str, temporary_folder: 
     os.makedirs(processed_folder, exist_ok=True)
     os.makedirs(temporary_folder, exist_ok=True)
 
-    print("⚙️ Starting Advanced Parser (PyMuPDF + LlamaParse) with DOCX isolation...")
+    print("Starting Advanced Parser (PyMuPDF + LlamaParse) with DOCX isolation...")
     local_count, cloud_count, docx_count = 0, 0, 0
 
     for file_name in os.listdir(raw_folder):
@@ -128,14 +128,14 @@ def process_directory(raw_folder: str, processed_folder: str, temporary_folder: 
 
         if current_extension == "docx" and DOCX_SUPPORT:
             temporary_path = os.path.join(temporary_folder, f"{name_without_extension}.pdf")
-            print(f"🔄 Normalizing: {file_name} -> PDF")
+            print(f"Normalizing: {file_name} -> PDF")
             try:
                 convert(raw_path, temporary_path)
                 path_to_analyze = temporary_path
                 is_temporary_file = True
                 docx_count += 1
             except Exception as e:
-                print(f"❌ Word conversion error: {e}")
+                print(f"Word conversion error: {e}")
                 continue
 
         if path_to_analyze.lower().endswith(".pdf"):
@@ -148,18 +148,18 @@ def process_directory(raw_folder: str, processed_folder: str, temporary_folder: 
                     final_text = add_frontmatter(raw_text, file_name, "llamaparse", current_extension, source_domain)
                     cloud_count += 1
                 except Exception as e:
-                    print(f"   ❌ LlamaParse error: {e}")
+                    print(f"   LlamaParse error: {e}")
                     if is_temporary_file and os.path.exists(path_to_analyze):
                         os.remove(path_to_analyze)
                     continue
             else:
-                print("   💻 Processing locally...")
+                print("   Processing locally...")
                 try:
                     raw_text = extract_text_locally(path_to_analyze)
                     final_text = add_frontmatter(raw_text, file_name, "pymupdf", current_extension, source_domain)
                     local_count += 1
                 except Exception as e:
-                    print(f"   ❌ Local extraction error: {e}")
+                    print(f"   Local extraction error: {e}")
                     if is_temporary_file and os.path.exists(path_to_analyze):
                         os.remove(path_to_analyze)
                     continue
@@ -170,7 +170,7 @@ def process_directory(raw_folder: str, processed_folder: str, temporary_folder: 
             if is_temporary_file and os.path.exists(path_to_analyze):
                 os.remove(path_to_analyze)
 
-    print("\n📊 REPORT:")
+    print("\nREPORT:")
     print(f"DOCX->PDF: {docx_count} | Local (Free): {local_count} | AI Cloud: {cloud_count}")
 
 
