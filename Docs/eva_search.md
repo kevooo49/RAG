@@ -1,57 +1,76 @@
 # Dokumentacja Architektoniczna: Ewaluacja Głównej Wyszukiwarki (`evaluate_search.py`)
 
-## 1. Wprowadzenie i Przeznaczenie Modułu
+## 1. Cel i Rola Modułu
 
-Celem skryptu jest wyłonienie optymalnego algorytmu pobierania danych, analizując nie tylko jego precyzję, ale również narzut czasowy (opóźnienia) generowany przez zaawansowane techniki, takie jak przepisywanie zapytań przez model językowy czy ponowne sortowanie wyników (re-ranking).
+Skrypt `evaluate_search.py` to finalne, najbardziej kompleksowe środowisko analityczne systemu RAG. Jego nadrzędnym zadaniem jest wyłonienie docelowej, produkcyjnej architektury wyszukiwania poprzez symulację pełnego przepływu danych – od zapytania użytkownika, przez fuzję wektorowo-leksykalną, aż po zaawansowane techniki takie jak Query Expansion (przepisywanie zapytań przez LLM) oraz Cross-Encoder Re-ranking. Wyróżnikiem modułu jest ewaluacja precyzji w korelacji z krytycznym parametrem produkcyjnym – opóźnieniami (latencją).
 
-## 2. Metodologia Ewaluacji i Architektura Środowiska
+## 2. Metodologia i Architektura Testów
 
-Aby wyniki oddawały rzeczywiste warunki produkcyjne i pozwalały na miarodajne porównania, wdrożono zaawansowaną architekturę testową:
+Aby zagwarantować odporność statystyczną i wiarygodność pomiarów, skrypt implementuje rygorystyczne procedury:
 
-* **Ocena na Poziomie Plików**: Skrypt analizuje trafność odnalezienia całego, referencyjnego dokumentu, a nie pojedynczego fragmentu tekstu. Jest to zgodne z oczekiwaniami użytkownika końcowego, który szuka konkretnego regulaminu lub sylabusa.
-* **Separacja Czasów Wykonania**: Zaimplementowano rygorystyczne mierzenie czasu operacji. Skrypt wyraźnie oddziela czas samego przeszukiwania baz danych (mediana oraz 95. percentyl) od narzutu czasowego generowanego przez model językowy podczas rozszerzania zapytań.
-* **Wielowarstwowy System Pamięci Podręcznej**:
-* Baza wektorowa ChromaDB oraz indeks leksykalny Elasticsearch są budowane raz i zachowywane na dysku. Unikalny klucz mieszający (fingerprint) gwarantuje, że bazy zostaną przebudowane tylko wtedy, gdy zmieni się kod chunkera, korpus plików referencyjnych lub parametry modelu.
-* Wywołania do modelu językowego odpowiedzialnego za rozszerzanie zapytań są buforowane w pliku JSON, co drastycznie przyspiesza kolejne uruchomienia testów i całkowicie eliminuje powtarzalne koszty API.
+* **Ewaluacja na Poziomie Plików (Document-Level Retrieval):** Zgodnie z docelowym przypadkiem użycia RAG na uczelni (student szuka konkretnego regulaminu lub sylabusa), metryki (`MRR@10`, `Hit@1`) nie punktują odnalezienia poprawnego *chunku*, lecz odnalezienie oryginalnego, nadrzędnego pliku źródłowego.
 
 
-* **Rygor Statystyczny**: Skrypt aplikuje próbkowanie (bootstrap klastrowy) na poziomie plików referencyjnych, dostarczając rzetelne 95% przedziały ufności oraz umożliwiając sparowane testy różnic między badanymi modalnościami a wariantem bazowym.
-
-## 3. Analiza Raportu: Skuteczność Strategii Wyszukiwania
-
-Środowisko przetestowało 6 różnych modalności na 90 zapytaniach testowych. Wyniki uwypukliły silne i słabe strony poszczególnych architektur.
-
-### Główne Wyniki Skuteczności (MRR@10 i Hit@1)
-
-* **Podejścia Bazowe**:
-* Wyszukiwarka leksykalna (Elasticsearch) uzyskała najsłabszy wynik ogólny (MRR: 0.596, Hit@1: 0.511).
-* Wyszukiwarka wektorowa (ChromaDB) wygenerowała znacznie lepszy rezultat (MRR: 0.695, Hit@1: 0.578).
+* **Separacja Narzutu Czasowego (Latency Profiling):** Środowisko precyzyjnie izoluje czas trwania poszczególnych faz. Osobno mierzony i raportowany jest czas surowego wyszukiwania w bazach wektorowych/leksykalnych (oraz przeliczania wag Cross-Encodera), a osobno logowany jest czas potrzebny modelowi językowemu na wygenerowanie optymalizacji zapytania (Query Expansion).
 
 
-* **Fuzja Hybrydowa**: Połączenie obu powyższych metod (RRF) dało wynik bazowy MRR na poziomie 0.704.
-* **Metody Zaawansowane**:
-* **Hybryda + Rozszerzanie Zapytań** osiągnęła najwyższą precyzję w zestawieniu (MRR: 0.779, Hit@1: 0.667).
-* **Hybryda + Re-ranking** (model krzyżowy) uzyskała zbliżony, bardzo wysoki wynik (MRR: 0.768, Hit@1: 0.667).
-* Zastosowanie obu zaawansowanych metod jednocześnie (Hybryda + Rozszerzanie + Re-ranking) doprowadziło do spadku precyzji wariantu pierwszego (MRR: 0.741). Wskazuje to na zjawisko nakładania się szumu, gdzie rozbudowane, nienaturalne zapytanie pogarsza ocenę realizowaną przez model krzyżowy.
+* **Architektura Podwójnego Cache'u:**
+* Baza wektorowa ChromaDB oraz baza tekstowa Elasticsearch są budowane jednorazowo. Generowany jest unikalny kryptograficzny odcisk (fingerprint SHA-256) uwzględniający zawartość korpusu plików, model osadzający, wagę RRF oraz model re-rankera.
+
+
+* Wyniki rozszerzania zapytań z modelu LLM (GPT-4o-mini) są lokalnie buforowane w pliku `rewrites.json` wraz z precyzyjnie zmierzonym czasem pierwszej generacji. Gwarantuje to, że ponowne uruchomienia testów są niemal darmowe finansowo i nie zakłamują uśrednionych czasów wyszukiwania.
 
 
 
-### Rozbicie na Typy Zapytań (Wąskie Gardła)
 
-Szczegółowa analiza skuteczności (Hit@1) udowodniła, dlaczego system hybrydowy jest absolutnie konieczny:
+* **Cluster Bootstrap Sampling:** Podobnie jak we wcześniejszych badaniach, wdrożono próbkowanie na klastrach plików referencyjnych (N=2000 iteracji), uodparniając statystyki `dHit@1` i `dMRR@10` na skorelowane zapytania testowe pochodzące z tych samych dokumentów.
 
-* Zapytania precyzyjne (leksykalne) dominowane są przez Elasticsearch (Hit@1: 0.80), podczas gdy fuzja hybrydowa lekko zaniża ten wynik (0.73).
-* Zapytania potoczne świetnie obsługuje baza wektorowa (Hit@1: 0.57 w porównaniu do 0.43 z bazy leksykalnej).
-* **Przełom w semantyce**: Czysta hybryda radzi sobie bardzo słabo z trudnymi zapytaniami opartymi na parafraze (Hit@1: 0.40). Wdrożenie modułu rozszerzania zapytań (dopisującego oficjalne synonimy) drastycznie podnosi ten wynik do 0.57 (wzrost skuteczności o ponad 40%).
 
-### Limity Górne Systemu
 
-Ewaluacja wykazała, że baza 30 najwyżej ocenionych fragmentów z wyszukiwarki hybrydowej (pula dla re-rankera) w 94%-97% przypadków zawierała poprawny plik. Oznacza to, że warstwa bazowego pobierania danych jest niemal bezbłędna, a ewentualne pomyłki wynikają wyłącznie z niedoskonałości sortowania ostatecznych wyników. Analiza ujawniła również istnienie 3 zapytań całkowicie pominiętych przez wszystkie algorytmy, co wyznacza nieprzekraczalną granicę możliwości obecnego korpusu.
+## 3. Analiza Modalności i Rozbicie na Typy Zapytań
 
-## 4. Konkluzje Architektoniczne i Kompromis Wydajnościowy
+Środowisko przetestowało 6 wariantów architektonicznych na 90 zróżnicowanych zapytaniach. Analiza wyników wskazuje na twarde limity algorytmów jednowymiarowych i absolutną konieczność wdrożenia podejść hybrydowych.
 
-Kluczowym elementem raportu jest zestawienie precyzji z opóźnieniami (latencją), co bezpośrednio warunkuje architekturę produkcyjną.
+* **Limity Algorytmów Bazowych:**
+* Wyszukiwarka czysto leksykalna (Elasticsearch) uzyskała słaby wynik ogólny (`MRR@10`: 0.596), choć całkowicie zdominowała zapytania "lexical" (`Hit@1`: 0.80).
 
-* Czyste wyszukiwanie wektorowe i leksykalne działa błyskawicznie (mediana odpowiednio 181 ms i 52 ms).
-* Zastosowanie modelu krzyżowego do ponownego sortowania wyników (Re-ranking) oferuje potężny wzrost precyzji, jednak generuje nieakceptowalne dla systemów interaktywnych opóźnienia, sięgające średnio niemal 3 sekund (mediana 2891 ms, p95 4332 ms). Wynika to z konieczności obciążającego, wielokrotnego ewaluowania par tekstów.
-* Zastosowanie techniki rozszerzania zapytań za pomocą szybkiego modelu językowego generuje stałe opóźnienie rzędu 1 sekundy (średnio 1053 ms). Biorąc pod uwagę fakt, że podejście to wygenerowało najwyższy wskaźnik MRR@10 w całym zestawieniu (0.779), **wdrożenie fuzji hybrydowej wspartej rozszerzaniem zapytań stanowi optymalny punkt kompromisu produkcyjnego**. Oferuje ono najwyższą jakość odpowiedzi przy utrzymaniu całkowitego czasu wyszukiwania wyraźnie poniżej granicy 1,5 sekundy.
+
+* Wyszukiwarka czysto wektorowa (ChromaDB) wypracowała wyższą bazę (`MRR@10`: 0.696), bezapelacyjnie wygrywając z ES przy obsłudze slangu ("colloquial").
+
+
+
+
+* **Przełom Hybrydowy (RRF):** Fuzja obu wyszukiwarek metodą Reciprocal Rank Fusion (wariant bazowy) zrównoważyła błędy obu podejść, podnosząc skuteczność całkowitą do `MRR@10`: 0.705.
+
+
+* **Rozwiązywanie Luki Semantycznej:**
+Czysta hybryda RRF poniosła sromotną klęskę przy radzeniu sobie z silnymi parafrazami (typ "semantic" – `Hit@1`: zaledwie 0.40). Problem ten rozwiązały obie zaawansowane metody modyfikacji zapytań:
+
+
+* Modalność **Hybrid + Expansion** (gdzie LLM przed wyszukiwaniem domieszkowuje synonimy) drastycznie podniosła trafność dla zapytań semantycznych do 0.57, generując najwyższy ogólny wynik `MRR@10` w zestawieniu (0.779).
+
+
+* Modalność **Hybrid + Re-Rank** (sortowanie top 30 chunków za pomocą neuronowego modelu krzyżowego Cross-Encoder) uzyskała niewiele niższy, wyśmienity rezultat ogólny (`MRR@10`: 0.769).
+
+
+* Jednoczesne połączenie tych technik (**Hybrid + Exp + Re-Rank**) doprowadziło do kanibalizacji wyników (`MRR@10` spadło do 0.741). Rozbudowane, sztuczne (rozszerzone) zapytanie zatarło oryginalną semantykę wymaganą przez model krzyżowy na etapie ewaluacji par, wprowadzając niszczący szum.
+
+
+
+
+
+## 4. Ograniczenia i Kompromis Projektowy (Decyzja Architektoniczna)
+
+Zestawienie najwyższych wyników z wygenerowanymi przez nie opóźnieniami ukształtowało docelową decyzję architektoniczną dla backendu.
+
+* Zwykłe metody (wektor, leksyka, czysta hybryda) działają w systemie w czasie rzeczywistym, oscylując wokół 180-240 milisekund narzutu wyszukiwania.
+
+
+* Modalność `Hybrid + Re-Rank`, mimo rewelacyjnej precyzji, generuje niszczycielskie opóźnienia w locie. Skomplikowane, wielokrotne oceny par tekstów przez Cross-Encoder na surowym procesorze środowiska bez GPU windują medianę czasu oczekiwania na same wyniki z bazy do gigantycznych blisko **2.9 sekundy** (przy 95. percentylu dobijającym do 4.3 sekundy). W skali interaktywnego czatbota jest to wynik nieakceptowalny.
+
+
+* Modalność `Hybrid + Expansion` wykazuje narzut LLM-a na wygenerowanie słów kluczowych na poziomie średnio 1053 ms. Z narzutem samej hybrydy (ok. 240 ms) zamyka ona proces wyszukiwania w bezpiecznej granicy poniżej 1,5 sekundy.
+
+
+
+Skoro modalność rozszerzania zapytań (**Hybrid + Expansion**) oferuje matematycznie najwyższy pułap jakości (najwyższe `Hit@1` i `MRR@10`), zamykając przy tym czasy operacyjne w interaktywnym oknie 1,5 sekundy, staje się ona absolutnym, ustandaryzowanym wyborem dla systemu produkcyjnego AGH. Mechanizm Re-rankera zostaje odrzucony ze względu na tzw. *latency tax*.

@@ -779,7 +779,7 @@ def rebuild_es(allow_missing_dirs=False):
     chunk_count, skipped = 0, []
     for cfg, path, rel in files:
         entry, doc = manifest["pliki"].get(rel), prepare_document(path, cfg)
-        if not entry or doc is None or entry["sygnatura"] != get_file_signature(doc[1], doc[2], cfg):
+        if not entry or doc is None or entry["sygnatura"] != get_file_signature(doc[0], doc[1], doc[2], cfg):
             skipped.append(rel)
             continue
         chunks = chunk_file(path, cfg, doc, rel=rel)

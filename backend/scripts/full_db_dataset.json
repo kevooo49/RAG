@@ -1,0 +1,2564 @@
+[
+  {
+    "query": "Kto otrzymał Puchar JM prof. dr. hab. inż. Jerzego Lisa podczas X Mistrzostw Polski Pracowników Szkół Wyższych w Piłce Siatkowej?",
+    "type": "lexical",
+    "expected_file": "x-mistrzostwa-polski-pracownik-szkol-wyzszych-w-pilce-siatkowej-za-nami_ae886ac7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/x-mistrzostwa-polski-pracownik-szkol-wyzszych-w-pilce-siatkowej-za-nami_ae886ac7.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Jak przebiegały rozgrywki siatkarskie, które odbyły się na uczelni technicznej, angażujące pracowników akademickich z różnych regionów kraju?",
+    "type": "semantic",
+    "expected_file": "x-mistrzostwa-polski-pracownik-szkol-wyzszych-w-pilce-siatkowej-za-nami_ae886ac7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/x-mistrzostwa-polski-pracownik-szkol-wyzszych-w-pilce-siatkowej-za-nami_ae886ac7.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Kto skosił pierwsze miejsce w rozgrywkach dla starszej ekipy podczas tych siatkarskich zawodów u nas?",
+    "type": "colloquial",
+    "expected_file": "x-mistrzostwa-polski-pracownik-szkol-wyzszych-w-pilce-siatkowej-za-nami_ae886ac7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/x-mistrzostwa-polski-pracownik-szkol-wyzszych-w-pilce-siatkowej-za-nami_ae886ac7.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Ile punktów zdobyła Olimpia Sulęcin w dotychczasowych osiemnastu spotkaniach sezonu 2023?",
+    "type": "lexical",
+    "expected_file": "zdobyc-cenne-punkty_e2a0b5bb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/zdobyc-cenne-punkty_e2a0b5bb.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Kto ma szansę poprawić swoje wyniki w nadchodzącym meczu dzięki lepszej pozycji w tabeli?",
+    "type": "semantic",
+    "expected_file": "zdobyc-cenne-punkty_e2a0b5bb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/zdobyc-cenne-punkty_e2a0b5bb.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Kiedy ziomy grają na Piastowskiej i można ich dopingować?",
+    "type": "colloquial",
+    "expected_file": "zdobyc-cenne-punkty_e2a0b5bb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/zdobyc-cenne-punkty_e2a0b5bb.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Kiedy odbyły się Mistrzostwa AGH w narciarstwie alpejskim i snowboardzie na stacji narciarskiej Grapa Ski – Litwinka?",
+    "type": "lexical",
+    "expected_file": "mistrzostwa-agh-w-narciarstwie-alpejskim-i-snowboardzie_2affdbca.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/mistrzostwa-agh-w-narciarstwie-alpejskim-i-snowboardzie_2affdbca.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Na jakim typie wydarzenia można spotkać rywalizujących ze sobą uczestników związanych z jedną z krakowskich uczelni, a także ludzi spoza niej, którzy lubią zimowe sporty na stoku?",
+    "type": "semantic",
+    "expected_file": "mistrzostwa-agh-w-narciarstwie-alpejskim-i-snowboardzie_2affdbca.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/mistrzostwa-agh-w-narciarstwie-alpejskim-i-snowboardzie_2affdbca.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Gdzie na desce i nartach można poszaleć z ekipą z uczelni w marcu?",
+    "type": "colloquial",
+    "expected_file": "mistrzostwa-agh-w-narciarstwie-alpejskim-i-snowboardzie_2affdbca.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/AZS_Strony/mistrzostwa-agh-w-narciarstwie-alpejskim-i-snowboardzie_2affdbca.md",
+    "source": "AZS AGH"
+  },
+  {
+    "query": "Jakie moduły są wymienione w bazie Total Materia, oferujące zaawansowane dane o materiałach?",
+    "type": "lexical",
+    "expected_file": "zasoby__e-zasoby__total-materia_d82f0d3d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/zasoby__e-zasoby__total-materia_d82f0d3d.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Czym zajmuje się system, który pozwala na porównanie nowego materiału na podstawie danych z urządzenia analizującego jego skład?",
+    "type": "semantic",
+    "expected_file": "zasoby__e-zasoby__total-materia_d82f0d3d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/zasoby__e-zasoby__total-materia_d82f0d3d.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Jak to zrobić, żeby dorwać wszelkie dane o różnych metalach na AGH, no wiesz, te ich właściwości, kody i takie tam?",
+    "type": "colloquial",
+    "expected_file": "zasoby__e-zasoby__total-materia_d82f0d3d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/zasoby__e-zasoby__total-materia_d82f0d3d.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Ile rekordów naukowych znajduje się w zbiorze streszczeń w serwisie Scopus, z którego korzysta LeapSpace?",
+    "type": "lexical",
+    "expected_file": "zasoby__e-zasoby__leapspace_c5115886.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/zasoby__e-zasoby__leapspace_c5115886.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Jakie są główne korzyści dla badaczy wynikające z używania narzędzia do analizy treści naukowych, które ułatwia wyszukiwanie i współpracę?",
+    "type": "semantic",
+    "expected_file": "zasoby__e-zasoby__leapspace_c5115886.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/zasoby__e-zasoby__leapspace_c5115886.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Gdzie mogę znaleźć kumpla do wspólnego projektu naukowego przez narzędzie, które mi w tym pomoże?",
+    "type": "colloquial",
+    "expected_file": "zasoby__e-zasoby__leapspace_c5115886.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/zasoby__e-zasoby__leapspace_c5115886.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Jakie jest oznaczenie lokalizacji dla książek dostępnych w Bibliotece Głównej AGH?",
+    "type": "lexical",
+    "expected_file": "jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "W jaki sposób można uzyskać materiały przechowywane w głównym archiwum, które nie są bezpośrednio dostępne na półkach?",
+    "type": "semantic",
+    "expected_file": "jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Co trzeba zrobić, żeby oddać książki, jak się je przetrzyma dłużej niż trzeba?",
+    "type": "colloquial",
+    "expected_file": "jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony/jak-korzystac__wypozyczenia-i-zwroty_23b2eb82.md",
+    "source": "Biblioteka Główna AGH"
+  },
+  {
+    "query": "Jakie ustawienie żywotności pamięci podręcznej należy wybrać w panelu 'Zachowanie', aby ustawić '1 minuta' dla elementu wstawiającego wiersze?",
+    "type": "lexical",
+    "expected_file": "typo3-instrukcja__element-wstawiajacy-wiersze_a4d8bb71.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Strony/typo3-instrukcja__element-wstawiajacy-wiersze_a4d8bb71.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jaki proces umożliwia synchronizację powielonych danych między dwiema stronami, tak aby zmiany dokonane na jednej były automatycznie odwzorowane na drugiej?",
+    "type": "semantic",
+    "expected_file": "typo3-instrukcja__element-wstawiajacy-wiersze_a4d8bb71.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Strony/typo3-instrukcja__element-wstawiajacy-wiersze_a4d8bb71.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jak ogarnąć, żeby dane z jednej podstronki automatycznie uaktualniały się na innej? Coś o kopiowaniu, ale nie do końca?",
+    "type": "colloquial",
+    "expected_file": "typo3-instrukcja__element-wstawiajacy-wiersze_a4d8bb71.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Strony/typo3-instrukcja__element-wstawiajacy-wiersze_a4d8bb71.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jakie kroki należy podjąć, aby stworzyć nową aktualność w folderze „News - PL” w serwisie AGH?",
+    "type": "lexical",
+    "expected_file": "typo3-instrukcja__redagowanie-aktualnosci_99794d9c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Strony/typo3-instrukcja__redagowanie-aktualnosci_99794d9c.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jak można zarządzać informacjami na stronie uczelni, aby były dostępne w bardziej skróconej formie na stronie głównej?",
+    "type": "semantic",
+    "expected_file": "typo3-instrukcja__redagowanie-aktualnosci_99794d9c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Strony/typo3-instrukcja__redagowanie-aktualnosci_99794d9c.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jak w systemie newsów można zrobić, żeby info zawsze było na topie, nawet jak jest już stare?",
+    "type": "colloquial",
+    "expected_file": "typo3-instrukcja__redagowanie-aktualnosci_99794d9c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Strony/typo3-instrukcja__redagowanie-aktualnosci_99794d9c.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jaki numer telefonu należy wybrać, aby uzyskać dodatkowe informacje w sprawach dotyczących patronatu honorowego przyznawanego przez AGH?",
+    "type": "lexical",
+    "expected_file": "Zasady_udzielania_Patronatu_Honorowego_AGH_aktualizacja_3.25_f2419967.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Dokumenty_Przetworzone/Zasady_udzielania_Patronatu_Honorowego_AGH_aktualizacja_3.25_f2419967.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Co musi zrobić organizator, aby uzyskać formalne poparcie od lidera uczelni dla swojego wydarzenia, które zwiększy jego prestiż bez wsparcia finansowego?",
+    "type": "semantic",
+    "expected_file": "Zasady_udzielania_Patronatu_Honorowego_AGH_aktualizacja_3.25_f2419967.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Dokumenty_Przetworzone/Zasady_udzielania_Patronatu_Honorowego_AGH_aktualizacja_3.25_f2419967.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jeśli chcesz zorganizować powtarzający się event na AGH i chcesz, żeby miał wysoką renomę, co musisz załatwić każdorazowo?",
+    "type": "colloquial",
+    "expected_file": "Zasady_udzielania_Patronatu_Honorowego_AGH_aktualizacja_3.25_f2419967.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CKiM_Dokumenty_Przetworzone/Zasady_udzielania_Patronatu_Honorowego_AGH_aktualizacja_3.25_f2419967.md",
+    "source": "CKiM AGH"
+  },
+  {
+    "query": "Jakie jest oznaczenie zarządzenia wydanego przez Rektora AGH dotyczącego opłat za usługi edukacyjne?",
+    "type": "lexical",
+    "expected_file": "oplaty_Zarzadzenie_Rektora_22_2018_e6ead891.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone/oplaty_Zarzadzenie_Rektora_22_2018_e6ead891.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Jaki jest koszt dla uczniów uczęszczających na dodatkowe zajęcia w celu poprawy wyników na uczelni w Krakowie?",
+    "type": "semantic",
+    "expected_file": "oplaty_Zarzadzenie_Rektora_22_2018_e6ead891.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone/oplaty_Zarzadzenie_Rektora_22_2018_e6ead891.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Ile trzeba wybulić za poprawkę godzinki zajęć na dziennych studiach, jak się obleje przedmiot na AGH?",
+    "type": "colloquial",
+    "expected_file": "oplaty_Zarzadzenie_Rektora_22_2018_e6ead891.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone/oplaty_Zarzadzenie_Rektora_22_2018_e6ead891.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Jaka jest różnica między oceną 'nzal./2.0' a 'nzal.' w kontekście niesamodzielności pracy studenta, zgodnie z RS AGH § 15 ust. 13 i § 16 ust. 23?",
+    "type": "lexical",
+    "expected_file": "2022_10_01_wpisywanie_ocen_wykaz_2022_2023_0f6d4fec.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone/2022_10_01_wpisywanie_ocen_wykaz_2022_2023_0f6d4fec.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Jakie są zasady zakończenia zajęć fizycznych na uczelni technicznej, jeśli ktoś nie zdoła uzyskać zaliczenia na końcu semestru?",
+    "type": "semantic",
+    "expected_file": "2022_10_01_wpisywanie_ocen_wykaz_2022_2023_0f6d4fec.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone/2022_10_01_wpisywanie_ocen_wykaz_2022_2023_0f6d4fec.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Co musisz zrobić, żeby dostać 'zal' z wuefu na koniec semestru w AGH?",
+    "type": "colloquial",
+    "expected_file": "2022_10_01_wpisywanie_ocen_wykaz_2022_2023_0f6d4fec.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone/2022_10_01_wpisywanie_ocen_wykaz_2022_2023_0f6d4fec.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Jaki jest tytuł dokumentu PDF dotyczącego zarządzenia na rok akademicki 2026/2027?",
+    "type": "lexical",
+    "expected_file": "niezbednik__organizacja-roku-akademickiego_bc6cc8c7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Strony/niezbednik__organizacja-roku-akademickiego_bc6cc8c7.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "W jaki sposób można sprawdzić zmiany w kalendarzu naukowym dla studentów studiujących w danym roku?",
+    "type": "semantic",
+    "expected_file": "niezbednik__organizacja-roku-akademickiego_bc6cc8c7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Strony/niezbednik__organizacja-roku-akademickiego_bc6cc8c7.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Gdzie w necie znajdę AGH-owskie filmiki do pooglądania?",
+    "type": "colloquial",
+    "expected_file": "niezbednik__organizacja-roku-akademickiego_bc6cc8c7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/COK_Strony/niezbednik__organizacja-roku-akademickiego_bc6cc8c7.md",
+    "source": "COK AGH"
+  },
+  {
+    "query": "Jaki przycisk należy wybrać w górnym menu na stronie SSO AGH, aby rozpocząć proces zmiany hasła?",
+    "type": "lexical",
+    "expected_file": "pomoc-it__instrukcje__zmiana-i-resetowanie-hasla-do-sso_b91829b5.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/pomoc-it__instrukcje__zmiana-i-resetowanie-hasla-do-sso_b91829b5.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Jakie kroki muszą podjąć osoby zatrudnione na uczelni, aby odzyskać dostęp do swojego konta pocztowego związanego z uczelnią?",
+    "type": "semantic",
+    "expected_file": "pomoc-it__instrukcje__zmiana-i-resetowanie-hasla-do-sso_b91829b5.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/pomoc-it__instrukcje__zmiana-i-resetowanie-hasla-do-sso_b91829b5.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Co trzeba zrobić, żeby zresetować hasło do maila studenckiego, jak już zgubiłeś stare?",
+    "type": "colloquial",
+    "expected_file": "pomoc-it__instrukcje__zmiana-i-resetowanie-hasla-do-sso_b91829b5.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/pomoc-it__instrukcje__zmiana-i-resetowanie-hasla-do-sso_b91829b5.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Jaka jest maksymalna liczba urządzeń, na których można zainstalować aplikacje Microsoft 365 Copilot?",
+    "type": "lexical",
+    "expected_file": "uslugi__microsoft-365_b56b5843.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/uslugi__microsoft-365_b56b5843.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "W jaki sposób system wspomaga organizację pracy, komunikację i zarządzanie danymi, nie używając tradycyjnych narzędzi?",
+    "type": "semantic",
+    "expected_file": "uslugi__microsoft-365_b56b5843.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/uslugi__microsoft-365_b56b5843.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Kto może skorzystać z tych fajnych programów od MS i gdzie można się po nie zgłosić?",
+    "type": "colloquial",
+    "expected_file": "uslugi__microsoft-365_b56b5843.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/uslugi__microsoft-365_b56b5843.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Jakie jest dokładne stanowisko osoby, która zarządza wewnętrzną strukturą Centrum Rozwiązań Informatycznych na AGH?",
+    "type": "lexical",
+    "expected_file": "o-nas_584676c0.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/o-nas_584676c0.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Jakie są obowiązki osoby odpowiedzialnej za kierowanie działem technologicznym na uczelni w Krakowie, w tym zarządzanie zasobami oraz składanie sprawozdań?",
+    "type": "semantic",
+    "expected_file": "o-nas_584676c0.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/o-nas_584676c0.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Kto jest szefem w CRI i jakie ma zadania, jeśli chodzi o nadzór nad ekipą i sprzętem?",
+    "type": "colloquial",
+    "expected_file": "o-nas_584676c0.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CRI_Strony/o-nas_584676c0.md",
+    "source": "CRI AGH"
+  },
+  {
+    "query": "Jakie jest oznaczenie i numer zarządzenia dotyczącego zasad organizacji praktyk studenckich w AGH w Krakowie z 2023 roku?",
+    "type": "lexical",
+    "expected_file": "Zarzadzenie-94-2023_eb5f4455.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Dokumenty_Przetworzone/Zarzadzenie-94-2023_eb5f4455.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "W jaki sposób reguluje się organizację doświadczeń zdobywanych przez studentów poza tradycyjnym nauczaniem, które są integralną częścią ich wykształcenia w uczelni technicznej?",
+    "type": "semantic",
+    "expected_file": "Zarzadzenie-94-2023_eb5f4455.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Dokumenty_Przetworzone/Zarzadzenie-94-2023_eb5f4455.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Kiedy można zaliczyć prackę studentowi, jeśli robił coś podobnego na przykład w robocie albo na wolontariacie?",
+    "type": "colloquial",
+    "expected_file": "Zarzadzenie-94-2023_eb5f4455.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Dokumenty_Przetworzone/Zarzadzenie-94-2023_eb5f4455.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Jaki jest adres Centrum Karier AGH?",
+    "type": "lexical",
+    "expected_file": "kontakt_5d9ed1bf.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony/kontakt_5d9ed1bf.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Kto odpowiada za nadzorowanie wydarzeń związanych z procesem wspierania studentów w rozwijaniu kariery zawodowej?",
+    "type": "semantic",
+    "expected_file": "kontakt_5d9ed1bf.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony/kontakt_5d9ed1bf.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Z kim się skontaktować, jeśli szukam porady o robocie albo praktykach na AGH?",
+    "type": "colloquial",
+    "expected_file": "kontakt_5d9ed1bf.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony/kontakt_5d9ed1bf.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Które wydarzenie jest organizowane przez AGH we współpracy z pracodawcami w listopadzie i obejmuje ono przybliżenie ścieżek kariery?",
+    "type": "lexical",
+    "expected_file": "dla-pracodawcow_918e9d88.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony/dla-pracodawcow_918e9d88.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Jakie działania oferują wsparcie firmom w zakresie dotarcia do potencjalnych pracowników poprzez aktywność w sieciach?",
+    "type": "semantic",
+    "expected_file": "dla-pracodawcow_918e9d88.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony/dla-pracodawcow_918e9d88.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Gdzie mogę wrzucić info o robocie albo praktykach, żeby studenci AGH to ogarnęli?",
+    "type": "colloquial",
+    "expected_file": "dla-pracodawcow_918e9d88.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony/dla-pracodawcow_918e9d88.md",
+    "source": "Centrum Karier AGH"
+  },
+  {
+    "query": "Jakie jest dokładne oznaczenie ustawy, na podstawie której wydano rozporządzenie Ministra Pracy i Polityki Społecznej z dnia 29 stycznia 2013 r.?",
+    "type": "lexical",
+    "expected_file": "Rozporzadzenie_Ministra_Pracy_i_Polityki_Spolecznej_z_dnia_29_stycznia_2013_36ff954c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone/Rozporzadzenie_Ministra_Pracy_i_Polityki_Spolecznej_z_dnia_29_stycznia_2013_36ff954c.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "W jaki sposób pracownik może odzyskać wydatki związane z podróżą, jeśli nie ma potwierdzenia w formie paragonu lub biletu?",
+    "type": "semantic",
+    "expected_file": "Rozporzadzenie_Ministra_Pracy_i_Polityki_Spolecznej_z_dnia_29_stycznia_2013_36ff954c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone/Rozporzadzenie_Ministra_Pracy_i_Polityki_Spolecznej_z_dnia_29_stycznia_2013_36ff954c.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Co trzeba zrobić z papierami po powrocie z delegacji, żeby się z hajsem zgadzało?",
+    "type": "colloquial",
+    "expected_file": "Rozporzadzenie_Ministra_Pracy_i_Polityki_Spolecznej_z_dnia_29_stycznia_2013_36ff954c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone/Rozporzadzenie_Ministra_Pracy_i_Polityki_Spolecznej_z_dnia_29_stycznia_2013_36ff954c.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Jaki jest numer pokoju Welcome Pointu AGH dla międzynarodowych gości?",
+    "type": "lexical",
+    "expected_file": "welcome-point_f64fdf14.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Strony/welcome-point_f64fdf14.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Gdzie można uzyskać pomoc w zaklimatyzowaniu się w nowym środowisku akademickim dla obcokrajowców?",
+    "type": "semantic",
+    "expected_file": "welcome-point_f64fdf14.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Strony/welcome-point_f64fdf14.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Gdzie na AGH można załatwić sprawy związane z papierologią dla przyjezdnych?",
+    "type": "colloquial",
+    "expected_file": "welcome-point_f64fdf14.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Strony/welcome-point_f64fdf14.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Jaki jest minimalny czas trwania mobilności fizycznej nauczycieli akademickich w ramach Erasmus+ KA131 w roku akademickim 2025/2026?",
+    "type": "lexical",
+    "expected_file": "Erasmus_regulamin_KA131_STA_2025_9ee2c615.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone/Erasmus_regulamin_KA131_STA_2025_9ee2c615.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Jakie są kluczowe kroki, które muszą podjąć pracownicy uczelni, aby zakwalifikować się do udziału w międzynarodowym projekcie edukacyjnym, który pozwala na prowadzenie zajęć poza granicami kraju?",
+    "type": "semantic",
+    "expected_file": "Erasmus_regulamin_KA131_STA_2025_9ee2c615.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone/Erasmus_regulamin_KA131_STA_2025_9ee2c615.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Kiedy trzeba się zgłosić, żeby załapać się na wyjazd na Erasmusa w przyszłym roku?",
+    "type": "colloquial",
+    "expected_file": "Erasmus_regulamin_KA131_STA_2025_9ee2c615.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone/Erasmus_regulamin_KA131_STA_2025_9ee2c615.md",
+    "source": "Centrum Spraw Międzynarodowych AGH"
+  },
+  {
+    "query": "Jakie jest pełne imię i nazwisko Prorektora ds. Studenckich reprezentującego Akademię Górniczo-Hutniczą w umowie dotyczącej Grantów Rektora?",
+    "type": "lexical",
+    "expected_file": "GR2023_z6_umowa.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone/GR2023_z6_umowa.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Co jest wymagane od uczestnika, który angażuje się w projekt akademicki i pracuje nad innowacyjnymi rozwiązaniami, jeżeli chodzi o przekazywanie praw do rezultatów swojej pracy?",
+    "type": "semantic",
+    "expected_file": "GR2023_z6_umowa.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone/GR2023_z6_umowa.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Co student dostaje w zamian za oddanie praw do projektu, który robi na uczelni pod Grantem Rektora?",
+    "type": "colloquial",
+    "expected_file": "GR2023_z6_umowa.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone/GR2023_z6_umowa.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Jaka średnia ocen została uzyskana przez absolwenta o numerze albumu 291863 w roku akademickim 2020/2021?",
+    "type": "lexical",
+    "expected_file": "lista_absolwenci_IIstopien_2020-2021.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone/lista_absolwenci_IIstopien_2020-2021.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Jak określa się procedurę wybierania najlepszych studentów na zakończenie studiów drugiego poziomu na uczelni technicznej?",
+    "type": "semantic",
+    "expected_file": "lista_absolwenci_IIstopien_2020-2021.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone/lista_absolwenci_IIstopien_2020-2021.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Ile trzeba mieć średnią, żeby być w topce na magisterce na Inżynierii Łądowej i Gospodarki Zasobami?",
+    "type": "colloquial",
+    "expected_file": "lista_absolwenci_IIstopien_2020-2021.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone/lista_absolwenci_IIstopien_2020-2021.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Jaka jest maksymalna kwota dofinansowania jednego wniosku w ramach edycji 2023 IDUB?",
+    "type": "lexical",
+    "expected_file": "organizacje-studenckie__grant-rektora__edycja-2023-idub_8fa0e596.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Strony/organizacje-studenckie__grant-rektora__edycja-2023-idub_8fa0e596.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Jakie czynności są przewidziane pomiędzy oceną formalną a oficjalnym ogłoszeniem wyników projektów?",
+    "type": "semantic",
+    "expected_file": "organizacje-studenckie__grant-rektora__edycja-2023-idub_8fa0e596.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Strony/organizacje-studenckie__grant-rektora__edycja-2023-idub_8fa0e596.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Kiedy dokładnie można było składać papiery na ten grant na kółka?",
+    "type": "colloquial",
+    "expected_file": "organizacje-studenckie__grant-rektora__edycja-2023-idub_8fa0e596.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/CSS_Strony/organizacje-studenckie__grant-rektora__edycja-2023-idub_8fa0e596.md",
+    "source": "Centrum Spraw Studenckich AGH"
+  },
+  {
+    "query": "Jak nazywa się projekt z dofinansowaniem w wysokości 1 787 492,00 zł realizowany przez ACK Cyfronet AGH?",
+    "type": "lexical",
+    "expected_file": "pl__projects__international-projects__dome_b341adfa.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__projects__international-projects__dome_b341adfa.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Jakie przedsięwzięcie ma na celu stworzenie jednego miejsca dostępu dla dostawców i odbiorców technologii przetwarzania danych w Europie, wspierając tym samym transformację cyfrową?",
+    "type": "semantic",
+    "expected_file": "pl__projects__international-projects__dome_b341adfa.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__projects__international-projects__dome_b341adfa.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Gdzie można uderzyć, żeby pogadać o tym całym chmurowym przedsięwzięciu, które ogarnia Cyfronet?",
+    "type": "colloquial",
+    "expected_file": "pl__projects__international-projects__dome_b341adfa.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__projects__international-projects__dome_b341adfa.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Jakie polecenia są omawiane w szkoleniu 'Podstawy Linuxa od zera' w zakresie poruszania się po drzewie katalogów?",
+    "type": "lexical",
+    "expected_file": "pl__training__absolute-basics-of-linux-04-08-2026_689d7fa7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__training__absolute-basics-of-linux-04-08-2026_689d7fa7.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Jakiej czynności dotyczy nauka na kursie, która obejmuje tworzenie i zarządzanie różnymi rodzajami struktur danych w systemie operacyjnym?",
+    "type": "semantic",
+    "expected_file": "pl__training__absolute-basics-of-linux-04-08-2026_689d7fa7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__training__absolute-basics-of-linux-04-08-2026_689d7fa7.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Kiedy jest ta cała nauka Linucha online? Trzeba być na necie w jakich godzinach?",
+    "type": "colloquial",
+    "expected_file": "pl__training__absolute-basics-of-linux-04-08-2026_689d7fa7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__training__absolute-basics-of-linux-04-08-2026_689d7fa7.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Jakie języki programowania wymieniono w kontekście technologii webowych w Cyfronet AGH?",
+    "type": "lexical",
+    "expected_file": "pl__about-us__career_649ab063.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__about-us__career_649ab063.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Jakiego rodzaju instytucja oferuje możliwość pracy nad zaawansowanymi projektami z użyciem nowoczesnych narzędzi do przechowywania i obliczeń?",
+    "type": "semantic",
+    "expected_file": "pl__about-us__career_649ab063.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__about-us__career_649ab063.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Gdzie muszę wysłać papiery, jeśli chcę pracować w Cyfronecie nad AI?",
+    "type": "colloquial",
+    "expected_file": "pl__about-us__career_649ab063.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony/pl__about-us__career_649ab063.md",
+    "source": "Cyfronet AGH"
+  },
+  {
+    "query": "Jaki jest numer Dziennika Ustaw dla Rozporządzenia Ministra Nauki i Szkolnictwa Wyższego z dnia 8 sierpnia 2011 r. dotyczącego nostryfikacji stopni naukowych uzyskanych za granicą?",
+    "type": "lexical",
+    "expected_file": "repozytorium__badania_stopnie-i-tytuly-naukowe.html_158eba23.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/repozytorium__badania_stopnie-i-tytuly-naukowe.html_158eba23.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Jakie przepisy regulują procesy związane z uzyskiwaniem wyższych tytułów akademickich, takie jak zaawansowane stopnie naukowe, zgodnie z polskim prawem o edukacji?",
+    "type": "semantic",
+    "expected_file": "repozytorium__badania_stopnie-i-tytuly-naukowe.html_158eba23.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/repozytorium__badania_stopnie-i-tytuly-naukowe.html_158eba23.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Jakie papierki trzeba ogarnąć, żeby dostać doktorat na AGH?",
+    "type": "colloquial",
+    "expected_file": "repozytorium__badania_stopnie-i-tytuly-naukowe.html_158eba23.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/repozytorium__badania_stopnie-i-tytuly-naukowe.html_158eba23.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Jakie jest pełne imię i nazwisko oraz dziedzina naukowa osoby, która złożyła wniosek o habilitację 9 stycznia 2020 roku?",
+    "type": "lexical",
+    "expected_file": "repozytorium__dyscypliny_dyscyplina-aee_stopnie-naukowe_habilitacje.html_5fa61c73.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/repozytorium__dyscypliny_dyscyplina-aee_stopnie-naukowe_habilitacje.html_5fa61c73.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "W jaki sposób instytucja edukacyjna w Krakowie zapewnia przejrzystość procedur związanych z uzyskiwaniem tytułów akademickich?",
+    "type": "semantic",
+    "expected_file": "repozytorium__dyscypliny_dyscyplina-aee_stopnie-naukowe_habilitacje.html_5fa61c73.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/repozytorium__dyscypliny_dyscyplina-aee_stopnie-naukowe_habilitacje.html_5fa61c73.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Gdzie można poczytać o polityce ciasteczek na stronie EAIiIB? Jak sprawić, żeby nie wyskakiwał komunikat o cookies?",
+    "type": "colloquial",
+    "expected_file": "repozytorium__dyscypliny_dyscyplina-aee_stopnie-naukowe_habilitacje.html_5fa61c73.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/repozytorium__dyscypliny_dyscyplina-aee_stopnie-naukowe_habilitacje.html_5fa61c73.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "W jakim pomieszczeniu i na którym piętrze znajduje się Biblioteka Wydziałowa w nowym budynku D-2?",
+    "type": "lexical",
+    "expected_file": "biblioteka-wydzialowa-eaiiib_a5a20cbb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/biblioteka-wydzialowa-eaiiib_a5a20cbb.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Jakie są główne obowiązki instytucji odpowiedzialnej za materiały czytelnicze i współpracującej z główną placówką uczelnianą?",
+    "type": "semantic",
+    "expected_file": "biblioteka-wydzialowa-eaiiib_a5a20cbb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/biblioteka-wydzialowa-eaiiib_a5a20cbb.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Gdzie na wydziale można załatwić sprawy związane z książkami, jak masz jakieś nowe do wrzucenia?",
+    "type": "colloquial",
+    "expected_file": "biblioteka-wydzialowa-eaiiib_a5a20cbb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony/biblioteka-wydzialowa-eaiiib_a5a20cbb.md",
+    "source": "EAIIB AGH"
+  },
+  {
+    "query": "Kiedy dokładnie kończą się zapisy na bloki tematyczne w systemie USOS dla 5. semestru Nanoinżynierii Materiałów na rok akademicki 2025/2026?",
+    "type": "lexical",
+    "expected_file": "studenci__komunikaty__detail__zapisy-na-bloki-tematyczne-5-semestr-fizyki-techni_431d6616.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Strony/studenci__komunikaty__detail__zapisy-na-bloki-tematyczne-5-semestr-fizyki-techni_431d6616.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Jak studenci powinni postąpić, jeśli przerwali naukę na rok i wracają na studia, aby wybrać odpowiednie zajęcia na przyszły semestr?",
+    "type": "semantic",
+    "expected_file": "studenci__komunikaty__detail__zapisy-na-bloki-tematyczne-5-semestr-fizyki-techni_431d6616.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Strony/studenci__komunikaty__detail__zapisy-na-bloki-tematyczne-5-semestr-fizyki-techni_431d6616.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Do kiedy można zapisać się na bloki w USOSie, zanim skończy się czas?",
+    "type": "colloquial",
+    "expected_file": "studenci__komunikaty__detail__zapisy-na-bloki-tematyczne-5-semestr-fizyki-techni_431d6616.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Strony/studenci__komunikaty__detail__zapisy-na-bloki-tematyczne-5-semestr-fizyki-techni_431d6616.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Który zespół w Katedrze Fizyki Ciała Stałego zajmuje się badaniami nad 'Efektami Kwantowymi w Nanostrukturach'?",
+    "type": "lexical",
+    "expected_file": "wydzial__katedry_b3254658.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Strony/wydzial__katedry_b3254658.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Jak nazywa się jednostka akademicka, która prowadzi działania związane z badaniem złożonych systemów oraz narzędzi wykorzystywanych do analizy danych?",
+    "type": "semantic",
+    "expected_file": "wydzial__katedry_b3254658.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Strony/wydzial__katedry_b3254658.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Gdzie na AGH można złapać info o kwantowej bajerze i nanorurach?",
+    "type": "colloquial",
+    "expected_file": "wydzial__katedry_b3254658.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Strony/wydzial__katedry_b3254658.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Ile stron zajmuje część „ABSOLWENCI ZATRUDNIENI” w sekcji „Dane zasadnicze (próba R1)” według dokumentu BLA_2015_WFiIS_46352f4e.md?",
+    "type": "lexical",
+    "expected_file": "BLA_2015_WFiIS_46352f4e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Dokumenty_Przetworzone/BLA_2015_WFiIS_46352f4e.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Jakie są kluczowe aspekty badania dotyczącego kariery zawodowej, które były monitorowane dla określonego roku?",
+    "type": "semantic",
+    "expected_file": "BLA_2015_WFiIS_46352f4e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Dokumenty_Przetworzone/BLA_2015_WFiIS_46352f4e.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Jak szybko po studiach magisterskich z WFiIS ludzie znajdują robotę?",
+    "type": "colloquial",
+    "expected_file": "BLA_2015_WFiIS_46352f4e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/FIS_Dokumenty_Przetworzone/BLA_2015_WFiIS_46352f4e.md",
+    "source": "FIS AGH"
+  },
+  {
+    "query": "Jaki numer statystyczny w systemie REGON posiada Fundacja dla Akademii Górniczo-Hutniczej im. Stanisława Staszica w Krakowie?",
+    "type": "lexical",
+    "expected_file": "FAGH_sprawozdanie_roczne_2007_0c082bd1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Dokumenty_Przetworzone/FAGH_sprawozdanie_roczne_2007_0c082bd1.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Jakie działania podejmuje organizacja w celu wsparcia innowacji technologicznych i naukowych w instytucjach komercyjnych?",
+    "type": "semantic",
+    "expected_file": "FAGH_sprawozdanie_roczne_2007_0c082bd1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Dokumenty_Przetworzone/FAGH_sprawozdanie_roczne_2007_0c082bd1.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Kto jest szefem Fundacji przy AGH, i co tam robią z hajsem na badania?",
+    "type": "colloquial",
+    "expected_file": "FAGH_sprawozdanie_roczne_2007_0c082bd1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Dokumenty_Przetworzone/FAGH_sprawozdanie_roczne_2007_0c082bd1.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Jakie są numery NIP i REGON Fundacji dla Akademii Górniczo-Hutniczej?",
+    "type": "lexical",
+    "expected_file": "kontakt_e2e22b67.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony/kontakt_e2e22b67.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "W jaki sposób można skontaktować się z biurem dla zapytań związanych z podróżami powietrznymi?",
+    "type": "semantic",
+    "expected_file": "kontakt_e2e22b67.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony/kontakt_e2e22b67.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Gdzie trzeba się udać, żeby pogadać z ekipą z fundacji między 10 a 15?",
+    "type": "colloquial",
+    "expected_file": "kontakt_e2e22b67.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony/kontakt_e2e22b67.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Jaka była łączna wartość stypendiów SAP przyznanych przez Fundację dla AGH?",
+    "type": "lexical",
+    "expected_file": "stypendia-sap-rozdane_c2fc1b8d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony/stypendia-sap-rozdane_c2fc1b8d.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Kto odegrał istotną rolę w realizacji projektu dotyczącego wsparcia finansowego dla najlepszych prac magisterskich z zakresu oprogramowania biznesowego?",
+    "type": "semantic",
+    "expected_file": "stypendia-sap-rozdane_c2fc1b8d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony/stypendia-sap-rozdane_c2fc1b8d.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Co to za praca dostała pierwsze miejsce za ten projekt speców od biznesowego softu?",
+    "type": "colloquial",
+    "expected_file": "stypendia-sap-rozdane_c2fc1b8d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony/stypendia-sap-rozdane_c2fc1b8d.md",
+    "source": "Fundacja AGH"
+  },
+  {
+    "query": "Który absolwent Akademii Górniczej w Leoben zainicjował I Zjazd Górników Polskich w 1906 roku?",
+    "type": "lexical",
+    "expected_file": "wiki__Dzieje_AGH__do_1956_r_53755195.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__Dzieje_AGH__do_1956_r_53755195.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Jakie były główne przeszkody w przekształceniu istniejącej instytucji technicznej w pełnoprawną jednostkę edukacyjną dla przyszłych specjalistów od wydobywania surowców w XIX wieku?",
+    "type": "semantic",
+    "expected_file": "wiki__Dzieje_AGH__do_1956_r_53755195.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__Dzieje_AGH__do_1956_r_53755195.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "W jaki sposób krakowski ratusz pomógł w budowie przyszłej szkoły dla górników na początku XX wieku?",
+    "type": "colloquial",
+    "expected_file": "wiki__Dzieje_AGH__do_1956_r_53755195.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__Dzieje_AGH__do_1956_r_53755195.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Jaka była data uroczystego otwarcia Akademii Górniczej w Krakowie, według *Czasopisma Górniczo-Hutniczego* z 1919 roku, Z. 10, s. 221-224?",
+    "type": "lexical",
+    "expected_file": "wiki__AGH_w_prasie_359a2d56.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__AGH_w_prasie_359a2d56.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Jakie były główne czynniki i inicjatywy prowadzące do powstania instytucji technicznej w Małopolsce na początku XX wieku?",
+    "type": "semantic",
+    "expected_file": "wiki__AGH_w_prasie_359a2d56.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__AGH_w_prasie_359a2d56.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Kiedy krakowska AGH zaczęła działać pełną parą? Chodzi mi o czasy, jak to wszystko oficjalnie się zaczęło.",
+    "type": "colloquial",
+    "expected_file": "wiki__AGH_w_prasie_359a2d56.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__AGH_w_prasie_359a2d56.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Która uchwała Senatu AGH z dnia 28 maja 2008 r. ustala zasady nadawania tytułu Profesora Honorowego AGH?",
+    "type": "lexical",
+    "expected_file": "wiki__Profesor_Honorowy_AGH_09ea4cb5.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__Profesor_Honorowy_AGH_09ea4cb5.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Jakie są wymogi dla naukowca, aby otrzymać szczególne wyróżnienie na pewnej polskiej uczelni technicznej podczas specjalnej ceremonii?",
+    "type": "semantic",
+    "expected_file": "wiki__Profesor_Honorowy_AGH_09ea4cb5.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__Profesor_Honorowy_AGH_09ea4cb5.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Co musi mieć gość, żeby dostać ten cały tytuł profa od AGH? Chodzi mi o takie szopki na senacie.",
+    "type": "colloquial",
+    "expected_file": "wiki__Profesor_Honorowy_AGH_09ea4cb5.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Historia_Strony/wiki__Profesor_Honorowy_AGH_09ea4cb5.md",
+    "source": "Historia AGH"
+  },
+  {
+    "query": "Jakie zarządzenie numer 35/2021 reguluje procesy akademickie?",
+    "type": "lexical",
+    "expected_file": "egzamin-dyplomowy_b50a6b8e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/egzamin-dyplomowy_b50a6b8e.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Jaki jest proces zmiany pomysłu projektu lub opiekuna akademickiego na tej uczelni?",
+    "type": "semantic",
+    "expected_file": "egzamin-dyplomowy_b50a6b8e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/egzamin-dyplomowy_b50a6b8e.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Gdzie można znaleźć terminy na obronę pracy magisterskiej?",
+    "type": "colloquial",
+    "expected_file": "egzamin-dyplomowy_b50a6b8e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/egzamin-dyplomowy_b50a6b8e.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Kto jest opiekunem praktyk dla kierunku Elektronika i Telekomunikacja na AGH?",
+    "type": "lexical",
+    "expected_file": "praktyki-studenckie_f6cc44ec.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/praktyki-studenckie_f6cc44ec.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Jakie są wymagania dotyczące dokumentacji, którą trzeba złożyć po praktykach, aby je zaliczyć?",
+    "type": "semantic",
+    "expected_file": "praktyki-studenckie_f6cc44ec.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/praktyki-studenckie_f6cc44ec.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Jak załatwić sobie miejsce w akademiku na czas praktyk?",
+    "type": "colloquial",
+    "expected_file": "praktyki-studenckie_f6cc44ec.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/praktyki-studenckie_f6cc44ec.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Które służby specjalne w Polsce współpracują z kierunkiem Nowoczesne Technologie w Kryminalistyce na AGH?",
+    "type": "lexical",
+    "expected_file": "kierunek-nowoczesne-technologie-w-kryminalistyce_0cb7ba62.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/kierunek-nowoczesne-technologie-w-kryminalistyce_0cb7ba62.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Jakie umiejętności rozwija program, który przygotowuje do oceny i przeciwdziałania zagrożeniom oraz ochrony danych w środowisku cyfrowym?",
+    "type": "semantic",
+    "expected_file": "kierunek-nowoczesne-technologie-w-kryminalistyce_0cb7ba62.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/kierunek-nowoczesne-technologie-w-kryminalistyce_0cb7ba62.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Co można robić po tych studiach, żeby hajs się zgadzał i było trochę jak w CSI?",
+    "type": "colloquial",
+    "expected_file": "kierunek-nowoczesne-technologie-w-kryminalistyce_0cb7ba62.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IET_Strony/kierunek-nowoczesne-technologie-w-kryminalistyce_0cb7ba62.md",
+    "source": "IET AGH"
+  },
+  {
+    "query": "Jak nazywa się oprogramowanie, którego kurs kończy się uzyskaniem certyfikatu w ramach programu FERS KOMPAS – MiBM?",
+    "type": "lexical",
+    "expected_file": "pl__SIME_5f22a908.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__SIME_5f22a908.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Jakie są korzyści z uczestniczenia w programie, który skupia się na zaawansowanej nauce systemów i narzędzi używanych do analizy i symulacji procesów związanych z odnawialnymi źródłami mocy?",
+    "type": "semantic",
+    "expected_file": "pl__SIME_5f22a908.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__SIME_5f22a908.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Gdzie można się wybrać na studia terenowe, żeby zobaczyć jak działa elektrownia na szczycie góry?",
+    "type": "colloquial",
+    "expected_file": "pl__SIME_5f22a908.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__SIME_5f22a908.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Jakie technologie są stosowane w mechatronicznym wytwarzaniu według Industry 4.0?",
+    "type": "lexical",
+    "expected_file": "pl__studia__specjalnosci__wytwarzanie-mechatroniczne_155fbb67.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__studia__specjalnosci__wytwarzanie-mechatroniczne_155fbb67.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Jakie są korzyści z integracji różnych systemów w procesie tworzenia przedmiotów?",
+    "type": "semantic",
+    "expected_file": "pl__studia__specjalnosci__wytwarzanie-mechatroniczne_155fbb67.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__studia__specjalnosci__wytwarzanie-mechatroniczne_155fbb67.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Czym się zajmują absolwenci mechatronskiej specjalizacji, jak już skończą studia?",
+    "type": "colloquial",
+    "expected_file": "pl__studia__specjalnosci__wytwarzanie-mechatroniczne_155fbb67.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__studia__specjalnosci__wytwarzanie-mechatroniczne_155fbb67.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Jaki jest adres URL dokumentu opisującego formalnie specjalność Komputerowe Wspomaganie Projektowania na AGH?",
+    "type": "lexical",
+    "expected_file": "pl__studia__specjalnosci__komputerowe-wspomaganie-projektowania_4215bb7a.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__studia__specjalnosci__komputerowe-wspomaganie-projektowania_4215bb7a.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Jakie umiejętności zdobywają studenci specjalizacji związanej z tworzeniem maszyn i urządzeń przy użyciu zaawansowanych metod komputerowych?",
+    "type": "semantic",
+    "expected_file": "pl__studia__specjalnosci__komputerowe-wspomaganie-projektowania_4215bb7a.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__studia__specjalnosci__komputerowe-wspomaganie-projektowania_4215bb7a.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Gdzie można znaleźć robotę po tych całych studiach od projektowania na kompie?",
+    "type": "colloquial",
+    "expected_file": "pl__studia__specjalnosci__komputerowe-wspomaganie-projektowania_4215bb7a.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/IMIR_Strony/pl__studia__specjalnosci__komputerowe-wspomaganie-projektowania_4215bb7a.md",
+    "source": "IMIR AGH"
+  },
+  {
+    "query": "Kiedy Akademia Górnicza została formalnie powołana do życia i na podstawie jakiego dokumentu? Podaj dokładną datę i nazwę dokumentu.",
+    "type": "lexical",
+    "expected_file": "statut_agh_z_poprawkami_z_27_09_2023_c9a43fe1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone/statut_agh_z_poprawkami_z_27_09_2023_c9a43fe1.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jakie wartości i ideały są szczególnie ważne dla uniwersytetu, które wpływają na rozwój zarówno studentów, jak i całej społeczności akademickiej?",
+    "type": "semantic",
+    "expected_file": "statut_agh_z_poprawkami_z_27_09_2023_c9a43fe1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone/statut_agh_z_poprawkami_z_27_09_2023_c9a43fe1.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jakie są kolory i symboliki AGH? Co tam jest w ogóle w tej księdze wizualnej zapisane?",
+    "type": "colloquial",
+    "expected_file": "statut_agh_z_poprawkami_z_27_09_2023_c9a43fe1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone/statut_agh_z_poprawkami_z_27_09_2023_c9a43fe1.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jaki jest NIP Akademii Górniczo-Hutniczej, organizatora Programu Promocji Aktywności Studenckiej?",
+    "type": "lexical",
+    "expected_file": "regulamin_f06f2a90.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone/regulamin_f06f2a90.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jakie są zasady przyznawania punktów za uczestnictwo w działalności wspierającej społeczność akademicką, które nie wiążą się z finansowym wynagrodzeniem?",
+    "type": "semantic",
+    "expected_file": "regulamin_f06f2a90.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone/regulamin_f06f2a90.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jak można odpuścić bycie w tej zabawie na infie? Trzeba wysłać maila czy co?",
+    "type": "colloquial",
+    "expected_file": "regulamin_f06f2a90.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone/regulamin_f06f2a90.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jakie metody są wykorzystywane w badaniach przez dr inż. Annę Zygmunt do analizy mediów społecznościowych?",
+    "type": "lexical",
+    "expected_file": "pl__badania-i-rozwoj__obszary-badawcze__analiza-mediow-spolecznosciowych_3fdd6921.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Strony/pl__badania-i-rozwoj__obszary-badawcze__analiza-mediow-spolecznosciowych_3fdd6921.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jakie techniki są używane do przewidywania interakcji i zachowań osób korzystających z internetowych platform komunikacyjnych?",
+    "type": "semantic",
+    "expected_file": "pl__badania-i-rozwoj__obszary-badawcze__analiza-mediow-spolecznosciowych_3fdd6921.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Strony/pl__badania-i-rozwoj__obszary-badawcze__analiza-mediow-spolecznosciowych_3fdd6921.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Czym się zajmuje AGH w kontekście fejsa i tt, jeśli chodzi o ludzkie nawyki?",
+    "type": "colloquial",
+    "expected_file": "pl__badania-i-rozwoj__obszary-badawcze__analiza-mediow-spolecznosciowych_3fdd6921.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Informatyka_Strony/pl__badania-i-rozwoj__obszary-badawcze__analiza-mediow-spolecznosciowych_3fdd6921.md",
+    "source": "Informatyka AGH"
+  },
+  {
+    "query": "Jakie są dokładne zniżki na noclegi w hostelach o standardzie KOMFORT dla posiadaczy karty Klubu Absolwentów AGH w dniach od poniedziałku do niedzieli?",
+    "type": "lexical",
+    "expected_file": "oferta-znizek_bd420c3d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/oferta-znizek_bd420c3d.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Jakie korzyści mogą uzyskać członkowie specjalnej grupy społecznościowej w kompleksie sportowym uczelni związanym z treningiem i pływaniem?",
+    "type": "semantic",
+    "expected_file": "oferta-znizek_bd420c3d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/oferta-znizek_bd420c3d.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Gdzie w Krakowie można dostać taniej miejscówkę na spanko i wpaść na browarka w klubie z fajnym vibe'em?",
+    "type": "colloquial",
+    "expected_file": "oferta-znizek_bd420c3d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/oferta-znizek_bd420c3d.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Jakie warunki musi spełnić osoba, aby zostać członkiem Klubu Absolwentów AGH i jakie zgody musi wyrazić podczas rejestracji na stronie www.ka.agh.edu.pl?",
+    "type": "lexical",
+    "expected_file": "regulamin-klubu_20d947d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/regulamin-klubu_20d947d8.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Jak wygląda proces uzyskania członkostwa w organizacji zrzeszającej byłych studentów pewnej krakowskiej uczelni technicznej, co jest wymagane od aplikantów oraz jakie są ich prawa w zakresie ochrony prywatności?",
+    "type": "semantic",
+    "expected_file": "regulamin-klubu_20d947d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/regulamin-klubu_20d947d8.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Co trzeba zrobić, żeby zapisać się do klubu absolwenckiego na AGH, jakie formalności załatwić, żeby dostać kartę i co z nią można potem zrobić?",
+    "type": "colloquial",
+    "expected_file": "regulamin-klubu_20d947d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/regulamin-klubu_20d947d8.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Jaki moduł zostanie odwzorowany w habitacie budowanym na AGH?",
+    "type": "lexical",
+    "expected_file": "news_d99ef638.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/news_d99ef638.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Jakie wyzwanie ludzkie, związane z emocjami i zachowaniem, jest kluczowe dla udanych misji na inne planety?",
+    "type": "semantic",
+    "expected_file": "news_d99ef638.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/news_d99ef638.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Jakie przygody przeżywają śmiałkowie zamknięci w kosmicznym domku na AGH?",
+    "type": "colloquial",
+    "expected_file": "news_d99ef638.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/KA_Strony/news_d99ef638.md",
+    "source": "KA AGH"
+  },
+  {
+    "query": "Co ocenia opiekun w odniesieniu do raportu z JSA w pracy dyplomowej?",
+    "type": "lexical",
+    "expected_file": "page__zasady-pisania-recenzji_41f302d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Strony/page__zasady-pisania-recenzji_41f302d8.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Jakie aspekty są ważne przy ocenie innowacyjnych projektów akademickich pod kątem ich wartości praktycznej?",
+    "type": "semantic",
+    "expected_file": "page__zasady-pisania-recenzji_41f302d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Strony/page__zasady-pisania-recenzji_41f302d8.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Co dziekanat sprawdza w pracach, żeby stwierdzić, czy projekt ma ręce i nogi?",
+    "type": "colloquial",
+    "expected_file": "page__zasady-pisania-recenzji_41f302d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Strony/page__zasady-pisania-recenzji_41f302d8.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Jaki jest status pracy dyplomowej, aby możliwe było uzupełnienie informacji o pracy w APD?",
+    "type": "lexical",
+    "expected_file": "USOSweb-APD-Proces-dyplomowania-Instrukcja-dla-studenta_48bea3c6.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone/USOSweb-APD-Proces-dyplomowania-Instrukcja-dla-studenta_48bea3c6.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Jakie kroki muszą być podjęte, aby zarejestrować projekt końcowy w systemach uniwersyteckich?",
+    "type": "semantic",
+    "expected_file": "USOSweb-APD-Proces-dyplomowania-Instrukcja-dla-studenta_48bea3c6.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone/USOSweb-APD-Proces-dyplomowania-Instrukcja-dla-studenta_48bea3c6.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Gdzie w USOSweb klikasz, żeby ogarnąć dyplomówkę?",
+    "type": "colloquial",
+    "expected_file": "USOSweb-APD-Proces-dyplomowania-Instrukcja-dla-studenta_48bea3c6.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone/USOSweb-APD-Proces-dyplomowania-Instrukcja-dla-studenta_48bea3c6.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Jakie elementy zawiera Załącznik nr 2 do Zarządzenia Nr 14/2019 Rektora AGH z dnia 10 kwietnia 2019 r.?",
+    "type": "lexical",
+    "expected_file": "oswiadczenie_studenta_bed22602.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone/oswiadczenie_studenta_bed22602.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Jakie są potencjalne konsekwencje prawne dla studenta, który przypisuje sobie pracę innych osób?",
+    "type": "semantic",
+    "expected_file": "oswiadczenie_studenta_bed22602.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone/oswiadczenie_studenta_bed22602.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Co musisz ogarnąć, żeby nie mieć przypału z pracą dyplomową?",
+    "type": "colloquial",
+    "expected_file": "oswiadczenie_studenta_bed22602.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone/oswiadczenie_studenta_bed22602.md",
+    "source": "Metal AGH"
+  },
+  {
+    "query": "Które domy studenckie AGH są wymienione jako dostępne do zakwaterowania podczas letniej sesji poprawkowej 2015/2016?",
+    "type": "lexical",
+    "expected_file": "news__262__58__Kwaterowanie-na-sesje-egzaminacyjna.html_51b35f05.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/news__262__58__Kwaterowanie-na-sesje-egzaminacyjna.html_51b35f05.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Co muszą zrobić osoby, które nie mieszkały w akademikach na wakacjach, ale chcą otrzymać miejsce podczas nadchodzących egzaminów?",
+    "type": "semantic",
+    "expected_file": "news__262__58__Kwaterowanie-na-sesje-egzaminacyjna.html_51b35f05.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/news__262__58__Kwaterowanie-na-sesje-egzaminacyjna.html_51b35f05.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Jakie są godziny, kiedy można się wprowadzić do akademika na poprawki?",
+    "type": "colloquial",
+    "expected_file": "news__262__58__Kwaterowanie-na-sesje-egzaminacyjna.html_51b35f05.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/news__262__58__Kwaterowanie-na-sesje-egzaminacyjna.html_51b35f05.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Ile kosztuje miesięczny pobyt w standardzie Comfort+ dla studentów AGH od 1 stycznia 2027 roku?",
+    "type": "lexical",
+    "expected_file": "www.miasteczko.agh.edu.pl_en_resident-zone_pricing.html_b63d05a7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/www.miasteczko.agh.edu.pl_en_resident-zone_pricing.html_b63d05a7.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Jakie udogodnienia są dostępne dla mieszkańców, które zapewniają im możliwość aktywnego spędzania czasu na świeżym powietrzu?",
+    "type": "semantic",
+    "expected_file": "www.miasteczko.agh.edu.pl_en_resident-zone_pricing.html_b63d05a7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/www.miasteczko.agh.edu.pl_en_resident-zone_pricing.html_b63d05a7.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Jakie są stawki za miejscówkę na Miasteczku w 'podstawówce' na AGH?",
+    "type": "colloquial",
+    "expected_file": "www.miasteczko.agh.edu.pl_en_resident-zone_pricing.html_b63d05a7.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/www.miasteczko.agh.edu.pl_en_resident-zone_pricing.html_b63d05a7.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Kto jest Dyrektorem Biura Rektora AGH odpowiedzialnym za skargi dotyczące dostępności cyfrowej według dokumentu?",
+    "type": "lexical",
+    "expected_file": "pl__horizontal__deklaracja-dostepnosci.html_332cb9a9.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/pl__horizontal__deklaracja-dostepnosci.html_332cb9a9.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Jakie kroki powinieneś podjąć, jeśli strona uczelni nie spełnia wymogów, a Ty potrzebujesz specjalnej pomocy w dostępie do informacji?",
+    "type": "semantic",
+    "expected_file": "pl__horizontal__deklaracja-dostepnosci.html_332cb9a9.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/pl__horizontal__deklaracja-dostepnosci.html_332cb9a9.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Kiedy ostatni raz ogarniali stronę studenckiego miasteczka pod kątem dostępności dla każdego?",
+    "type": "colloquial",
+    "expected_file": "pl__horizontal__deklaracja-dostepnosci.html_332cb9a9.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony/pl__horizontal__deklaracja-dostepnosci.html_332cb9a9.md",
+    "source": "Miasteczko Studenckie AGH"
+  },
+  {
+    "query": "Które wydarzenie upamiętniało 75 lat działalności opisanej organizacji?",
+    "type": "lexical",
+    "expected_file": "wydzial__organizacje__stop__fotogaleria-2_c13e86fb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/wydzial__organizacje__stop__fotogaleria-2_c13e86fb.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Jakie spotkanie pozwala uczestnikom na prezentację osiągnięć i wymianę wiedzy w grupie akademickiej?",
+    "type": "semantic",
+    "expected_file": "wydzial__organizacje__stop__fotogaleria-2_c13e86fb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/wydzial__organizacje__stop__fotogaleria-2_c13e86fb.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Gdzie na AGH można się dowiedzieć o opcjach przedmiotów do wyboru?",
+    "type": "colloquial",
+    "expected_file": "wydzial__organizacje__stop__fotogaleria-2_c13e86fb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/wydzial__organizacje__stop__fotogaleria-2_c13e86fb.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Jaki dokument trzeba złożyć, aby rozpocząć przewód doktorski na Wydziale Odlewnictwa?",
+    "type": "lexical",
+    "expected_file": "student__doktoranckie__wymagane-dokumenty_0b30e727.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/student__doktoranckie__wymagane-dokumenty_0b30e727.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Jakie są kluczowe kroki potrzebne do przygotowania się do końcowego etapu akademickiego, który polega na oficjalnym potwierdzeniu zaawansowanej wiedzy i umiejętności?",
+    "type": "semantic",
+    "expected_file": "student__doktoranckie__wymagane-dokumenty_0b30e727.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/student__doktoranckie__wymagane-dokumenty_0b30e727.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Jakie papiery musisz ogarnąć, żeby zacząć promocję na odlewnictwie?",
+    "type": "colloquial",
+    "expected_file": "student__doktoranckie__wymagane-dokumenty_0b30e727.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/student__doktoranckie__wymagane-dokumenty_0b30e727.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Jaki jest termin składania wniosków o stypendium ministra za wybitne osiągnięcia dla doktorantów?",
+    "type": "lexical",
+    "expected_file": "student__doktoranckie__aktualnosci2_2f6e94a4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/student__doktoranckie__aktualnosci2_2f6e94a4.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Kiedy należy dostarczyć dokumenty, aby uzyskać finansową pomoc dla młodych naukowców na uczelni?",
+    "type": "semantic",
+    "expected_file": "student__doktoranckie__aktualnosci2_2f6e94a4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/student__doktoranckie__aktualnosci2_2f6e94a4.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Do kiedy musisz oddać papiery, żeby dostać hajs na doktoracie?",
+    "type": "colloquial",
+    "expected_file": "student__doktoranckie__aktualnosci2_2f6e94a4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony/student__doktoranckie__aktualnosci2_2f6e94a4.md",
+    "source": "Odlewnictwo AGH"
+  },
+  {
+    "query": "Jaki jest numer telefonu do Murata Çolaka, kierownika studiów podyplomowych MBA TECH na AGH?",
+    "type": "lexical",
+    "expected_file": "oferta-studiow-podyplomowych__mba-tech_25433c33.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__mba-tech_25433c33.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Jakie umiejętności interpersonalne są podkreślane jako kluczowe dla liderów w programie łączącym technologie z biznesem?",
+    "type": "semantic",
+    "expected_file": "oferta-studiow-podyplomowych__mba-tech_25433c33.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__mba-tech_25433c33.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Kto jest odpowiedzialny za studia podyplomowe MBA na AGH i jak się z nim skontaktować, gdy masz pytania?",
+    "type": "colloquial",
+    "expected_file": "oferta-studiow-podyplomowych__mba-tech_25433c33.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__mba-tech_25433c33.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Kto jest kierownikiem studiów na kierunku Wiertnictwo i jaki jest jego adres email?",
+    "type": "lexical",
+    "expected_file": "oferta-studiow-podyplomowych__wiertnictwo_0598378a.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__wiertnictwo_0598378a.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Jakie są główne cele edukacyjne dla uczestników programu podyplomowego związanego z badaniem wnętrza ziemi i eksploatacją zasobów naturalnych?",
+    "type": "semantic",
+    "expected_file": "oferta-studiow-podyplomowych__wiertnictwo_0598378a.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__wiertnictwo_0598378a.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Gdzie na AGH można załatwić papiery na te studia naftowe?",
+    "type": "colloquial",
+    "expected_file": "oferta-studiow-podyplomowych__wiertnictwo_0598378a.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__wiertnictwo_0598378a.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Jakie są numery telefonów kontaktowych do mgr inż. Dominiki Knapik-Mróz podane w opisie studiów podyplomowych 'Analiza danych – Data Science' na AGH?",
+    "type": "lexical",
+    "expected_file": "oferta-studiow-podyplomowych__analiza-danych-data-science_7b51c2ee.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__analiza-danych-data-science_7b51c2ee.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Jaki jest główny cel edukacyjny programu, który integruje wiedzę teoretyczną z praktycznymi umiejętnościami używanymi w dzisiejszych inicjatywach związanych z analizą informacji?",
+    "type": "semantic",
+    "expected_file": "oferta-studiow-podyplomowych__analiza-danych-data-science_7b51c2ee.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__analiza-danych-data-science_7b51c2ee.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Ile godzin laborki trzeba zrobić na tej podyplomówce z analizy danych na AGH i jakie języki programowania tam klepią?",
+    "type": "colloquial",
+    "expected_file": "oferta-studiow-podyplomowych__analiza-danych-data-science_7b51c2ee.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony/oferta-studiow-podyplomowych__analiza-danych-data-science_7b51c2ee.md",
+    "source": "Podyplomowe AGH"
+  },
+  {
+    "query": "Która ustawa z dnia 14.06.1960 r. jest wymagana do przestrzegania na uczelni?",
+    "type": "lexical",
+    "expected_file": "Twoje-zaangazowanie-ma-znaczenie-materialy-dla-os.-uczestniczacych_df8250dd.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Dokumenty_Przetworzone/Twoje-zaangazowanie-ma-znaczenie-materialy-dla-os.-uczestniczacych_df8250dd.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Jakie są zasady poprawnego odczytywania formalnych dokumentów na poziomie akademickim?",
+    "type": "semantic",
+    "expected_file": "Twoje-zaangazowanie-ma-znaczenie-materialy-dla-os.-uczestniczacych_df8250dd.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Dokumenty_Przetworzone/Twoje-zaangazowanie-ma-znaczenie-materialy-dla-os.-uczestniczacych_df8250dd.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Jakie info trzeba podać, żeby załatwić coś u dziekana?",
+    "type": "colloquial",
+    "expected_file": "Twoje-zaangazowanie-ma-znaczenie-materialy-dla-os.-uczestniczacych_df8250dd.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Dokumenty_Przetworzone/Twoje-zaangazowanie-ma-znaczenie-materialy-dla-os.-uczestniczacych_df8250dd.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Jaki jest numer telefonu do Biura RPS AGH w krakowskim budynku A0, pokój 116?",
+    "type": "lexical",
+    "expected_file": "_stopka.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Strony/_stopka.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Jak można skontaktować się z jednostką odpowiedzialną za obronę praw osób uczących się na krakowskiej uczelni technicznej?",
+    "type": "semantic",
+    "expected_file": "_stopka.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Strony/_stopka.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Gdzie na fejsie szukać nowinek od AGH? Jakie socialki mają, żeby być na bieżąco?",
+    "type": "colloquial",
+    "expected_file": "_stopka.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Strony/_stopka.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Jaki jest dokładny numer telefonu, pod którym można zgłosić problemy z dostępnością cyfrową strony AGH?",
+    "type": "lexical",
+    "expected_file": "deklaracja-dostepnosci-1_fd1968e3.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Strony/deklaracja-dostepnosci-1_fd1968e3.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Jak wygląda proces zgłaszania trudności związanych z dostępem do treści online uczelni, który uwzględnia formalne terminy reakcji na takie zgłoszenia?",
+    "type": "semantic",
+    "expected_file": "deklaracja-dostepnosci-1_fd1968e3.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Strony/deklaracja-dostepnosci-1_fd1968e3.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Kto na AGH ogarnia sprawy jak dostępność stron netowych? Jakieś namiary?",
+    "type": "colloquial",
+    "expected_file": "deklaracja-dostepnosci-1_fd1968e3.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/RPS_Strony/deklaracja-dostepnosci-1_fd1968e3.md",
+    "source": "RPS AGH"
+  },
+  {
+    "query": "Ile wynosi opłata rekrutacyjna na kierunku Teleinformatyka?",
+    "type": "lexical",
+    "expected_file": "kierunki-studiow__teleinformatyka_dfa523c4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/kierunki-studiow__teleinformatyka_dfa523c4.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Jakie umiejętności zdobywają studenci na kierunku, który przygotowuje do pracy z rozwiązaniami cyfrowymi i tworzeniem aplikacji?",
+    "type": "semantic",
+    "expected_file": "kierunki-studiow__teleinformatyka_dfa523c4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/kierunki-studiow__teleinformatyka_dfa523c4.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Gdzie można odbyć praktyki po trzecim roku infy na AGH?",
+    "type": "colloquial",
+    "expected_file": "kierunki-studiow__teleinformatyka_dfa523c4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/kierunki-studiow__teleinformatyka_dfa523c4.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Na którym miejscu w Rankingu Perspektywy 2025 uplasował się kierunek Inżynieria i Zarządzanie Procesami Przemysłowymi?",
+    "type": "lexical",
+    "expected_file": "g2-technik__technik-eksploatacji-portow-i-terminali-17_6b00a677.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/g2-technik__technik-eksploatacji-portow-i-terminali-17_6b00a677.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Jakie studia są prowadzone, gdy celem jest efektywne sterowanie oraz optymalizacja operacji związanych z przemysłem?",
+    "type": "semantic",
+    "expected_file": "g2-technik__technik-eksploatacji-portow-i-terminali-17_6b00a677.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/g2-technik__technik-eksploatacji-portow-i-terminali-17_6b00a677.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Gdzie mogę studiować coś związanego z produkcją i jakością na AGHu?",
+    "type": "colloquial",
+    "expected_file": "g2-technik__technik-eksploatacji-portow-i-terminali-17_6b00a677.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/g2-technik__technik-eksploatacji-portow-i-terminali-17_6b00a677.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Który kierunek zajmuje #1 miejsce w Rankingu Perspektywy 2025?",
+    "type": "lexical",
+    "expected_file": "g2-technik__technik-mechanik-19__page__3_e52a3733.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/g2-technik__technik-mechanik-19__page__3_e52a3733.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Jaki obszar wiedzy i nauki jest związany z kreowaniem nowoczesnych systemów automatyzacji w przemyśle?",
+    "type": "semantic",
+    "expected_file": "g2-technik__technik-mechanik-19__page__3_e52a3733.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/g2-technik__technik-mechanik-19__page__3_e52a3733.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Na jakim wydziale jest kierunek, który na Perspektywach 2025 uzyskał srebro?",
+    "type": "colloquial",
+    "expected_file": "g2-technik__technik-mechanik-19__page__3_e52a3733.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony/g2-technik__technik-mechanik-19__page__3_e52a3733.md",
+    "source": "Rekrutacja AGH"
+  },
+  {
+    "query": "Jaki jest numer umowy o dofinansowanie projektu Międzynarodowa Przestrzeń Szkoły Doktorskiej AGH?",
+    "type": "lexical",
+    "expected_file": "Regulamin_STAZE_z_4_zalacznikami_NAWA_STER_PL_2025_AKTUAL_5f50c3fc.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Regulamin_STAZE_z_4_zalacznikami_NAWA_STER_PL_2025_AKTUAL_5f50c3fc.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Jakie są wymagania dotyczące kwalifikacji, które muszą spełniać studenci ubiegający się o wsparcie finansowe na zagraniczne wyjazdy badawcze?",
+    "type": "semantic",
+    "expected_file": "Regulamin_STAZE_z_4_zalacznikami_NAWA_STER_PL_2025_AKTUAL_5f50c3fc.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Regulamin_STAZE_z_4_zalacznikami_NAWA_STER_PL_2025_AKTUAL_5f50c3fc.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Gdzie mam zanieść papiery, żeby dostać dofinansowanie na wyjazd naukowy jako doktorant?",
+    "type": "colloquial",
+    "expected_file": "Regulamin_STAZE_z_4_zalacznikami_NAWA_STER_PL_2025_AKTUAL_5f50c3fc.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Regulamin_STAZE_z_4_zalacznikami_NAWA_STER_PL_2025_AKTUAL_5f50c3fc.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Jaka jest nazwa dokumentu o sygnaturze Rb-D.0201-1-18/19?",
+    "type": "lexical",
+    "expected_file": "Zarzadzenie_Rektora_AGH_w_sprawie_utworzenia_Szkoly_Doktorskiej_72ab9482.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Zarzadzenie_Rektora_AGH_w_sprawie_utworzenia_Szkoly_Doktorskiej_72ab9482.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Kto jest odpowiedzialny za nadzorowanie wszystkich aspektów funkcjonowania jednostki edukacyjnej i podejmowanie kluczowych decyzji w jej sprawach?",
+    "type": "semantic",
+    "expected_file": "Zarzadzenie_Rektora_AGH_w_sprawie_utworzenia_Szkoly_Doktorskiej_72ab9482.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Zarzadzenie_Rektora_AGH_w_sprawie_utworzenia_Szkoly_Doktorskiej_72ab9482.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Kto ma decydujący głos w Radzie, jak jest remis?",
+    "type": "colloquial",
+    "expected_file": "Zarzadzenie_Rektora_AGH_w_sprawie_utworzenia_Szkoly_Doktorskiej_72ab9482.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Zarzadzenie_Rektora_AGH_w_sprawie_utworzenia_Szkoly_Doktorskiej_72ab9482.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Jakie unikalne oznaczenia posiadają Uczelniana Rada Samorządu Studentów i Uczelniana Rada Samorządu Doktorantów na AGH?",
+    "type": "lexical",
+    "expected_file": "Regulamin_dzialalnosci_uczelnianych_organizacji_studenckich_organizacji_doktoran_bb0af8eb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Regulamin_dzialalnosci_uczelnianych_organizacji_studenckich_organizacji_doktoran_bb0af8eb.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Opisz proces, w którym grupa osób na uniwersytecie organizuje się, aby wspólnie działać zgodnie z określonymi zasadami i celami, włączając w to organizowanie zebrania i tworzenie dokumentacji.",
+    "type": "semantic",
+    "expected_file": "Regulamin_dzialalnosci_uczelnianych_organizacji_studenckich_organizacji_doktoran_bb0af8eb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Regulamin_dzialalnosci_uczelnianych_organizacji_studenckich_organizacji_doktoran_bb0af8eb.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Jak studenci na AGH mogą założyć swoją ekipę albo klub? Co muszą zrobić na starcie?",
+    "type": "colloquial",
+    "expected_file": "Regulamin_dzialalnosci_uczelnianych_organizacji_studenckich_organizacji_doktoran_bb0af8eb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone/Regulamin_dzialalnosci_uczelnianych_organizacji_studenckich_organizacji_doktoran_bb0af8eb.md",
+    "source": "SD AGH"
+  },
+  {
+    "query": "Jaki jest kod przedmiotu obowiązkowego dla studentów niebędących obywatelami polskimi na kierunku Międzywydziałowym?",
+    "type": "lexical",
+    "expected_file": "sylabus-polski-b2-1-2-I-st_e508d034.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-polski-b2-1-2-I-st_e508d034.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Jakie umiejętności powinien rozwijać student w trakcie kursu, aby móc efektywnie komunikować się w kontekście uczelni i pracy?",
+    "type": "semantic",
+    "expected_file": "sylabus-polski-b2-1-2-I-st_e508d034.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-polski-b2-1-2-I-st_e508d034.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Co trzeba ogarnąć, żeby zaliczyć lektorat z polskiego na pierwszym semestrze?",
+    "type": "colloquial",
+    "expected_file": "sylabus-polski-b2-1-2-I-st_e508d034.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-polski-b2-1-2-I-st_e508d034.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Jaki blok zajęciowy obejmuje kurs język angielski C-1 zgodnie z sylabusem modułu zajęć?",
+    "type": "lexical",
+    "expected_file": "sylabus-jezyk-angielski-C1-kurs-dodatkowy-90-godzin_9216dbfe.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-jezyk-angielski-C1-kurs-dodatkowy-90-godzin_9216dbfe.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Jakie umiejętności studenci mają rozwijać, aby skutecznie przekazywać swoje myśli i interpretować informacje z różnych źródeł?",
+    "type": "semantic",
+    "expected_file": "sylabus-jezyk-angielski-C1-kurs-dodatkowy-90-godzin_9216dbfe.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-jezyk-angielski-C1-kurs-dodatkowy-90-godzin_9216dbfe.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Co trzeba zrobić, żeby zaliczyć ten angielski na trzecim semestrze?",
+    "type": "colloquial",
+    "expected_file": "sylabus-jezyk-angielski-C1-kurs-dodatkowy-90-godzin_9216dbfe.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-jezyk-angielski-C1-kurs-dodatkowy-90-godzin_9216dbfe.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Jaki jest kod przedmiotu przypisany do kursu Język polski A2?",
+    "type": "lexical",
+    "expected_file": "sylabus-polski-a2-II-st_2ef079e1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-polski-a2-II-st_2ef079e1.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Jakie umiejętności językowe powinny zostać opanowane przez uczestników w celu sprostania typowym sytuacjom społecznym i zawodowym?",
+    "type": "semantic",
+    "expected_file": "sylabus-polski-a2-II-st_2ef079e1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-polski-a2-II-st_2ef079e1.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Ile godzin polskiego trzeba ogarnąć w pierwszym semestrze, żeby zaliczyć?",
+    "type": "colloquial",
+    "expected_file": "sylabus-polski-a2-II-st_2ef079e1.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone/sylabus-polski-a2-II-st_2ef079e1.md",
+    "source": "SJO AGH"
+  },
+  {
+    "query": "Jakie zasady obowiązują przy zwolnieniu lekarskim z WF na AGH?",
+    "type": "lexical",
+    "expected_file": "footer__default-e09be744347fc01e0c315f593881acbe__tytul-domyslny_3937688b.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Strony/footer__default-e09be744347fc01e0c315f593881acbe__tytul-domyslny_3937688b.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Jakie są ustalenia dotyczące ponownego uczestnictwa w zajęciach dla tych, którzy nie zaliczyli wymaganej liczby godzin na zajęciach sportowych?",
+    "type": "semantic",
+    "expected_file": "footer__default-e09be744347fc01e0c315f593881acbe__tytul-domyslny_3937688b.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Strony/footer__default-e09be744347fc01e0c315f593881acbe__tytul-domyslny_3937688b.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Gdzie można znaleźć info o terminach ćwiczeń na wuefie?",
+    "type": "colloquial",
+    "expected_file": "footer__default-e09be744347fc01e0c315f593881acbe__tytul-domyslny_3937688b.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Strony/footer__default-e09be744347fc01e0c315f593881acbe__tytul-domyslny_3937688b.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Jaki jest numer zarządzenia dotyczącego zasad organizacji zajęć z wychowania fizycznego w AGH?",
+    "type": "lexical",
+    "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone/zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Jakie są wymagania dla studentów uczestniczących w zajęciach sportowych na uczelni, jeśli chodzi o regularność i uczestnictwo?",
+    "type": "semantic",
+    "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone/zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Co trzeba zrobić, żeby ogarnąć WF na studiach dziennych i jakie są zasady zaliczeń?",
+    "type": "colloquial",
+    "expected_file": "zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone/zarz_rek_zasady_zaliczeni_WF43_2025_181b6db0.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Jakie zajęcia odbywają się o 11⁰⁰ w poniedziałek w sali EOZ-90?",
+    "type": "lexical",
+    "expected_file": "Basen_zima_26_27_070426a8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone/Basen_zima_26_27_070426a8.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Jakie kursy mają miejsce na początku tygodnia, gdy zajmują się zagadnieniami związanymi z elektrotechniką i informatyką?",
+    "type": "semantic",
+    "expected_file": "Basen_zima_26_27_070426a8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone/Basen_zima_26_27_070426a8.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Co jest grane w poniedziałki rano, jak masz EOZ i Os?",
+    "type": "colloquial",
+    "expected_file": "Basen_zima_26_27_070426a8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone/Basen_zima_26_27_070426a8.md",
+    "source": "SWFiS AGH"
+  },
+  {
+    "query": "Pod jakim numerem uchwały Senatu AGH ustalono tekst jednolity regulaminu studiów wyższych obowiązujący od 1 października 2023 roku?",
+    "type": "lexical",
+    "expected_file": "2023_rs_t.j_763c4206.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone/2023_rs_t.j_763c4206.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Jakiego rodzaju jednostka organizacyjna na uczelni odpowiada za prowadzenie edukacji na konkretnym polu naukowym?",
+    "type": "semantic",
+    "expected_file": "2023_rs_t.j_763c4206.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone/2023_rs_t.j_763c4206.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Co trzeba ogarnąć, żeby móc się przenieść z innego kierunku na AGHu?",
+    "type": "colloquial",
+    "expected_file": "2023_rs_t.j_763c4206.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone/2023_rs_t.j_763c4206.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Jaki numer ma zarządzenie dotyczące powtórzenia procedury wyborczej na Przewodniczącego URSS AGH z dnia 30.06.2026?",
+    "type": "lexical",
+    "expected_file": "zarzadzenie_nr3_wybory_305845ef.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone/zarzadzenie_nr3_wybory_305845ef.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Jakie są wymagane kroki i terminy, które muszą być spełnione przez osobę ubiegającą się o określoną pozycję lidera w strukturach studenckich, aby jej kandydatura została zaakceptowana?",
+    "type": "semantic",
+    "expected_file": "zarzadzenie_nr3_wybory_305845ef.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone/zarzadzenie_nr3_wybory_305845ef.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Kiedy dokładnie odbędzie się spotkanie wyborcze URSS? Jaki jest deadline na zgłaszanie się do wyborów przewodniczącego?",
+    "type": "colloquial",
+    "expected_file": "zarzadzenie_nr3_wybory_305845ef.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone/zarzadzenie_nr3_wybory_305845ef.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Jakie wydarzenia organizuje Samorząd Studencki AGH?",
+    "type": "lexical",
+    "expected_file": "projekty__planer-agh_0f9f916d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Strony/projekty__planer-agh_0f9f916d.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Jak nazywa się organizacja, która opiniuje przepisy dotyczące uczniów i aranżuje różne spotkania dla nich?",
+    "type": "semantic",
+    "expected_file": "projekty__planer-agh_0f9f916d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Strony/projekty__planer-agh_0f9f916d.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Gdzie można ogarnąć info o kasie na studia albo psychologu w AGH?",
+    "type": "colloquial",
+    "expected_file": "projekty__planer-agh_0f9f916d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Samorzad_Strony/projekty__planer-agh_0f9f916d.md",
+    "source": "Samorzad AGH"
+  },
+  {
+    "query": "Kto jest kierownikiem Domu Studenckiego Nr 1 'OLIMP'?",
+    "type": "lexical",
+    "expected_file": "jednostka__akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie__pion-sp_8c743f2b.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/jednostka__akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie__pion-sp_8c743f2b.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Kim jest osoba odpowiedzialna za zarządzanie i kontakt w głównym budynku mieszkalnym na terenie kampusu technicznej uczelni w Krakowie?",
+    "type": "semantic",
+    "expected_file": "jednostka__akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie__pion-sp_8c743f2b.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/jednostka__akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie__pion-sp_8c743f2b.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Jak się nazywa szefowa tego akademika na AGH, co ma biuro na parterze?",
+    "type": "colloquial",
+    "expected_file": "jednostka__akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie__pion-sp_8c743f2b.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/jednostka__akademia-gorniczo-hutnicza-im-stanislawa-staszica-w-krakowie__pion-sp_8c743f2b.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Jaka jest pełna nazwa wydziału, z którym jest związana Katedra Fotogrametrii, Teledetekcji Środowiska i Inżynierii Przestrzennej?",
+    "type": "lexical",
+    "expected_file": "osoba__stefan-radziszewski-2767.html_782296e2.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/osoba__stefan-radziszewski-2767.html_782296e2.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Która jednostka edukacyjna zatrudniała osobę będącą teraz na emeryturze, specjalizującą się w analizie przestrzennej i technologiach obrazowania?",
+    "type": "semantic",
+    "expected_file": "osoba__stefan-radziszewski-2767.html_782296e2.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/osoba__stefan-radziszewski-2767.html_782296e2.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Pod jaki adres na AGH można by wysłać maila do Radzia, żeby się czegoś dowiedzieć?",
+    "type": "colloquial",
+    "expected_file": "osoba__stefan-radziszewski-2767.html_782296e2.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/osoba__stefan-radziszewski-2767.html_782296e2.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Jaki jest numer telefonu do Zbigniewa Piotrowskiego?",
+    "type": "lexical",
+    "expected_file": "osoba__zbigniew-piotrowski-2583.html_dd0e7463.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/osoba__zbigniew-piotrowski-2583.html_dd0e7463.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Gdzie pracował profesor, który specjalizował się w naukach związanych z substancjami nieorganicznego pochodzenia?",
+    "type": "semantic",
+    "expected_file": "osoba__zbigniew-piotrowski-2583.html_dd0e7463.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/osoba__zbigniew-piotrowski-2583.html_dd0e7463.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Gdzie ten gość od chemii z AGH ma swoją miejscówkę?",
+    "type": "colloquial",
+    "expected_file": "osoba__zbigniew-piotrowski-2583.html_dd0e7463.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Skos_Strony/osoba__zbigniew-piotrowski-2583.html_dd0e7463.md",
+    "source": "Skos AGH"
+  },
+  {
+    "query": "Jaki jest tytuł artykułu opublikowanego 16 października 2026 roku dotyczącego przełomu w analizie języka polskiego?",
+    "type": "lexical",
+    "expected_file": "pl_72f61e83.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl_72f61e83.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Jak uczelnia dąży do przygotowania swoich studentów do wyzwań związanych z eksploracją przestrzeni kosmicznej?",
+    "type": "semantic",
+    "expected_file": "pl_72f61e83.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl_72f61e83.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Kiedy jest ta akcja z dodatkowymi zajęciami, co się ją robi po normalnych lekcjach?",
+    "type": "colloquial",
+    "expected_file": "pl_72f61e83.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl_72f61e83.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Kto jest liderem Zespołu Badawczego Przedsiębiorczość, Społeczeństwo, Edukacja?",
+    "type": "lexical",
+    "expected_file": "pl__badania__zespoly-badawcze__przedsiebiorczosc-spoleczenstwo-edukacja_25d092c9.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl__badania__zespoly-badawcze__przedsiebiorczosc-spoleczenstwo-edukacja_25d092c9.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Jakie jest zadanie specjalistów badających interakcje pomiędzy ludźmi a nowoczesnymi rozwiązaniami w miejscu pracy?",
+    "type": "semantic",
+    "expected_file": "pl__badania__zespoly-badawcze__przedsiebiorczosc-spoleczenstwo-edukacja_25d092c9.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl__badania__zespoly-badawcze__przedsiebiorczosc-spoleczenstwo-edukacja_25d092c9.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Kto w tym teamie, co bada technologie i społeczeństwo, ma tytuł magistra?",
+    "type": "colloquial",
+    "expected_file": "pl__badania__zespoly-badawcze__przedsiebiorczosc-spoleczenstwo-edukacja_25d092c9.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl__badania__zespoly-badawcze__przedsiebiorczosc-spoleczenstwo-edukacja_25d092c9.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Jaka jest dokładna wartość projektu 'Kontroler multimedialny o zwiększonej odporności bezprzewodowych interfejsów komunikacyjnych' w PLN?",
+    "type": "lexical",
+    "expected_file": "pl__nasze-projekty-i-granty__kontroler-multimedialny_1c9b3376.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl__nasze-projekty-i-granty__kontroler-multimedialny_1c9b3376.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Jakie są główne cele przyszłościowego projektu skierowanego na poprawę bezpieczeństwa technologii używanych w pojazdach?",
+    "type": "semantic",
+    "expected_file": "pl__nasze-projekty-i-granty__kontroler-multimedialny_1c9b3376.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl__nasze-projekty-i-granty__kontroler-multimedialny_1c9b3376.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Ile kaski z UE dostało Aptiv na ten nowy kontroler do fury?",
+    "type": "colloquial",
+    "expected_file": "pl__nasze-projekty-i-granty__kontroler-multimedialny_1c9b3376.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony/pl__nasze-projekty-i-granty__kontroler-multimedialny_1c9b3376.md",
+    "source": "Spacetech AGH"
+  },
+  {
+    "query": "Jaki jest kod kursu 'Texas Instruments DSP in automotive – advanced'?",
+    "type": "lexical",
+    "expected_file": "Texas Instruments DSP in automotive – advanced.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023/Wydział Elektrotechniki, Automatyki, Informatyki i Inżynierii Biomedycznej/Elektrotechnika/Studia inżynierskie I stopnia_Stacjonarne/Texas Instruments DSP in automotive – advanced.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Jakie umiejętności praktyczne zdobywają studenci dotyczące układów napędowych i elektroniki w pojazdach elektrycznych w ramach zaawansowanego szkolenia?",
+    "type": "semantic",
+    "expected_file": "Texas Instruments DSP in automotive – advanced.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023/Wydział Elektrotechniki, Automatyki, Informatyki i Inżynierii Biomedycznej/Elektrotechnika/Studia inżynierskie I stopnia_Stacjonarne/Texas Instruments DSP in automotive – advanced.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Ile punktów ECTS można zgarnąć za ten kurs na magisterce z elektrotechniki?",
+    "type": "colloquial",
+    "expected_file": "Texas Instruments DSP in automotive – advanced.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023/Wydział Elektrotechniki, Automatyki, Informatyki i Inżynierii Biomedycznej/Elektrotechnika/Studia inżynierskie I stopnia_Stacjonarne/Texas Instruments DSP in automotive – advanced.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Jaki jest kod przedmiotu 'Teoria automatów i języków formalnych' na AGH?",
+    "type": "lexical",
+    "expected_file": "Teoria automatów i języków formalnych.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023/Wydział Informatyki/Informatyka (kierunek wspólny - WI)/Studia inżynierskie I stopnia_Stacjonarne/Teoria automatów i języków formalnych.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Jakie umiejętności nabywa się podczas zajęć dotyczących systemów wykorzystywanych do przetwarzania języka używanego przez komputery?",
+    "type": "semantic",
+    "expected_file": "Teoria automatów i języków formalnych.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023/Wydział Informatyki/Informatyka (kierunek wspólny - WI)/Studia inżynierskie I stopnia_Stacjonarne/Teoria automatów i języków formalnych.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Gdzie i kiedy odbywa się stacjo ten przedmiot z automatów na czwartym semestrze na informatyce?",
+    "type": "colloquial",
+    "expected_file": "Teoria automatów i języków formalnych.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023/Wydział Informatyki/Informatyka (kierunek wspólny - WI)/Studia inżynierskie I stopnia_Stacjonarne/Teoria automatów i języków formalnych.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Jaki jest kod przedmiotu 'Elektromagnetyzm i optyka' na kierunku Mikro- i Nanotechnologie w Biofizyce na AGH?",
+    "type": "lexical",
+    "expected_file": "Elektromagnetyzm i optyka.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2026_2027/Wydział Fizyki i Informatyki Stosowanej/Mikro- i Nanotechnologie w Biofizyce/Studia inżynierskie I stopnia_Stacjonarne/Elektromagnetyzm i optyka.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Jakie zagadnienia są wprowadzane w ramach kursu, który obejmuje naukę o interakcjach związanych z obiektami naładowanymi i zjawiskami związanych ze światłem?",
+    "type": "semantic",
+    "expected_file": "Elektromagnetyzm i optyka.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2026_2027/Wydział Fizyki i Informatyki Stosowanej/Mikro- i Nanotechnologie w Biofizyce/Studia inżynierskie I stopnia_Stacjonarne/Elektromagnetyzm i optyka.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Ile ECTSie można wyrwać za ten przedmiot o prądach i soczewkach?",
+    "type": "colloquial",
+    "expected_file": "Elektromagnetyzm i optyka.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2026_2027/Wydział Fizyki i Informatyki Stosowanej/Mikro- i Nanotechnologie w Biofizyce/Studia inżynierskie I stopnia_Stacjonarne/Elektromagnetyzm i optyka.md",
+    "source": "Sylabusy AGH"
+  },
+  {
+    "query": "Jaki jest NIP Wydziału Energetyki i Paliw Akademii Górniczo-Hutniczej w Krakowie?",
+    "type": "lexical",
+    "expected_file": "kandydaci__technologia-chemiczna-1_38527c82.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Strony/kandydaci__technologia-chemiczna-1_38527c82.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Na jakie potrzeby aktualnych czasów odpowiada edukacja w tematyce związanej z transformacją surowców i ich wpływem na środowisko?",
+    "type": "semantic",
+    "expected_file": "kandydaci__technologia-chemiczna-1_38527c82.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Strony/kandydaci__technologia-chemiczna-1_38527c82.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Gdzie załatwisz formalności związane z Energetyką na AGHu? Podaj namiary.",
+    "type": "colloquial",
+    "expected_file": "kandydaci__technologia-chemiczna-1_38527c82.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Strony/kandydaci__technologia-chemiczna-1_38527c82.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Która instytucja pełni rolę koordynatora projektu I-MAT?",
+    "type": "lexical",
+    "expected_file": "wspolpraca__i-mat_d0d3d899.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Strony/wspolpraca__i-mat_d0d3d899.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "W jaki sposób uczelnie w Europie i Ameryce Południowej współpracują, aby promować wymiany międzynarodowe?",
+    "type": "semantic",
+    "expected_file": "wspolpraca__i-mat_d0d3d899.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Strony/wspolpraca__i-mat_d0d3d899.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Kto z AGH ogarnia ten cały projekt z mobilnością dla studenciaków z Ameryki Południowej?",
+    "type": "colloquial",
+    "expected_file": "wspolpraca__i-mat_d0d3d899.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Strony/wspolpraca__i-mat_d0d3d899.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Jakie zarządzenie Rektora AGH związane jest z odbywaniem praktyk studenckich?",
+    "type": "lexical",
+    "expected_file": "Zarz_dzenie-94_23-zaa_cznik-nr-4_376223d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Dokumenty_Przetworzone/Zarz_dzenie-94_23-zaa_cznik-nr-4_376223d8.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Co jest wymagane od studenta, aby zaliczyć praktykę w kontekście zdobytych umiejętności i wiedzy?",
+    "type": "semantic",
+    "expected_file": "Zarz_dzenie-94_23-zaa_cznik-nr-4_376223d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Dokumenty_Przetworzone/Zarz_dzenie-94_23-zaa_cznik-nr-4_376223d8.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Jak załatwić papierek na praktyki, żeby mieć z głowy obowiązek na studiach?",
+    "type": "colloquial",
+    "expected_file": "Zarz_dzenie-94_23-zaa_cznik-nr-4_376223d8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WEIP_Dokumenty_Przetworzone/Zarz_dzenie-94_23-zaa_cznik-nr-4_376223d8.md",
+    "source": "WEIP AGH"
+  },
+  {
+    "query": "Gdzie znajduje się biuro SDP AGH, w którym można przedłużyć ważność Elektronicznych Legitymacji?",
+    "type": "lexical",
+    "expected_file": "strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony/strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md",
+    "source": "WGGIIS AGH"
+  },
+  {
+    "query": "Jakie działania musi podjąć student, aby uzyskać cyfrową wersję swojej legitymacji na nowy semestr?",
+    "type": "semantic",
+    "expected_file": "strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony/strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md",
+    "source": "WGGIIS AGH"
+  },
+  {
+    "query": "Gdzie można załatwić formalności związane z dyplomem na AGH? Tak trochę od zaplecza.",
+    "type": "colloquial",
+    "expected_file": "strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony/strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md",
+    "source": "WGGIIS AGH"
+  },
+  {
+    "query": "Jakie słynne wydarzenie organizowane przez WRSS jest związane z geodezją?",
+    "type": "lexical",
+    "expected_file": "strefa-studenta__wydzialowa-rada-samorzadu-studentow_f4e1a84d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony/strefa-studenta__wydzialowa-rada-samorzadu-studentow_f4e1a84d.md",
+    "source": "WGGIIS AGH"
+  },
+  {
+    "query": "Jakie jest główne zadanie grupy studentów reprezentujących swoich kolegów podczas ważnych spotkań uczelnianych?",
+    "type": "semantic",
+    "expected_file": "strefa-studenta__wydzialowa-rada-samorzadu-studentow_f4e1a84d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony/strefa-studenta__wydzialowa-rada-samorzadu-studentow_f4e1a84d.md",
+    "source": "WGGIIS AGH"
+  },
+  {
+    "query": "Gdzie można się zwrócić, jeśli masz jakiś problem na studiach i potrzebujesz wsparcia?",
+    "type": "colloquial",
+    "expected_file": "strefa-studenta__wydzialowa-rada-samorzadu-studentow_f4e1a84d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony/strefa-studenta__wydzialowa-rada-samorzadu-studentow_f4e1a84d.md",
+    "source": "WGGIIS AGH"
+  },
+  {
+    "query": "Jakie są dokładne daty, pomiędzy którymi dostępny jest zbiór danych Google Earth Engine?",
+    "type": "lexical",
+    "expected_file": "IGP_teleGIS_2025_ver3_d2067576.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Dokumenty_Przetworzone/IGP_teleGIS_2025_ver3_d2067576.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Opisz proces, w którym zaawansowane algorytmy analizują ogromne ilości informacji z obserwacji Ziemi, aby stworzyć zintegrowaną reprezentację danych.",
+    "type": "semantic",
+    "expected_file": "IGP_teleGIS_2025_ver3_d2067576.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Dokumenty_Przetworzone/IGP_teleGIS_2025_ver3_d2067576.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Jakie softy i języki używacie na tych zajęciach, żeby ogarnąć dane przestrzenne?",
+    "type": "colloquial",
+    "expected_file": "IGP_teleGIS_2025_ver3_d2067576.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Dokumenty_Przetworzone/IGP_teleGIS_2025_ver3_d2067576.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Jaki program stypendialny umożliwił Kacprowi Widuchowi wyjazd do Trondheim?",
+    "type": "lexical",
+    "expected_file": "absolwenci_gik.html_c9fd9fdf.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony/absolwenci_gik.html_c9fd9fdf.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Jakie zadania miał absolwent, który rozpoczął pracę już na drugim roku studiów, dotyczące obszaru projektowania i budowy?",
+    "type": "semantic",
+    "expected_file": "absolwenci_gik.html_c9fd9fdf.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony/absolwenci_gik.html_c9fd9fdf.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Który z absolwentów pracuje z dronami i jak je wykorzystuje w swojej robocie?",
+    "type": "colloquial",
+    "expected_file": "absolwenci_gik.html_c9fd9fdf.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony/absolwenci_gik.html_c9fd9fdf.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Kiedy Wydział Geodezji Górniczej i Inżynierii Środowiska organizował 'WIRTUALNY DZIEŃ OTWARTY AGH 2022'?",
+    "type": "lexical",
+    "expected_file": "wizyty.html_5248606e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony/wizyty.html_5248606e.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "W jakim miesiącu odbyło się spotkanie edukacyjne, które miało na celu przybliżenie uczniom aspektów związanych z inżynierią środowiskową na tej uczelni?",
+    "type": "semantic",
+    "expected_file": "wizyty.html_5248606e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony/wizyty.html_5248606e.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Kiedy mieliśmy wizytę tych dzieciaków z technikum, co to się o geodezji uczą w Krakowie?",
+    "type": "colloquial",
+    "expected_file": "wizyty.html_5248606e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony/wizyty.html_5248606e.md",
+    "source": "WGGIIS_Studiuj AGH"
+  },
+  {
+    "query": "Który kandydat został rekomendowany do udziału w projekcie Opus 26/LAP w konkursie z dnia 16.01.2025?",
+    "type": "lexical",
+    "expected_file": "2025-02-24_-_rozstrzygniecie_konkursu_na_studenta_z_dnia_16.01.2025-sig_b4cb011d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/2025-02-24_-_rozstrzygniecie_konkursu_na_studenta_z_dnia_16.01.2025-sig_b4cb011d.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Jakie kryteria były brane pod uwagę przy ocenie aplikacji na stanowisko w naukowym przedsięwzięciu finansowanym przez krajowy fundusz badawczy?",
+    "type": "semantic",
+    "expected_file": "2025-02-24_-_rozstrzygniecie_konkursu_na_studenta_z_dnia_16.01.2025-sig_b4cb011d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/2025-02-24_-_rozstrzygniecie_konkursu_na_studenta_z_dnia_16.01.2025-sig_b4cb011d.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Kto został wybrany na stypę w projekcie o lit?",
+    "type": "colloquial",
+    "expected_file": "2025-02-24_-_rozstrzygniecie_konkursu_na_studenta_z_dnia_16.01.2025-sig_b4cb011d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/2025-02-24_-_rozstrzygniecie_konkursu_na_studenta_z_dnia_16.01.2025-sig_b4cb011d.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Kto był promotorem rozprawy doktorskiej pt. 'Mineralizacja hydrotermalna w Tatrach Polskich. Inwentaryzacja i charakterystyka sztolni i hałd górniczych będących pozostałością po historycznym górnictwie tatrzańskim' autorstwa mgr inż. Magdaleny Sitarz?",
+    "type": "lexical",
+    "expected_file": "uchwaly_RD_z_dnia_25_kwietnia_2022_r_-_13-16_cfbd0a45.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/uchwaly_RD_z_dnia_25_kwietnia_2022_r_-_13-16_cfbd0a45.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Jaki proces dotyczy przemieszczania się pewnych substancji chemicznych w środowisku wodnym, mający znaczenie dla zdolności tych substancji do przenikania przez różne struktury geologiczne?",
+    "type": "semantic",
+    "expected_file": "uchwaly_RD_z_dnia_25_kwietnia_2022_r_-_13-16_cfbd0a45.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/uchwaly_RD_z_dnia_25_kwietnia_2022_r_-_13-16_cfbd0a45.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Kto ma być na obronie doktoratu, żeby wszystko było legitne? Ilu ludzi musiało przyjść na głosowanie w sprawie nadania tytułu, żeby je przegłosować?",
+    "type": "colloquial",
+    "expected_file": "uchwaly_RD_z_dnia_25_kwietnia_2022_r_-_13-16_cfbd0a45.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/uchwaly_RD_z_dnia_25_kwietnia_2022_r_-_13-16_cfbd0a45.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Kto był promotorem rozprawy doktorskiej o tematyce dotyczącej 'interpretacji otworowych profilowań oporności obarczonych efektem Groningen'?",
+    "type": "lexical",
+    "expected_file": "uchwaly_RDN_zdnia_7_marca_2022_nr-_6-9_d36e5444.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/uchwaly_RDN_zdnia_7_marca_2022_nr-_6-9_d36e5444.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Jaki proces decyzyjny przeprowadzono w celu wyróżnienia pracy związanej z badaniami nad opornością w złożach?",
+    "type": "semantic",
+    "expected_file": "uchwaly_RDN_zdnia_7_marca_2022_nr-_6-9_d36e5444.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/uchwaly_RDN_zdnia_7_marca_2022_nr-_6-9_d36e5444.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Ile osób mogło głosować, gdy przyznawano Stanisławowi Baudzisowi tytuł doktora?",
+    "type": "colloquial",
+    "expected_file": "uchwaly_RDN_zdnia_7_marca_2022_nr-_6-9_d36e5444.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone/uchwaly_RDN_zdnia_7_marca_2022_nr-_6-9_d36e5444.md",
+    "source": "WGGIOS AGH"
+  },
+  {
+    "query": "Jaki jest adres email osoby o nazwisku Porowska, związanej z Akademią Górniczo-Hutniczą?",
+    "type": "lexical",
+    "expected_file": "wydzial__doktoranci__kporowska_69ff687c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__doktoranci__kporowska_69ff687c.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Które centrum na uczelni zajmuje się sprawami studentów, zapewniając im różne usługi i wsparcie?",
+    "type": "semantic",
+    "expected_file": "wydzial__doktoranci__kporowska_69ff687c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__doktoranci__kporowska_69ff687c.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Gdzie się zgłasza po załatwienie spraw związanych z papierami na WH?",
+    "type": "colloquial",
+    "expected_file": "wydzial__doktoranci__kporowska_69ff687c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__doktoranci__kporowska_69ff687c.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Jaki jest numer pokoju dr Justyny Kraszewskiej-Kozik na Wydziale Humanistycznym?",
+    "type": "lexical",
+    "expected_file": "wydzial__pracownicy-naukowi__kraszewska_b48ae2eb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__pracownicy-naukowi__kraszewska_b48ae2eb.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Kiedy odbywają się konsultacje z wykładowcą zainteresowanym projektowaniem wizualnym i nowymi technologiami?",
+    "type": "semantic",
+    "expected_file": "wydzial__pracownicy-naukowi__kraszewska_b48ae2eb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__pracownicy-naukowi__kraszewska_b48ae2eb.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Jakie są godziny dyżurów tej babki od grafiki na AGH, co ma zajawkę na UX i UI?",
+    "type": "colloquial",
+    "expected_file": "wydzial__pracownicy-naukowi__kraszewska_b48ae2eb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__pracownicy-naukowi__kraszewska_b48ae2eb.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Jaki jest adres e-mail mgr Katarzyny Hetmańczyk?",
+    "type": "lexical",
+    "expected_file": "wydzial__doktoranci__khetmanczyk_db1d8678.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__doktoranci__khetmanczyk_db1d8678.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Jak nazywa się jednostka zajmująca się koordynacją spraw studenckich na uczelni technicznej w Krakowie?",
+    "type": "semantic",
+    "expected_file": "wydzial__doktoranci__khetmanczyk_db1d8678.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__doktoranci__khetmanczyk_db1d8678.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Gdzie na AGH można ogarnąć papierki związane z hajsem na studia?",
+    "type": "colloquial",
+    "expected_file": "wydzial__doktoranci__khetmanczyk_db1d8678.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WH_Strony/wydzial__doktoranci__khetmanczyk_db1d8678.md",
+    "source": "WH AGH"
+  },
+  {
+    "query": "Jakie są zasady projektowania i kształtowania żelbetowych ustrojów płytowo-słupowych?",
+    "type": "lexical",
+    "expected_file": "Pytania_egz_mgr_BUD_GiBS_2025_26_06.08.25_63eef98f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone/Pytania_egz_mgr_BUD_GiBS_2025_26_06.08.25_63eef98f.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Jakie są metody zarządzania drganiami strukturalnymi i jak są one ilustrowane?",
+    "type": "semantic",
+    "expected_file": "Pytania_egz_mgr_BUD_GiBS_2025_26_06.08.25_63eef98f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone/Pytania_egz_mgr_BUD_GiBS_2025_26_06.08.25_63eef98f.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Co to jest Biot i do czego to się używa w budowlance?",
+    "type": "colloquial",
+    "expected_file": "Pytania_egz_mgr_BUD_GiBS_2025_26_06.08.25_63eef98f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone/Pytania_egz_mgr_BUD_GiBS_2025_26_06.08.25_63eef98f.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Jaka jest maksymalna liczba punktów ECTS, którą studenci studiów niestacjonarnych mogą mieć jako deficyt z jednego semestru zgodnie z opinią nr 2/2022?",
+    "type": "lexical",
+    "expected_file": "2022-WILiGZ-Deficyt_ECTS-finall_fb493a7c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone/2022-WILiGZ-Deficyt_ECTS-finall_fb493a7c.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Na jakiej podstawie można kontynuować naukę, jeśli student ma zbyt wiele przedmiotów z niedoborem punktów?",
+    "type": "semantic",
+    "expected_file": "2022-WILiGZ-Deficyt_ECTS-finall_fb493a7c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone/2022-WILiGZ-Deficyt_ECTS-finall_fb493a7c.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Ile maksymalnie ECTS-ów można mieć braku, żeby nie było przypału na studiach dziennych na WILiGZ?",
+    "type": "colloquial",
+    "expected_file": "2022-WILiGZ-Deficyt_ECTS-finall_fb493a7c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone/2022-WILiGZ-Deficyt_ECTS-finall_fb493a7c.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Jak nazywa się nagroda przyznawana przez Wydział Inżynierii Lądowej i Gospodarki Zasobami, która jest związana z prof. Henrykiem Czeczottą?",
+    "type": "lexical",
+    "expected_file": "strefa-studenta__organizacje_5e1fa910.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Strony/strefa-studenta__organizacje_5e1fa910.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Jakie kroki musi podjąć kandydat, aby zapisać się na zaawansowane formy kształcenia po uzyskaniu dyplomu inżyniera?",
+    "type": "semantic",
+    "expected_file": "strefa-studenta__organizacje_5e1fa910.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Strony/strefa-studenta__organizacje_5e1fa910.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Gdzie można znaleźć info o zajawkowych tematach studenckich i akcjach organizowanych przez kółka na AGH?",
+    "type": "colloquial",
+    "expected_file": "strefa-studenta__organizacje_5e1fa910.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WILGZ_Strony/strefa-studenta__organizacje_5e1fa910.md",
+    "source": "WILGZ AGH"
+  },
+  {
+    "query": "Kto jest prelegentem na Seminarium Wydziałowe 12.01.2024?",
+    "type": "lexical",
+    "expected_file": "nauka__seminarium-wydzialowe__seminaria-lista__detail__s__seminarium-wydzialowe-_4de9cafe.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony/nauka__seminarium-wydzialowe__seminaria-lista__detail__s__seminarium-wydzialowe-_4de9cafe.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Co jest głównym zagadnieniem poruszanym podczas wykładu związanym z prostszym podejściem do nauki pewnej gałęzi nauki?",
+    "type": "semantic",
+    "expected_file": "nauka__seminarium-wydzialowe__seminaria-lista__detail__s__seminarium-wydzialowe-_4de9cafe.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony/nauka__seminarium-wydzialowe__seminaria-lista__detail__s__seminarium-wydzialowe-_4de9cafe.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Gdzie i kiedy odbędzie się to spotkanie z chemii na AGH? Jaka sala i godzina?",
+    "type": "colloquial",
+    "expected_file": "nauka__seminarium-wydzialowe__seminaria-lista__detail__s__seminarium-wydzialowe-_4de9cafe.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony/nauka__seminarium-wydzialowe__seminaria-lista__detail__s__seminarium-wydzialowe-_4de9cafe.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "W jakim konkursie można wziąć udział, jeśli praca dyplomowa jest zgłaszana na Dni Betonu 2025?",
+    "type": "lexical",
+    "expected_file": "KARTA_ZGLOSZENIOWA__1_9db0fc17.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Dokumenty_Przetworzone/KARTA_ZGLOSZENIOWA__1_9db0fc17.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Jaki jest proces uzyskiwania zgody na wykorzystanie osobistych informacji w związku z rywalizacją akademicką?",
+    "type": "semantic",
+    "expected_file": "KARTA_ZGLOSZENIOWA__1_9db0fc17.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Dokumenty_Przetworzone/KARTA_ZGLOSZENIOWA__1_9db0fc17.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Jaką pieczątkę trzeba zdobyć, żeby zgłosić swoją inżynierkę na betonowy konkurs?",
+    "type": "colloquial",
+    "expected_file": "KARTA_ZGLOSZENIOWA__1_9db0fc17.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Dokumenty_Przetworzone/KARTA_ZGLOSZENIOWA__1_9db0fc17.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Jakie nagrody zdobył Zespół Materiałów Bioceramicznych na Geneva 2024 – International Exhibition of Inventions?",
+    "type": "lexical",
+    "expected_file": "nauka__zespoly-badawcze_97d24088.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony/nauka__zespoly-badawcze_97d24088.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Jakie innowacyjne podejścia są stosowane w tworzeniu materiałów wspierających procesy regeneracji tkanek?",
+    "type": "semantic",
+    "expected_file": "nauka__zespoly-badawcze_97d24088.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony/nauka__zespoly-badawcze_97d24088.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Kto jest szefem ekipy, co robi hity z ceramiki na AGH?",
+    "type": "colloquial",
+    "expected_file": "nauka__zespoly-badawcze_97d24088.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony/nauka__zespoly-badawcze_97d24088.md",
+    "source": "WIMIC AGH"
+  },
+  {
+    "query": "Kto jest pełnomocnikiem Rektora ds. Jakości Kształcenia na AGH w dokumencie z 1 października 2024 roku?",
+    "type": "lexical",
+    "expected_file": "2024_2025_harmonogram_badan_ankietowych_c4ad28bb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone/2024_2025_harmonogram_badan_ankietowych_c4ad28bb.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "W jakim okresie odbywa się ocena nowo wprowadzonych zajęć na uczelni technicznej?",
+    "type": "semantic",
+    "expected_file": "2024_2025_harmonogram_badan_ankietowych_c4ad28bb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone/2024_2025_harmonogram_badan_ankietowych_c4ad28bb.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Kiedy zaczyna się badanie ankietowe dla świeżaków na AGH?",
+    "type": "colloquial",
+    "expected_file": "2024_2025_harmonogram_badan_ankietowych_c4ad28bb.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone/2024_2025_harmonogram_badan_ankietowych_c4ad28bb.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Jakie są kierunki studiów oferowane przez Wydział Metali Nieżelaznych AGH?",
+    "type": "lexical",
+    "expected_file": "kandydaci_6e2fc7e4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Strony/kandydaci_6e2fc7e4.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Które aspekty kształcenia na wydziale mogą przyciągać osoby zainteresowane przyszłością przemysłu?",
+    "type": "semantic",
+    "expected_file": "kandydaci_6e2fc7e4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Strony/kandydaci_6e2fc7e4.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Czy po ukończeniu tych studiów jest szansa na dobrą robotę, nawet za granicą?",
+    "type": "colloquial",
+    "expected_file": "kandydaci_6e2fc7e4.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Strony/kandydaci_6e2fc7e4.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Jakie jest oznaczenie kodowe dokumentu wydanego przez prof. dr hab. inż. Wojciecha Łużnego dotyczącego wzorów dokumentów na AGH?",
+    "type": "lexical",
+    "expected_file": "2021_06_14_pismo_Prorektora_ds._Kstzalcenia_ws_wzorow_dokumentow_w_zwiazku_z_wej_c20d681f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone/2021_06_14_pismo_Prorektora_ds._Kstzalcenia_ws_wzorow_dokumentow_w_zwiazku_z_wej_c20d681f.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Jakie jest przeznaczenie nowego dokumentu, który zakłada użycie systemu do sprawdzania oryginalności prac na pewnej uczelni technicznej?",
+    "type": "semantic",
+    "expected_file": "2021_06_14_pismo_Prorektora_ds._Kstzalcenia_ws_wzorow_dokumentow_w_zwiazku_z_wej_c20d681f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone/2021_06_14_pismo_Prorektora_ds._Kstzalcenia_ws_wzorow_dokumentow_w_zwiazku_z_wej_c20d681f.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Co trzeba złożyć, żeby wyjaśnić sytuację z pracą magisterską na AGH-u?",
+    "type": "colloquial",
+    "expected_file": "2021_06_14_pismo_Prorektora_ds._Kstzalcenia_ws_wzorow_dokumentow_w_zwiazku_z_wej_c20d681f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone/2021_06_14_pismo_Prorektora_ds._Kstzalcenia_ws_wzorow_dokumentow_w_zwiazku_z_wej_c20d681f.md",
+    "source": "WMN AGH"
+  },
+  {
+    "query": "Jaki jest numer telefonu komórkowego prodziekana ds. współpracy?",
+    "type": "lexical",
+    "expected_file": "wydzial__wladze_9612821e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Strony/wydzial__wladze_9612821e.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Kto jest odpowiedzialny za nadzór nad sprawami edukacyjnymi oraz studentami w jednostce akademickiej?",
+    "type": "semantic",
+    "expected_file": "wydzial__wladze_9612821e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Strony/wydzial__wladze_9612821e.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Gdzie urzęduje szefowa administracji na AGH?",
+    "type": "colloquial",
+    "expected_file": "wydzial__wladze_9612821e.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Strony/wydzial__wladze_9612821e.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Jaki system jest używany do zgłoszenia tematu pracy magisterskiej na kierunku Edukacja Matematyczna?",
+    "type": "lexical",
+    "expected_file": "26_EDM_Dyplomowanie_06_46c03a5c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone/26_EDM_Dyplomowanie_06_46c03a5c.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Jakie kroki są podejmowane, gdy opiekun nie może dłużej prowadzić studenta podczas pisania głównego projektu akademickiego?",
+    "type": "semantic",
+    "expected_file": "26_EDM_Dyplomowanie_06_46c03a5c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone/26_EDM_Dyplomowanie_06_46c03a5c.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Co trzeba zrobić, żeby móc pisać magisterkę po angielsku na matmie stosowanej?",
+    "type": "colloquial",
+    "expected_file": "26_EDM_Dyplomowanie_06_46c03a5c.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone/26_EDM_Dyplomowanie_06_46c03a5c.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Kto był promotorem pracy doktorskiej zatytułowanej 'Optymalne algorytmy randomicacyjne i kwantowe dla problemów nieliniowych'?",
+    "type": "lexical",
+    "expected_file": "POSTEPOWANIA_DOKTORSKIE_ZAKONCZONE_NADANIEM_STOPNIA_RW_e5fd425f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone/POSTEPOWANIA_DOKTORSKIE_ZAKONCZONE_NADANIEM_STOPNIA_RW_e5fd425f.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Jakie są narzędzia matematyczne stosowane do analizy struktur o skomplikowanej symetrii, które mogą być stosowane do badania ich wewnętrznych właściwości?",
+    "type": "semantic",
+    "expected_file": "POSTEPOWANIA_DOKTORSKIE_ZAKONCZONE_NADANIEM_STOPNIA_RW_e5fd425f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone/POSTEPOWANIA_DOKTORSKIE_ZAKONCZONE_NADANIEM_STOPNIA_RW_e5fd425f.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Kto pisał doktorat o pakowaniu różnych rodzajów grafów i kiedy go obronił?",
+    "type": "colloquial",
+    "expected_file": "POSTEPOWANIA_DOKTORSKIE_ZAKONCZONE_NADANIEM_STOPNIA_RW_e5fd425f.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone/POSTEPOWANIA_DOKTORSKIE_ZAKONCZONE_NADANIEM_STOPNIA_RW_e5fd425f.md",
+    "source": "WMS AGH"
+  },
+  {
+    "query": "Jaki jest numer telefonu do Biura Administracyjnego Wydziału Wiertnictwa, Nafty i Gazu AGH?",
+    "type": "lexical",
+    "expected_file": "kandydaci_4ffcead8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Strony/kandydaci_4ffcead8.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Gdzie można znaleźć informacje dotyczące kryteriów przyjęć na studia wyższe na specjalizacje związane z zasobami naturalnymi?",
+    "type": "semantic",
+    "expected_file": "kandydaci_4ffcead8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Strony/kandydaci_4ffcead8.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Jak się dostać na studia po angielsku na nafcie?",
+    "type": "colloquial",
+    "expected_file": "kandydaci_4ffcead8.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Strony/kandydaci_4ffcead8.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Jaka jest pełna nazwa interfejsu systemu dostępnego dla studentów AGH, zaczynająca się od 'USOS'?",
+    "type": "lexical",
+    "expected_file": "studia__usos_88d5dc0d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Strony/studia__usos_88d5dc0d.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "W jaki sposób studenci mogą zarządzać rejestracją na zajęcia, korzystając z ogólnopolskiego systemu wykorzystywanego na większości uczelni?",
+    "type": "semantic",
+    "expected_file": "studia__usos_88d5dc0d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Strony/studia__usos_88d5dc0d.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Jak się nazywa to narzędzie do ogarniania ocen, planów i zapisów na AGH?",
+    "type": "colloquial",
+    "expected_file": "studia__usos_88d5dc0d.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Strony/studia__usos_88d5dc0d.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Jaka jest definicja współczynnika ściśliwości Z gazów rzeczywistych i jakie są metody jego wyznaczania?",
+    "type": "lexical",
+    "expected_file": "a15_64271365.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Dokumenty_Przetworzone/a15_64271365.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Jakie są kryteria wyboru wyczerpanego miejsca z węglowodorami na podziemne składowanie gazu?",
+    "type": "semantic",
+    "expected_file": "a15_64271365.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Dokumenty_Przetworzone/a15_64271365.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Co to jest pompaż w sprężarce? Jak można temu zapobiec?",
+    "type": "colloquial",
+    "expected_file": "a15_64271365.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/WNIG_Dokumenty_Przetworzone/a15_64271365.md",
+    "source": "WNIG AGH"
+  },
+  {
+    "query": "Który program studiów podyplomowych na Wydziale Zarządzania AGH obejmuje temat 'Rachunkowość menedżerska i controlling'?",
+    "type": "lexical",
+    "expected_file": "studenci__naukowy-ruch-studencki__kolo-naukowe-audytor_8ded7311.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/studenci__naukowy-ruch-studencki__kolo-naukowe-audytor_8ded7311.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Jakie są przykłady kierunków studiów, które koncentrują się na zrozumieniu i ulepszaniu operacji związanych z produkcją oraz optymalizacją procesów wytwarzania?",
+    "type": "semantic",
+    "expected_file": "studenci__naukowy-ruch-studencki__kolo-naukowe-audytor_8ded7311.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/studenci__naukowy-ruch-studencki__kolo-naukowe-audytor_8ded7311.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Jakie studia możesz ogarnąć, żeby zostać kozakiem od ogarniania hajsu i papierów w firmie?",
+    "type": "colloquial",
+    "expected_file": "studenci__naukowy-ruch-studencki__kolo-naukowe-audytor_8ded7311.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/studenci__naukowy-ruch-studencki__kolo-naukowe-audytor_8ded7311.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Który program studiów podyplomowych na Wydziale Zarządzania AGH dotyczy 'Home Staging – Zarządzanie powierzchnią i aranżacja wnętrz'?",
+    "type": "lexical",
+    "expected_file": "wydzial__jednostki__katedra-zarzadzania-strategicznego-i-ekonomii_9c4bb3de.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/wydzial__jednostki__katedra-zarzadzania-strategicznego-i-ekonomii_9c4bb3de.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Jakie są dostępne ścieżki kształcenia dla studentów chcących ukończyć drugi etap nauki na tej jednostce edukacyjnej?",
+    "type": "semantic",
+    "expected_file": "wydzial__jednostki__katedra-zarzadzania-strategicznego-i-ekonomii_9c4bb3de.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/wydzial__jednostki__katedra-zarzadzania-strategicznego-i-ekonomii_9c4bb3de.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Na którym wydziale mogę ogarnąć studia o zarządzaniu budynkami czy condominio?",
+    "type": "colloquial",
+    "expected_file": "wydzial__jednostki__katedra-zarzadzania-strategicznego-i-ekonomii_9c4bb3de.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/wydzial__jednostki__katedra-zarzadzania-strategicznego-i-ekonomii_9c4bb3de.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Jakie studia podyplomowe oferuje Wydział Zarządzania AGH związane z zarządzaniem inteligentnym budynkiem?",
+    "type": "lexical",
+    "expected_file": "nauka_6712f621.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/nauka_6712f621.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Które programy na poziomie magisterskim nazywają się po angielsku i są związane z efektywnością produkcji i zrównoważonym rozwojem?",
+    "type": "semantic",
+    "expected_file": "nauka_6712f621.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/nauka_6712f621.md",
+    "source": "Zarz AGH"
+  },
+  {
+    "query": "Który kierunek na zarzadzaniu w krakowskim AGH dotyczy kręcenia się wokół kasy i życia w wielkim świecie?",
+    "type": "colloquial",
+    "expected_file": "nauka_6712f621.md",
+    "expected_plik": "../../data/Baza_Wiedzy_AGH/Zarz_Strony/nauka_6712f621.md",
+    "source": "Zarz AGH"
+  }
+]
