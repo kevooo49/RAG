@@ -1,76 +1,181 @@
-# Dokumentacja Architektoniczna: Backend Aplikacji RAG (FastAPI)
+# Backend (FastAPI)
 
-## 1. Wprowadzenie i Wzorzec Architektoniczny
+Serwer odpowiada na pytania studentów: przepisuje zapytanie, wyszukuje fragmenty w ChromaDB i Elasticsearch, łączy wyniki metodą RRF, a następnie strumieniuje odpowiedź modelu językowego razem z listą źródeł.
 
-Backend systemu RAG został zrealizowany w oparciu o asynchroniczny framework FastAPI, co pozwala na wysoce wydajne przetwarzanie współbieżnych zapytań we/wy (takich jak odpytywanie zewnętrznych baz danych czy interfejsów API modeli językowych).
+## 1. Struktura katalogów
 
-Architektura aplikacji opiera się na ścisłym wzorcu warstwowym, który gwarantuje separację odpowiedzialności:
+```text
+backend/
+├── main.py                       # aplikacja FastAPI, CORS, handlery błędów, /health
+├── app/
+│   ├── api/routers/chat.py       # POST /api/chat (SSE), limit 5/min
+│   ├── core/
+│   │   ├── config.py             # Settings (pydantic-settings, plik .env)
+│   │   ├── limiter.py            # slowapi Limiter (klucz = adres IP)
+│   │   └── logging.py            # konfiguracja logowania na stdout
+│   ├── models/schemas.py         # walidacja żądania (Pydantic)
+│   └── services/
+│       ├── rag_service.py        # przepisywanie zapytań, wyszukiwanie hybrydowe, RRF
+│       └── llm_service.py        # prompt, kontekst, strumieniowanie SSE
+├── scripts/                      # indeksowanie, parser dokumentów, ewaluacje (osobne dokumenty)
+├── tests/                        # testy pytest (sekcja 9)
+├── Dockerfile, requirements.txt
+```
 
-* **Warstwa Transportowa (API/Routing)**: Przyjmuje żądania HTTP, deleguje zadania i zwraca ustrukturyzowane odpowiedzi lub strumienie danych.
-* **Warstwa Logiki Biznesowej (Services)**: Hermetyzuje złożone operacje wyszukiwania, fuzji wyników oraz orkiestracji modeli AI, odseparowując kontrolery od technicznych szczegółów implementacji.
-* **Warstwa Infrastruktury (Core)**: Zapewnia fundamentalne mechanizmy działania systemu, takie jak walidacja typów, zarządzanie konfiguracją środowiskową, logowanie zdarzeń oraz kontrola przepustowości.
+Warstwy: **router** (`chat.py`) tylko przyjmuje żądanie i zwraca `StreamingResponse`; **serwisy** zawierają całą logikę; **core** to konfiguracja, logowanie i limiter. Całe wywołanie `rag_service` / `llm_service` odbywa się w generatorze `generate_streamed_response`, nie w routerze.
 
-Takie podejście sprawia, że kod jest wysoce modularny, łatwy w testowaniu i przygotowany na ewentualną wymianę poszczególnych komponentów (np. zmiana dostawcy bazy wektorowej) bez ingerencji w główny przepływ sterowania.
+## 2. Konfiguracja (`app/core/config.py`)
 
-## 2. Warstwa Infrastruktury i Danych Wejściowych
+Klasa `Settings` wczytuje zmienne z `backend/.env` (`extra="ignore"` — nieznane klucze są pomijane). Brak `OPENAI_API_KEY` kończy się błędem walidacji już przy imporcie modułu, czyli przy starcie aplikacji (*fail-fast*). Pełna tabela zmiennych jest w [`README.md`](README.md#4-zmienne-środowiskowe).
 
-Fundamentem stabilności backendu są moduły z katalogu głównego, które unifikują sposób, w jaki aplikacja komunikuje się ze środowiskiem operacyjnym i przetwarza dane wejściowe.
+Dwie rzeczy łatwo przeoczyć:
 
-### Moduł `config.py`
+* **`CORS_ORIGINS` nie należy do `Settings`.** `main.py` czyta ją przez `os.getenv`, więc wpis w `backend/.env` zadziała tylko tam, gdzie plik jest przekazywany do środowiska procesu — w Dockerze (`env_file` w Compose). Przy ręcznym `uvicorn main:app` trzeba ją wyeksportować w powłoce. Wartość domyślna: `http://localhost:5173,http://localhost:4173`.
+* **`ALLOWED_MODELS` to `Set[str]`**, więc nadpisanie z `.env` wymaga zapisu JSON, np. `ALLOWED_MODELS=["gpt-4o","gpt-4o-mini"]`.
 
-Skrypt ten stanowi jedyne centralne miejsce zarządzania konfiguracją systemu. Odpowiada za bezpieczne wczytywanie i walidację zmiennych środowiskowych z pliku `.env`. Mapuje on krytyczne poświadczenia (klucze API OpenAI) oraz parametry połączeniowe (adresy hostów dla ChromaDB i Elasticsearch) na statyczne obiekty konfiguracyjne. Dzięki temu aplikacja przy starcie weryfikuje kompletność środowiska, zapobiegając niekontrolowanym awariom w późniejszych fazach działania (tzw. zasada *Fail-Fast*).
+Przy starcie (`lifespan` w `main.py`) wykonywane jest `setup_logging()` i `rag_service.initialize()`. Ta druga funkcja otwiera kolekcję Chroma, sprawdza ją (patrz §5.1), tworzy klientów OpenAI i pinguje Elasticsearch. **Jeśli któraś baza jest niedostępna albo kolekcja jest pusta lub zbudowana innym modelem embeddingów, aplikacja nie wystartuje.** W `lifespan` nie ma logiki zamykania.
 
-### Moduł `schemas.py`
+## 3. Walidacja żądań (`app/models/schemas.py`)
 
-Zamiast operować na luźnych słownikach, backend rygorystycznie waliduje każde żądanie przy użyciu biblioteki Pydantic. Plik `schemas.py` definiuje modele danych wejściowych i wyjściowych. Określa m.in. ścisłą strukturę zapytania użytkownika oraz format przesyłanej historii konwersacji. Modele te automatycznie odrzucają uszkodzone pakiety (np. brakujące pola, nieprawidłowe typy danych) jeszcze przed przekazaniem ich do warstwy serwisowej, chroniąc system przed atakami typu wstrzykiwania złośliwych tagów oraz oszczędzając niepotrzebne wywołania do płatnych API.
+Żądanie `POST /api/chat` (`ChatRequestPayload`):
 
-### Moduł `logging.py`
+| Pole | Reguła |
+|---|---|
+| `query` | wymagane, 1–1000 znaków, musi zawierać znak niebiały |
+| `model` | tekst, domyślnie `"gpt-4o"`; dozwolone wartości sprawdza dopiero `llm_service` |
+| `history` | lista do **100** elementów (domyślnie pusta) |
+| `history[].role` | `"user"` lub `"assistant"` |
+| `history[].content` | 1–3000 znaków, musi zawierać znak niebiały |
 
-Zunifikowany system logowania zdarzeń zastępuje standardowe instrukcje drukowania w konsoli. Rejestruje on kluczowe etapy przepływu żądań, czasy wykonywania zapytań do baz danych oraz ewentualne wyjątki sieciowe. Wdrożenie ustrukturyzowanego logowania jest niezbędne z perspektywy utrzymania systemu na produkcji – pozwala na szybką diagnozę wąskich gardeł wydajnościowych (np. opóźnień wynikających z działania modelu krzyżowego) oraz monitorowanie stabilności połączeń z zewnętrznymi mikrousługami.
+Błąd walidacji zwraca HTTP **422** z jednym, ogólnym komunikatem po polsku (`validation_exception_handler` w `main.py`); treść zgłoszonych danych nie jest odsyłana w odpowiedzi. Pydantic odrzuca więc złe typy i brakujące pola, ale **nie sanitizuje treści** — ochrona przed wstrzykiwaniem instrukcji jest w warstwie promptu (§6).
 
-## 3. Warstwa Zabezpieczeń i Kontroli Ruchu
+## 4. Limit zapytań, proxy i CORS
 
-Udostępnienie interfejsu opartego o zaawansowane modele generatywne wiąże się z ryzykiem nadużyć oraz potencjalnie wysokimi kosztami operacyjnymi. Zabezpieczeniem na tym polu zajmuje się moduł limitujący.
+* **Limit:** dekorator `@limiter.limit("5/minute")` na endpoincie czatu; klucz to adres IP (`get_remote_address`). Przekroczenie → HTTP **429** i JSON `{"detail": "Zbyt wiele zapytań. Odczekaj chwilę…"}`. Licznik jest **w pamięci procesu** (domyślny magazyn slowapi), a obraz uruchamia jeden proces Uvicorn, więc limit nie jest współdzielony między instancjami.
+* **Adres klienta:** `ProxyHeadersMiddleware` z `trusted_hosts="*"` bierze IP z `X-Forwarded-For`. Za nginx (patrz [`docker.md`](docker.md)) to właściwe, ale port `8000` backendu jest w Compose publikowany na wszystkich interfejsach, a `trusted_hosts="*"` oznacza, że **ktokolwiek łączący się bezpośrednio z `:8000` może sfałszować nagłówek i obejść limit**. Jeśli backend ma być dostępny z sieci, należy ograniczyć port do `127.0.0.1` lub zawęzić `trusted_hosts`.
+* **CORS:** `allow_credentials=True`, metody i nagłówki `*`, dozwolone źródła z `CORS_ORIGINS`. W standardowym wdrożeniu przeglądarka rozmawia z nginx tą samą domeną (`/api/…`), więc CORS dotyczy głównie pracy deweloperskiej.
 
-### Moduł `limiter.py`
+## 5. Wyszukiwanie (`rag_service.py`)
 
-Moduł ten implementuje mechanizm Rate Limitingu, chroniący infrastrukturę uczelnianą oraz budżet API przed atakami typu DDoS, skryptami automatycznymi oraz zwykłym spamem. Działa on jako oprogramowanie pośredniczące, które zlicza żądania przychodzące z poszczególnych adresów IP.
-W przypadku przekroczenia zdefiniowanego progu bezpiecznej przepustowości (np. 5 zapytań na minutę dla danego użytkownika), mechanizm ten odcina dostęp i natychmiastowo zwraca błąd HTTP 429 Too Many Requests. Frontend aplikacji jest zintegrowany z tym rozwiązaniem i w odpowiedzi na ten kod błędu wyświetla użytkownikowi stosowny komunikat o konieczności odczekania, zapobiegając eskalacji żądań i chroniąc stabilność serwera.
+### 5.1. Start i zdrowie systemu
 
-## 4. Warstwa Wyszukiwania i Pobierania Danych (`rag_service.py`)
+* `_get_collection()` łączy się z Chroma przez `HttpClient`, a `_validate_collection` przerywa start, gdy: model w metadanych kolekcji (`model_embeddingow`) różni się od `EMBED_MODEL`, wymiar (`wymiary`) różni się od `EMBED_DIMENSIONS` albo kolekcja jest pusta.
+* `check_dependencies()` (używane przez `GET /health`) pinguje ES i liczy rekordy w Chroma; przy błędzie rzuca **503** z komunikatem `Database dependency unavailable` (szczegóły trafiają tylko do logu).
 
-Moduł `rag_service.py` stanowi serce operacyjne systemu RAG. Odpowiada za optymalizację zapytań, równoległą orkiestrację silników bazodanowych oraz ostateczną fuzję wyników. Jego architektura została zaprojektowana z naciskiem na minimalizację opóźnień oraz maksymalizację trafności kontekstu dostarczanego do głównego modelu generacyjnego. Posiadam ten kod w pamięci z naszej wcześniejszej analizy, co pozwala na precyzyjne odtworzenie jego logiki.
+### 5.2. Przygotowanie zapytania
 
-Kluczowe mechanizmy i decyzje projektowe:
+Funkcja `prepare_search_queries(query, history)` zwraca parę *(zapytanie samodzielne do wyświetlenia, zapytanie rozszerzone do wyszukiwania)*:
 
-* **Rozszerzanie i Przeformułowywanie Zapytań**: Zanim zapytanie trafi do baz danych, jest poddawane obróbce przez szybki, pomocniczy model językowy. Jeśli zapytanie nawiązuje do poprzednich wiadomości, algorytm buduje na podstawie historii konwersacji pytanie samodzielne. Następnie system wzbogaca je o oficjalne uczelniane słowa kluczowe, korzystając z wbudowanego słownika skrótów AGH (rozwiązującego żargon studencki, taki jak słowa "kolos", "sesja" czy "WF").
-* **Zarządzanie Pamięcią Podręczną**: Aby zminimalizować koszty odpytywania API OpenAI i drastycznie obniżyć opóźnienia, wdrożono autorski mechanizm pamięci podręcznej z określonym czasem życia. Moduł zachowuje w pamięci serwera operacyjnego wygenerowane wcześniej rozszerzenia zapytań oraz wektory, serwując je natychmiastowo przy powtarzających się pytaniach użytkowników.
-* **Asynchroniczne Wyszukiwanie Hybrydowe**: Skrypt eliminuje wąskie gardła wydajnościowe poprzez jednoczesne wywoływanie zapytań do dwóch niezależnych silników. Żądanie trafia równolegle do bazy wektorowej ChromaDB (odpowiadającej za dopasowanie semantyczne) oraz do indeksu Elasticsearch (odpowiadającego za precyzyjne dopasowanie leksykalne).
-* **Fuzja Wyników RRF**: Otrzymane z obu baz danych listy kandydatów są łączone za pomocą matematycznego algorytmu oceny odwrotności rangi. Mechanizm ten przelicza pozycje fragmentów w obu rankingach, naturalnie promując te dokumenty, które zostały wysoko ocenione przez oba silniki, i zwraca ścisłą czołówkę najbardziej przydatnych fragmentów tekstu.
-* **Progi Odcięcia i Tolerancja na Błędy**: Warstwa ta implementuje progi minimalnego podobieństwa wektorowego. Jeśli żaden fragment w bazie ChromaDB nie spełnia rygorystycznych kryteriów precyzji, wyniki z tego silnika są ignorowane, aby nie zanieczyścić kontekstu. Dodatkowo system jest odporny na awarię jednego z silników bazodanowych – potrafi płynnie przełączyć się na drugą, wciąż działającą bazę, logując to zdarzenie do celów diagnostycznych.
+* **Bez historii** — `_expand_query`: model `EXPANSION_MODEL` (domyślnie `gpt-4o-mini`, `temperature=0`) dopisuje 3–5 oficjalnych słów kluczowych do oryginalnego zapytania. Prompt zawiera słownik skrótów AGH (WF, MS/Miasteczko, kolos, sesja, skróty wydziałów).
+* **Z historią** — prompt reformulacji zwraca dwie linie `PYTANIE:` (pytanie samodzielne) i `SLOWA:` (słowa kluczowe); wynik jest parsowany regexem, a przy braku `PYTANIE:` używane jest oryginalne zapytanie.
+* **Odporność:** każdy błąd modelu (timeout, odpowiedź w złym formacie) kończy się powrotem do oryginalnego zapytania i ostrzeżeniem w logu; wyszukiwanie nigdy nie zależy od powodzenia rozszerzania. Wynik jest czyszczony (`_sanitize`: bez nawiasów kwadratowych i znaków nowej linii) i przycinany do 300 znaków.
+* **Pamięć podręczna:** `_TTLCache` — w pamięci procesu, LRU z TTL **3600 s**; osobno dla rozszerzeń (2048 wpisów) i wektorów zapytań (512 wpisów). Klucz to zapytanie po normalizacji białych znaków i `casefold`; dla historii dochodzi skrót SHA-1 historii. Cache znika po restarcie.
 
-## 5. Warstwa Generacyjna i Syntetyzująca (`llm_service.py`)
+### 5.3. Wyszukiwanie hybrydowe i RRF
 
-Moduł `llm_service.py` odpowiada za ostateczną syntezę odpowiedzi i komunikację z chmurowymi modelami językowymi (API OpenAI). Jego głównym zadaniem jest nałożenie surowych, wyszukanych fragmentów wiedzy na intencję użytkownika przy zachowaniu rygorystycznych barier (tzw. guardrails) zapobiegających halucynacjom.
+`search_by_query(query, top_k=5)`:
 
-* **Budowa System Promptu**: Serwis dynamicznie konstruuje instrukcję systemową, wymuszającą na modelu rolę profesjonalnego asystenta uczelnianego. Prompt kategorycznie zabrania modelowi korzystania z wiedzy własnej i nakazuje bazowanie wyłącznie na dostarczonych fragmentach tekstów.
-* **Wstrzykiwanie Kontekstu**: Pobrane przez `rag_service.py` chunki są formatowane do ujednoliconej postaci tekstowej (zawierającej metadane źródłowe) i doklejane do zapytania. Dzięki zachowaniu odpowiedniego formatowania (np. ścieżek nagłówków i list), model generatywny bez problemu interpretuje relacje przestrzenne i hierarchię regulaminów.
-* **Zarządzanie Oknem Kontekstowym**: Moduł inteligentnie zarządza przesyłaną historią konwersacji. Aplikacja dba o to, aby rozmiar dodawanej historii czatu nie przekroczył ustalonego limitu tokenów, odcinając najstarsze wiadomości, co chroni przed błędami przepełnienia okna kontekstowego (Context Window Overlap) i minimalizuje koszty API.
+1. Równolegle (`asyncio.gather` + `asyncio.to_thread`) uruchamiane są dwie ścieżki, każda z pulą **40** kandydatów:
+   * **gęsta** — embedding zapytania (`text-embedding-3-small` domyślnie) → `collection.query` w Chroma;
+   * **BM25** — `match` na polu `tekst` w indeksie ES (analizator `polish`, patrz [`build_database.md`](build_database.md)).
+2. Listy łączy `_reciprocal_rank_fusion`: wynik dokumentu = Σ `1/(rank + k)` po listach, `k = RRF_K = 60`; remisy rozstrzyga najlepsza pozycja, potem identyfikator.
+3. Zwracane jest `top_k` (**5**) fragmentów; każdy z `score` (wartość RRF) i opcjonalnie `dense_sim`.
 
-## 6. Warstwa Transportowa i Routing (`chat.py`)
+Wartość RRF nie jest „pewnością”: dla dwóch list i `k=60` mieści się w przedziale od ~0,008 do maksymalnie 2/61 ≈ 0,0328.
 
-Zwieńczeniem całego systemu backendowego jest kontroler główny w pliku `chat.py`. Definiuje on endpointy API (np. `/api/chat`), łącząc wszystkie opisane wcześniej warstwy w jeden spójny pipeline komunikacyjny z interfejsem graficznym.
+**Zachowanie przy awariach:** jeśli jedna ścieżka zawiedzie, wynik pochodzi z drugiej (log: `[BM25 fallback]` lub `[Dense fallback]`); jeśli zawiodą obie, rzucany jest `RetrievalError`, który `llm_service` zamienia na komunikat dla użytkownika.
 
-* **Orkiestracja Żądań**: Kontroler przyjmuje zapytanie wejściowe od użytkownika, przepuszcza je przez weryfikator `limiter.py`, zleca wyszukanie wiedzy do `rag_service.py`, a na koniec przekazuje cały pakiet do `llm_service.py`. Stanowi centralny punkt spinający logikę, obsługując również globalne przechwytywanie wyjątków (np. braki połączenia z bazą, timeouty API) i zwracanie ich jako odpowiednich kodów błędów HTTP.
-* **Strumieniowanie Odpowiedzi (SSE)**: Najważniejszą decyzją architektoniczną w tym module jest implementacja protokołu Server-Sent Events. Zamiast blokować połączenie i czekać na wygenerowanie pełnej odpowiedzi przez model językowy, endpoint nawiązuje trwałe połączenie z frontendem i asynchronicznie przesyła do niego nowo wygenerowane tokeny w czasie rzeczywistym. Gwarantuje to płynne, natychmiastowe pojawianie się tekstu na ekranie użytkownika, drastycznie zmniejszając odczuwalne opóźnienia systemu. Wraz z pierwszymi pakietami SSE zwracana jest również lista źródeł wygenerowana z metadanych.
+**Próg podobieństwa jest domyślnie wyłączony.** Dopiero ustawienie `RAG_MIN_DENSE_SIM` powoduje, że gdy najlepsze podobieństwo wektorowe jest niższe, wyniki gęste są pomijane i zostaje samo BM25. Podobieństwo liczone jest tylko dla metryki `cosine` (lub gdy nie da się jej ustalić).
 
-## 7. Punkt Wejścia i Inicjalizacja Aplikacji (`main.py`)
+## 6. Generowanie odpowiedzi (`llm_service.py`)
 
-Moduł `main.py` pełni rolę głównego rdzenia (entry point), który spina wszystkie warstwy, kontrolery i serwisy w jedną działającą usługę sieciową. To tutaj framework FastAPI jest inicjalizowany i konfigurowany przed przyjęciem pierwszego żądania HTTP. Moduł celowo nie zawiera logiki biznesowej, działając jako dyspozytor i zarządca środowiska.
+### 6.1. Przebieg jednego zapytania
 
-Kluczowe odpowiedzialności i mechanizmy:
+1. Sprawdzenie, czy `model` ∈ `ALLOWED_MODELS` — w przeciwnym razie zdarzenie `error` i koniec.
+2. Zdarzenie `status` („Przeszukuję bazę wiedzy AGH…”).
+3. `_prepare_history`: bierze **ostatnie 4** wiadomości, przycina każdą do **1500** znaków, pomija puste i odpowiedzi-odmowy, z odpowiedzi asystenta usuwa znaczniki `[n]`.
+4. `prepare_search_queries` → `search_by_query`.
+5. `_trim_context`: dodaje fragmenty po kolei, dopóki suma długości ≤ `RAG_MAX_CONTEXT_CHARS` (**12000 znaków**); **pierwszy fragment jest zachowany zawsze**, nawet gdyby sam przekraczał limit. Limit jest w znakach, nie w tokenach.
+6. Brak fragmentów → token z komunikatem `NO_ANSWER_FALLBACK` i koniec (bez wywołania modelu i bez zdarzenia `sources`).
+7. Zdarzenie `sources` — wysyłane **przed** pierwszym tokenem.
+8. Strumień tokenów z modelu (`astream`).
+9. `data: [DONE]`.
 
-* **Zarządzanie Cyklem Życia (Lifespan Events)**: Plik definiuje asynchroniczne operacje wykonywane podczas startu i zamykania serwera. Na etapie uruchamiania aplikacja nawiązuje trwałe połączenia z zewnętrznymi bazami danych (np. inicjalizacja klienta Elasticsearch i puli połączeń ChromaDB), co eliminuje narzut czasowy przy późniejszej obsłudze zapytań. Przy zamykaniu serwera mechanizm ten dba o bezpieczne zamknięcie sesji i zwolnienie zasobów w pamięci RAM.
-* **Konfiguracja CORS (Cross-Origin Resource Sharing)**: Rejestruje polityki bezpieczeństwa określające, z jakich domen przeglądarki mogą wysyłać zapytania do API. Skonfigurowanie odpowiedniego oprogramowania pośredniczącego (CORS Middleware) jest krytyczne dla umożliwienia bezpiecznej komunikacji między odseparowanym frontendem a backendem, zapobiegając jedocześnie nieautoryzowanym odpytaniom z obcych witryn.
-* **Rejestracja Routingów i Modułów**: Skrypt działa jako centralny rejestr. Importuje kontrolery z warstwy transportowej (takie jak router zdefiniowany w `chat.py`) i podłącza je do głównej instancji aplikacji za pomocą metody `include_router`. Pozwala to na eleganckie grupowanie ścieżek URL (np. z prefiksem `/api/v1/`).
-* **Globalna Obsługa Błędów (Exception Handling)**: Zamiast pozwalać na niekontrolowane zamykanie aplikacji przy błędach, moduł instaluje globalne przechwytywacze wyjątków. Gwarantują one, że nawet nieprzewidziany błąd w głębokiej warstwie serwisowej (np. zerwanie połączenia z API OpenAI) zostanie pochwycony, poprawnie zalogowany za pomocą modułu `logging.py`, a do frontendu powróci ustandaryzowana odpowiedź JSON z czytelnym komunikatem i bezpiecznym kodem błędu (np. 500 Internal Server Error).
+### 6.2. Protokół SSE
+
+Każda ramka ma postać `data: <JSON>\n\n`, JSON to `{"type": ..., "content": ...}`:
+
+| `type` | `content` | Kiedy |
+|---|---|---|
+| `status` | tekst | na początku (jeden raz) |
+| `sources` | lista `{id, text, score, meta:{title, source, section, url}}` | po wyszukaniu, przed tokenami |
+| `token` | fragment odpowiedzi | wielokrotnie |
+| `error` | komunikat po polsku | niedozwolony model, awaria wyszukiwarki, błąd generowania |
+
+Strumień zawsze kończy się ramką `data: [DONE]`, również po błędzie. Nagłówki odpowiedzi: `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no` (wyłącza buforowanie w nginx).
+
+**Ważne:** po rozpoczęciu strumienia status HTTP to już `200`, więc błędy w trakcie generowania są sygnalizowane zdarzeniem `error`, a nie kodem HTTP. Kody 422 i 429 pojawiają się tylko *przed* rozpoczęciem strumienia. Błąd w połowie odpowiedzi zachowuje już wysłane tokeny.
+
+### 6.3. Prompt systemowy i kontekst
+
+* Prompt (po polsku) nakazuje odpowiadać **wyłącznie** na podstawie fragmentów w znacznikach `<source>`, bez zgadywania terminów, kwot, godzin i adresów; dopuszcza proste obliczenia na danych ze źródeł; podaje dzisiejszą datę (strefa `Europe/Warsaw`); wymaga odpowiedzi tylko na *najnowsze* pytanie (historia jest tłem); przy częściowej odpowiedzi ma wskazać, czego baza nie precyzuje; całkowita odmowa — tylko gdy fragmenty nie dotyczą pytania; wymaga cytowania `[1]`, `[2][3]` po zdaniach opartych na źródle.
+* Fragmenty są wstrzykiwane jako `<source id="1" title="…" url="…">…</source>`; atrybuty są escapowane (`html.escape`), a ciąg `<source` / `</source` wewnątrz treści jest neutralizowany, więc dokument nie może „wyjść” poza swój znacznik. Prompt wprost deklaruje, że zawartość `<source>` to dane, nie polecenia.
+* Jeśli zapytanie samodzielne różni się od oryginału, jest dopisywane na końcu wiadomości użytkownika.
+
+### 6.4. Modele
+
+| Identyfikator | Backend | Parametry |
+|---|---|---|
+| `gpt-4o-mini`, `gpt-4o` | `ChatOpenAI`, streaming | `temperature=0.1`, timeout 60 s, 2 ponowienia |
+| `bielik` | `ChatOllama` (`OLLAMA_BASE_URL`, `BIELIK_MODEL`) | `temperature=0.1`, `num_ctx=BIELIK_NUM_CTX` |
+
+Instancje modeli są cache'owane (`lru_cache`). Domyślny model w schemacie żądania to `gpt-4o`. Wyniki porównania modeli opisuje [`eva_models.md`](eva_models.md).
+
+## 7. Endpointy
+
+| Metoda i ścieżka | Opis |
+|---|---|
+| `POST /api/chat` | czat (SSE), limit 5/min/IP |
+| `GET /health` | `200 {"elasticsearch":"ok","chroma":"ok"}` lub `503 {"detail":"Database dependency unavailable"}`; używany przez healthcheck Dockera |
+| `GET /docs`, `/openapi.json` | dokumentacja OpenAPI generowana przez FastAPI (nie wyłączona w kodzie) |
+
+Nie ma prefiksu `/api/v1`, nie ma endpointu zwracającego listę modeli, a metoda inna niż POST na `/api/chat` kończy się standardowym 405.
+
+Przykład żądania:
+
+```json
+{ "query": "Do kiedy mogę złożyć wniosek o stypendium?",
+  "model": "gpt-4o-mini",
+  "history": [ {"role": "user", "content": "…"}, {"role": "assistant", "content": "…"} ] }
+```
+
+## 8. Obsługa błędów — co faktycznie jest zaimplementowane
+
+* `RateLimitExceeded` → 429 (własny handler).
+* `RequestValidationError` → 422 (własny handler).
+* Błędy w trakcie generowania → zdarzenie SSE `error` (patrz §6.2); `RetrievalError` ma osobny komunikat („Wyszukiwarka jest chwilowo niedostępna…”), pozostałe wyjątki — ogólny. Szczegóły trafiają do logu (`log.exception`), nie do klienta.
+* **Nie ma** globalnego handlera 500 dla wyjątków poza strumieniem — takie przypadki obsługuje domyślnie Starlette.
+
+Logowanie (`app/core/logging.py`) to zwykły, jednolinijkowy format tekstowy na stdout: `czas | POZIOM | moduł:funkcja:linia - komunikat`. Nie jest to logowanie ustrukturyzowane (JSON). Dla każdego wyszukiwania logowane są czasy ścieżek gęstej i BM25, czas całkowity i liczba trafień.
+
+## 9. Testy
+
+Katalog `backend/tests/` zawiera ok. 180 testów pytest (wartość orientacyjna — część jest parametryzowana), uruchamianych z katalogu `backend/` (`from main import app`). Wymagane są `pytest` i `httpx`, których nie ma w `requirements.txt`.
+
+| Plik | Zakres |
+|---|---|
+| `test_rag_service.py` | RRF, cache TTL/LRU, sanityzacja i parsowanie odpowiedzi modelu |
+| `test_retrieval.py` | wyszukiwanie hybrydowe na atrapach baz, awarie ścieżek, progi |
+| `test_llm_service.py` | historia, limit kontekstu, odporność kontekstu na wstrzyknięcia, prompt, SSE |
+| `test_pipeline.py` | kolejność zdarzeń, ścieżki odmowy i błędów, kontrakt wyszukiwanie→prompt |
+| `test_integration.py` | `TestClient`: `/health`, 422, 429, nagłówki SSE, CORS, przebieg end-to-end |
+| `test_schemas.py`, `test_sites_config.py` | walidacja żądań; poprawność `sites.yaml` i walidatora |
+
+`conftest.py` pinuje ustawienia, czyści cache i **zabrania tworzenia prawdziwych klientów** Chroma/ES/OpenAI/Ollama (atrapy w `fakes.py`), więc testy nie używają sieci ani płatnych API.
+
+## 10. Ograniczenia
+
+* Cache i limiter działają w pamięci jednego procesu (patrz §4, §5.2).
+* Limity historii są w znakach/wiadomościach, nie w tokenach; kontekst — w znakach.
+* Nie ma uwierzytelniania użytkowników; ochroną jest wyłącznie limit na IP.
+* Zmiana `EMBED_MODEL` wymaga przebudowy kolekcji (`build_database.py --rebuild`), inaczej start zostanie przerwany walidacją z §5.1.
