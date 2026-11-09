@@ -9,6 +9,11 @@ from urllib.parse import urljoin
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from markdownify import markdownify as md
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "config"))
+from sites import load_or_exit # type: ignore
+_cfg = load_or_exit()
 
 # ==========================================
 # SCRIPT SETTINGS
@@ -16,7 +21,7 @@ from markdownify import markdownify as md
 TEST_LIMIT = False
 MAX_SYLLABUSES = 5
 
-BASE_FOLDER = "Baza_Wiedzy_AGH"
+BASE_FOLDER = str(_cfg.data_root)
 DOMAIN = "https://sylabusy.agh.edu.pl"
 START_URL = "https://sylabusy.agh.edu.pl/pl/1/2/22/0/0"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"}
@@ -139,7 +144,7 @@ for year, year_url in academic_years.items():
                 study_type = clean_name(a_mode.text.replace(', ', '_'))
                 field_url = urljoin(DOMAIN, a_mode.get('href'))
                 
-                save_path = os.path.join(BASE_FOLDER, "Syllabuses_Markdown", year, faculty_name, field_name, study_type)
+                save_path = os.path.join(BASE_FOLDER, "Sylabusy_Markdown", year, faculty_name, field_name, study_type)
                 os.makedirs(save_path, exist_ok=True)
                 
                 soup_subjects = fetch_soup(field_url)

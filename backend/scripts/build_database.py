@@ -36,13 +36,13 @@ import yaml
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from app.core.config import settings
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
+from sites import load_or_exit  # noqa: E402  # type: ignore
 
 # ==========================================
 # SETTINGS
 # ==========================================
 BASE_DIR = Path(__file__).resolve().parent
-DB_DIR = str((BASE_DIR / "../../data/Baza_Wektorowa_Chroma_ASYM").resolve())
-MANIFEST_PATH = os.path.join(DB_DIR, "_manifest_indeksu.json")
 
 COLLECTION_NAME = settings.CHROMA_COLLECTION
 ES_INDEX = settings.ES_INDEX
@@ -65,90 +65,20 @@ MIN_DOC_CHARS = 80
 MAX_BATCH_ELEMENTS = 256
 MAX_BATCH_TOKENS = 200_000
 
-COLLECTIONS = [
-    {"path": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Strony", "source": "Rekrutacja AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Rekrutacja_Dokumenty_Przetworzone", "source": "Rekrutacja AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Biblioteka_Strony", "source": "Biblioteka Główna AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Biblioteka_Dokumenty_Przetworzone", "source": "Biblioteka Główna AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/CSS_Strony", "source": "Centrum Spraw Studenckich AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/CSS_Dokumenty_Przetworzone", "source": "Centrum Spraw Studenckich AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Miasteczko_Strony", "source": "Miasteczko Studenckie AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Miasteczko_Dokumenty_Przetworzone", "source": "Miasteczko Studenckie AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Strony", "source": "Centrum Karier AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Centrum_Karier_Dokumenty_Przetworzone", "source": "Centrum Karier AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Strony", "source": "Centrum Spraw Międzynarodowych AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Centrum_Spraw_Miedzynarodowych_Dokumenty_Przetworzone", "source": "Centrum Spraw Międzynarodowych AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/SWFiS_Strony", "source": "SWFiS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/SWFiS_Dokumenty_Przetworzone", "source": "SWFiS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Cyfronet_Strony", "source": "Cyfronet AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Cyfronet_Dokumenty_Przetworzone", "source": "Cyfronet AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/SJO_Strony", "source": "SJO AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/SJO_Dokumenty_Przetworzone", "source": "SJO AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/KA_Dokumenty_Przetworzone", "source": "KA AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/KA_Strony", "source": "KA AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/CKiM_Strony", "source": "CKiM AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/CKiM_Dokumenty_Przetworzone", "source": "CKiM AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/CRI_Strony", "source": "CRI AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/CRI_Dokumenty_Przetworzone", "source": "CRI AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/SD_Strony", "source": "SD AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/SD_Dokumenty_Przetworzone", "source": "SD AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Strony", "source": "Podyplomowe AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Podyplomowe_Dokumenty_Przetworzone", "source": "Podyplomowe AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Fundacja_Strony", "source": "Fundacja AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Fundacja_Dokumenty_Przetworzone", "source": "Fundacja AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Samorzad_Strony", "source": "Samorzad AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Samorzad_Dokumenty_Przetworzone", "source": "Samorzad AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/EAIIB_Strony", "source": "EAIIB AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/RPS_Strony", "source": "RPS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/RPS_Dokumenty_Przetworzone", "source": "RPS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WH_Strony", "source": "WH AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WH_Dokumenty_Przetworzone", "source": "WH AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Odlewnictwo_Strony", "source": "Odlewnictwo AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WNIG_Strony", "source": "WNIG AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WNIG_Dokumenty_Przetworzone", "source": "WNIG AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Zarz_Strony", "source": "Zarz AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Zarz_Dokumenty_Przetworzone", "source": "Zarz AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WIMIC_Strony", "source": "WIMIC AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WIMIC_Dokumenty_Przetworzone", "source": "WIMIC AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WILGZ_Strony", "source": "WILGZ AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WILGZ_Dokumenty_Przetworzone", "source": "WILGZ AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Metal_Strony", "source": "Metal AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Metal_Dokumenty_Przetworzone", "source": "Metal AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WGGIOS_Strony", "source": "WGGIOS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WGGIOS_Dokumenty_Przetworzone", "source": "WGGIOS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/IET_Strony", "source": "IET AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/IET_Dokumenty_Przetworzone", "source": "IET AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WGGIIS_Strony", "source": "WGGIIS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WGGIIS_Dokumenty_Przetworzone", "source": "WGGIIS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Strony", "source": "WGGIIS_Studiuj AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WGGIIS_Studiuj_Dokumenty_Przetworzone", "source": "WGGIIS_Studiuj AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Informatyka_Strony", "source": "Informatyka AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Informatyka_Dokumenty_Przetworzone", "source": "Informatyka AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Spacetech_Strony", "source": "Spacetech AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Spacetech_Dokumenty_Przetworzone", "source": "Spacetech AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WMS_Strony", "source": "WMS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WMS_Dokumenty_Przetworzone", "source": "WMS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/FIS_Strony", "source": "FIS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/FIS_Dokumenty_Przetworzone", "source": "FIS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WEIP_Strony", "source": "WEIP AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WEIP_Dokumenty_Przetworzone", "source": "WEIP AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/WMN_Strony", "source": "WMN AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/WMN_Dokumenty_Przetworzone", "source": "WMN AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Historia_Strony", "source": "Historia AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/IMIR_Strony", "source": "IMIR AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/IMIR_Dokumenty_Przetworzone", "source": "IMIR AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/AZS_Strony", "source": "AZS AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/AZS_Dokumenty_Przetworzone", "source": "AZS AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/COK_Strony", "source": "COK AGH", "type": "strona"},
-    {"path": "../../data/Baza_Wiedzy_AGH/COK_Dokumenty_Przetworzone", "source": "COK AGH", "type": "dokument", "legal_headers": True},
-    {"path": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2021_2022", "source": "Sylabusy AGH", "type": "sylabus"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2022_2023", "source": "Sylabusy AGH", "type": "sylabus"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2023_2024", "source": "Sylabusy AGH", "type": "sylabus"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2024_2025", "source": "Sylabusy AGH", "type": "sylabus"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2025_2026", "source": "Sylabusy AGH", "type": "sylabus"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Sylabusy_Markdown/2026_2027", "source": "Sylabusy AGH", "type": "sylabus"},
-    {"path": "../../data/Baza_Wiedzy_AGH/Skos_Strony", "source": "Skos AGH", "type": "strona"},
-]
+SITES = None
+COLLECTIONS = []
+
+
+def init_config(config_path=None):
+    global SITES, COLLECTIONS, DB_DIR, MANIFEST_PATH
+    SITES = load_or_exit(config_path)
+    COLLECTIONS = SITES.collections()
+    DB_DIR = str(SITES.index_dir)
+    MANIFEST_PATH = os.path.join(DB_DIR, "_manifest_indeksu.json")
+
+
+init_config()
+
 
 # ==========================================
 # TOKEN COUNTING
@@ -181,7 +111,7 @@ def parse_frontmatter(content):
     try:
         meta = yaml.safe_load(m.group(1)) or {}
     except yaml.YAMLError as e:
-        print(f"   ⚠️ Invalid YAML in frontmatter ({str(e).splitlines()[0]}) - ignoring metadata")
+        print(f"   Invalid YAML in frontmatter ({str(e).splitlines()[0]}) - ignoring metadata")
         meta = {}
     return (meta if isinstance(meta, dict) else {}), content[m.end():].strip()
 
@@ -670,8 +600,8 @@ def resolve_path(path):
 def validate_config():
     seen = []
     for i, c in enumerate(COLLECTIONS):
-        if not isinstance(c, dict) or not {"path", "source", "type"} <= set(c):
-            sys.exit(f"COLLECTIONS[{i}] is invalid (required keys: path, source, type): {c!r}")
+        if not isinstance(c, dict) or not {"path", "id_path", "source", "type"} <= set(c):
+            sys.exit(f"COLLECTIONS[{i}] is invalid (required keys: path, id_path, source, type): {c!r}")
         cat = resolve_path(c["path"])
         for other in seen:
             if cat == other or cat in other.parents or other in cat.parents:
@@ -680,7 +610,7 @@ def validate_config():
 
 
 def collect_files(allow_missing=False):
-    """Returns [(cfg, read_path, rel)]. `rel` is the old manifest key (path as in COLLECTIONS),
+    """Returns [(cfg, read_path, rel)]. `rel` is the manifest key / chunk-ID basis (`id_path` from sites.yaml),
     so existing manifest and chunk IDs remain valid."""
     validate_config()
     files, missing = [], []
@@ -689,10 +619,10 @@ def collect_files(allow_missing=False):
         if not cat.exists():
             missing.append(str(cat))
             continue
-        files += [(cfg, p, (Path(cfg["path"]) / p.relative_to(cat)).as_posix()) for p in sorted(cat.rglob("*.md"))]
+        files += [(cfg, p, (Path(cfg["id_path"]) / p.relative_to(cat)).as_posix()) for p in sorted(cat.rglob("*.md"))]
     if missing:
         for k in missing:
-            print(f"⚠️ Missing directory: {k}")
+            print(f"Missing directory: {k}")
         if not allow_missing:
             sys.exit("Aborted: missing collection dirs would trigger DELETION of their chunks from index. "
                      "Fix paths or use --allow-missing-dirs.")
@@ -833,7 +763,7 @@ def check_es_consistency(es, manifest):
     es.indices.refresh(index=ES_INDEX)
     in_es = es.count(index=ES_INDEX)["count"]
     if in_es < expected:
-        print(f"⚠️ DISCREPANCY: manifest has {expected} chunks, but Elasticsearch only has {in_es}. "
+        print(f"DISCREPANCY: manifest has {expected} chunks, but Elasticsearch only has {in_es}. "
               f"Run:  python build_database.py --rebuild-es   (no API costs)")
 
 
@@ -859,9 +789,9 @@ def rebuild_es(allow_missing_dirs=False):
         bulk_es(es, build_index_actions(chunks))
         chunk_count += len(chunks)
     es.indices.refresh(index=ES_INDEX)
-    print(f"✅ ES rebuilt: {chunk_count} chunks from files matching manifest.")
+    print(f"ES rebuilt: {chunk_count} chunks from files matching manifest.")
     if skipped:
-        print(f"⚠️ Skipped {len(skipped)} files modified since last indexing "
+        print(f"Skipped {len(skipped)} files modified since last indexing "
               f"(e.g., {skipped[0]}) - run standard indexing to update them.")
 
 
@@ -932,7 +862,7 @@ def run_indexing(dry_run=False, rebuild=False, confirm_deletion=False, allow_mis
                 batch = all_kept[i:i + 2000]
                 col.update(ids=[cid for cid, _, _ in batch], metadatas=[md for _, _, md in batch])
                 bulk_es(es, build_index_actions(batch))
-                print(f"    ⚡ Odzyskiwanie linków: {min(i+2000, len(all_kept))}/{len(all_kept)}...")
+                print(f"    Odzyskiwanie linków: {min(i+2000, len(all_kept))}/{len(all_kept)}...")
         for rel, sig, all_ids, old_ids, _, _ in buffer:
             orphans = set(old_ids) - set(all_ids)
             if orphans:
@@ -1036,6 +966,7 @@ def search_test(query, k=5, source=None):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Build RAG vector database (Markdown -> Chroma)")
+    ap.add_argument("--config", help="alternative sites.yaml (default: config/sites.yaml or $RAG_SITES_FILE)")
     ap.add_argument("--dry-run", action="store_true", help="count chunks and cost, no API calls")
     ap.add_argument("--rebuild", action="store_true", help="delete Chroma collection and ES index, build from scratch")
     ap.add_argument("--rebuild-es", action="store_true", help="restore ES index from files (no OpenAI API)")
@@ -1046,6 +977,8 @@ if __name__ == "__main__":
     ap.add_argument("-k", type=int, default=5, help="number of --search results")
     ap.add_argument("--source", help="source filter for --search, e.g., 'Biblioteka Główna AGH'")
     a = ap.parse_args()
+    if a.config:
+        init_config(a.config)
     if a.preview:
         preview_chunking(a.preview)
     elif a.search:

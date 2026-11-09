@@ -1,10 +1,10 @@
 export type Role = 'user' | 'assistant' | 'system';
 
 export interface SourceMeta {
-  tytul?: string;
+  title?: string;
   url?: string;
-  sekcja?: string;
-  zrodlo?: string;
+  section?: string;
+  source?: string;
 }
 
 export interface SourceDocument {

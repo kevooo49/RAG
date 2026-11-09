@@ -1,6 +1,9 @@
+import argparse
 import os
 import json
+import sys
 import time
+from pathlib import Path
 import requests
 import fitz
 from dotenv import load_dotenv
@@ -11,6 +14,9 @@ try:
 except ImportError:
     DOCX_SUPPORT = False
     print("docx2pdf is missing. .docx files will be skipped. (Install: pip install docx2pdf)")
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
+from sites import ConfigError, load_or_exit  # noqa: E402 # type: ignore
 
 load_dotenv()
 API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
@@ -174,10 +180,37 @@ def process_directory(raw_folder: str, processed_folder: str, temporary_folder: 
     print(f"DOCX->PDF: {docx_count} | Local (Free): {local_count} | AI Cloud: {cloud_count}")
 
 
+def main():
+    ap = argparse.ArgumentParser(
+        description="Raw PDF/DOCX -> Markdown (PyMuPDF locally, LlamaParse for complex files)",
+        epilog="Folders come from config/sites.yaml (paths.data_root + layout). Any of them can be overridden below.")
+    ap.add_argument("site", nargs="?", help="site key from config/sites.yaml, e.g. 'cok'")
+    ap.add_argument("--raw", help="folder with downloaded PDF/DOCX files")
+    ap.add_argument("--processed", help="output folder for .md files")
+    ap.add_argument("--temp", help="scratch folder for DOCX->PDF conversion")
+    ap.add_argument("--domain", help="source URL written to the frontmatter")
+    ap.add_argument("--config", help="alternative sites.yaml")
+    a = ap.parse_args()
+
+    dirs = {"raw": a.raw, "processed": a.processed, "temp": a.temp, "source_domain": a.domain}
+    if a.site:
+        sites = load_or_exit(a.config)
+        try:
+            defaults = sites.document_dirs(a.site)
+        except ConfigError as e:
+            sys.exit(f"Configuration error: {e}")
+        dirs = {k: (v if v else defaults[k]) for k, v in dirs.items()}
+    missing = [k for k, v in dirs.items() if not v and k != "source_domain"]
+    if missing:
+        ap.error(f"give a site key (python document_parser.py cok) or --{' --'.join(missing)}")
+
+    if not os.path.isdir(dirs["raw"]):
+        sys.exit(f"Raw folder does not exist: {dirs['raw']}")
+    if not API_KEY:
+        print("Warning: LLAMA_CLOUD_API_KEY is not set - files needing LlamaParse will fail.")
+    process_directory(raw_folder=str(dirs["raw"]), processed_folder=str(dirs["processed"]),
+                      temporary_folder=str(dirs["temp"]), source_domain=dirs["source_domain"] or "")
+
+
 if __name__ == "__main__":
-    process_directory(
-        raw_folder="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Surowe",
-        processed_folder="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Przetworzone",
-        temporary_folder="C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Baza_Wiedzy_AGH\\COK_Dokumenty_Tymczasowe",
-        source_domain="https://www.cok.agh.edu.pl/"
-    )
+    main()

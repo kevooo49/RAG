@@ -19,7 +19,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
-
+from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -41,15 +41,18 @@ import build_database
 # 1. PRODUCTION CONFIGURATION
 # =====================================================================
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
 EVAL_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
+from sites import load_or_exit  # noqa: E402 # type: ignore
+EVAL_DATA_DIR = str(load_or_exit().eval_dir)
 DATASET_PATH = os.path.join(script_dir, "test_dataset_balanced.json")
-CACHE_DIR = os.path.join(script_dir, ".eval_cache_production_2")
-OUT_ROOT = os.path.join(script_dir, "production_eva_stats_2")
+CACHE_DIR = os.path.join(script_dir, ".eval_cache_production")
+OUT_ROOT = os.path.join(script_dir, "production_eva_stats")
 
 EMBED_MODEL = "text-embedding-3-small"
-REWRITE_MODEL = "gpt-4o"
-COLLECTION_NAME = "eval_production_2"
-ES_INDEX = "eval_production_2_idx"
+REWRITE_MODEL = "gpt-4o-mini"
+COLLECTION_NAME = "eval_production"
+ES_INDEX = "eval_production_idx"
 
 K_VALUES = (1, 3, 5, 10)
 K_MAX = max(K_VALUES)
@@ -113,22 +116,22 @@ def corpus_fingerprint() -> str:
 def chunk_file_asymmetric(filepath: str) -> List[Dict[str, Any]]:
     """Splits a file and returns two versions of text: clean breadcrumb (for vector) and full header (for ES/LLM)."""
     cfg = {"sciezka": filepath, "zrodlo": "Zbior_Ewaluacyjny", "typ": "dokument", "naglowki_prawne": True, "pogrubienia_jako_naglowki": True}
-    doc = build_database.przygotuj_dokument(filepath, cfg)
+    doc = build_database.prepare_document(filepath, cfg)
     if not doc: return []
     
     chunks = []
-    for _cid, c, md in build_database.chunkuj_plik(filepath, cfg, doc):
+    for _cid, c, md in build_database.chunk_file(filepath, cfg, doc):
         title = str(md.get("tytul") or "")
         section = str(md.get("sekcja") or "")
         
         bc_parts = [x for x in (title, section) if x]
         breadcrumb = " › ".join(bc_parts)
         
-        parts = c.tekst_emb.split("\n\n", 1)
-        content = parts[1] if len(parts) > 1 else c.tekst_emb
+        parts = c.text_emb.split("\n\n", 1)
+        content = parts[1] if len(parts) > 1 else c.text_emb
         
         text_vector = f"{breadcrumb}\n\n{content}" if breadcrumb else content
-        text_es = c.tekst_emb
+        text_es = c.text_emb
         
         chunks.append({
             "text_vector": text_vector,

@@ -19,7 +19,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
-
+from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -42,7 +42,10 @@ import build_database
 # 1. CONFIGURATION
 # =====================================================================
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
 EVAL_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
+from sites import load_or_exit  # noqa: E402 # type: ignore
+EVAL_DATA_DIR = str(load_or_exit().eval_dir)
 DATASET_PATH = os.path.join(SCRIPT_DIR, "test_dataset_balanced.json")
 CACHE_DIR = os.path.join(SCRIPT_DIR, ".eval_cache")
 OUT_ROOT = os.path.join(SCRIPT_DIR, "search_eva_stats")
@@ -144,11 +147,11 @@ def chunk_file(filepath: str) -> List[Dict[str, Any]]:
         "naglowki_prawne": True,
         "pogrubienia_jako_naglowki": True,
     }
-    doc = build_database.przygotuj_dokument(filepath, cfg)
+    doc = build_database.prepare_document(filepath, cfg)
     if not doc:
         return []
-    return [{"text": c.tekst_emb, "metadata": md}
-            for _cid, c, md in build_database.chunkuj_plik(filepath, cfg, doc)]
+    return [{"text": c.text_emb, "metadata": md}
+            for _cid, c, md in build_database.chunk_file(filepath, cfg, doc)]
 
 def build_or_load_index(chroma_client, embedding_fn, es: Elasticsearch, force: bool):
     fp_path = os.path.join(CACHE_DIR, "fingerprint.txt")

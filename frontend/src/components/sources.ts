@@ -21,8 +21,8 @@ sources.forEach((source, index) => {
     const card = document.createElement('div');
     card.className = 'source-card';
 
-    const title = escapeHTML(source.meta?.tytul || 'Dokument AGH');
-    const section = escapeHTML(source.meta?.sekcja || 'Baza główna');
+    const title = escapeHTML(source.meta?.title || 'Dokument AGH');
+    const section = escapeHTML(source.meta?.section || 'Baza główna');
     const safeText = escapeHTML(source.text);
     const score = source.score ? source.score.toFixed(5) : 'N/A';
 

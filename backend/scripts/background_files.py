@@ -2,9 +2,14 @@
 import os
 import random
 import shutil
+import sys
+from pathlib import Path
 
-MAIN_DATABASE_DIRECTORY = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Baza_Wiedzy_AGH"
-EVALUATION_DIRECTORY = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
+from sites import load_or_exit  # noqa: E402 # type: ignore
+_cfg = load_or_exit()
+MAIN_DATABASE_DIRECTORY = str(_cfg.data_root)
+EVALUATION_DIRECTORY = str(_cfg.eval_dir)
 
 TOTAL_BACKGROUND_FILE_COUNT = 170
 

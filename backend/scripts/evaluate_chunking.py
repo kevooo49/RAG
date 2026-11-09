@@ -44,9 +44,8 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
-
 import matplotlib
-
+from pathlib import Path
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,7 +57,10 @@ sys.path.append(os.path.abspath(os.path.join(SCRIPT_DIR, "..")))
 # 1. CONFIGURATION
 # =====================================================================
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
 DEFAULT_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
+from sites import load_or_exit  # noqa: E402 # type: ignore
+DEFAULT_DATA_DIR = str(load_or_exit().eval_dir)
 DEFAULT_DATASET = os.path.join(SCRIPT_DIR, "test_dataset_balanced.json")
 CACHE_DIR = os.path.join(SCRIPT_DIR, ".eval_cache")
 OUT_ROOT = os.path.join(SCRIPT_DIR, "chunk_eva_stats")
@@ -291,10 +293,10 @@ def chunk_production(bd, filepath: str) -> List[str]:
         "naglowki_prawne": True,
         "pogrubienia_jako_naglowki": True,
     }
-    doc = bd.przygotuj_dokument(filepath, cfg)
+    doc = bd.prepare_document(filepath, cfg)
     if not doc:
         return []
-    return [c.tekst_emb for _cid, c, _md in bd.chunkuj_plik(filepath, cfg, doc)]
+    return [c.text_emb for _cid, c, _md in bd.chunk_file(filepath, cfg, doc)]
 
 def chunk_production_asymmetric(bd, filepath: str) -> List[str]:
     """Hybrid version: preserves structure from the custom parser but uses a cleaner header."""
@@ -302,16 +304,16 @@ def chunk_production_asymmetric(bd, filepath: str) -> List[str]:
         "sciezka": filepath, "zrodlo": "Zbior_Ewaluacyjny", "typ": "dokument",
         "naglowki_prawne": True, "pogrubienia_jako_naglowki": True,
     }
-    doc = bd.przygotuj_dokument(filepath, cfg)
+    doc = bd.prepare_document(filepath, cfg)
     if not doc: return []
     
     out = []
-    for _cid, c, md in bd.chunkuj_plik(filepath, cfg, doc):
+    for _cid, c, md in bd.chunk_file(filepath, cfg, doc):
         title = md.get("tytul", "")
         section = md.get("sekcja", "")
 
-        parts = c.tekst_emb.split("\n\n", 1)
-        raw_content = parts[1] if len(parts) > 1 else c.tekst_emb
+        parts = c.text_emb.split("\n\n", 1)
+        raw_content = parts[1] if len(parts) > 1 else c.text_emb
         
         prefix = section.split(" › ") if section else []
         new_header = f"{title}" + (f" - {prefix[-1]}" if prefix else "")
@@ -329,7 +331,6 @@ def build_strategies(prod_mean: Optional[int]) -> List[Strategy]:
     ]
     if prod_mean:
         m = max(200, prod_mean)
-        # Notatki ("note") pozostawiam po polsku, gdyż trafiają one wprost do polskiego raportu.
         s += [
             Strategy("Fixed_Matched", lambda t: chunk_fixed(t, m), note=f"rozmiar={m}"),
             Strategy("Paragraphs_Matched", lambda t: chunk_paragraphs(t, m), note=f"max={m}"),

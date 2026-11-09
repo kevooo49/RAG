@@ -49,7 +49,9 @@ import numpy as np
 # 1. CONFIGURATION
 # =====================================================================
 SCRIPT_DIR = Path(__file__).resolve().parent
-EVAL_DATA_DIR = os.getenv("EVAL_DATA_DIR", r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
+from sites import load_or_exit  # noqa: E402 # type: ignore
+EVAL_DATA_DIR = os.getenv("EVAL_DATA_DIR") or str(load_or_exit().eval_dir)
 DATASET_PATH = SCRIPT_DIR / "test_dataset_balanced.json"
 OUT_ROOT = SCRIPT_DIR / "meta_eva_stats_claude"
 CACHE_PATH = SCRIPT_DIR / "meta_eva_cache.sqlite"
@@ -182,17 +184,17 @@ def load_chunks(data_dir: Path, bd) -> tuple:
     chunks: List[ChunkRec] = []
     docs: Dict[str, DocRec] = {}
     for p in sorted(Path(data_dir).rglob("*.md")):
-        doc = bd.przygotuj_dokument(p, {})
+        doc = bd.prepare_document(p, {})
         if not doc:
             continue
         meta, body, title = doc
         cfg = cfg_for_file(p, meta, data_dir)
         key = norm_name(p.name)
         docs[key] = DocRec(key, p.name, title, body)
-        for _, c, md in bd.chunkuj_plik(p, cfg, doc):
+        for _, c, md in bd.chunk_file(p, cfg, doc):
             chunks.append(ChunkRec(len(chunks), key, str(md.get("tytul") or title), str(md.get("sekcja") or ""),
                                    str(md.get("zrodlo") or cfg["zrodlo"]), url_words(md),
-                                   split_header(c.tekst_emb, md)))
+                                   split_header(c.text_emb, md)))
     return chunks, docs
 
 

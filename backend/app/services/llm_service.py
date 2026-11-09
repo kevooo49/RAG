@@ -75,8 +75,8 @@ def _build_context(chunks: List[Tuple[str, Dict[str, Any]]]) -> str:
     blocks = []
     for i, (text, info) in enumerate(chunks, 1):
         meta = info.get("meta", {})
-        attr = f'id="{i}"' + "".join(f' {k}="{html.escape(str(meta[k]), quote=True)}"' for k in ("tytul", "url") if meta.get(k))
-        safe_text = re.sub(r'</source', r'<\\/source', text, flags=re.IGNORECASE)
+        attr = f'id="{i}"' + "".join(f' {k}="{html.escape(str(meta[k]), quote=True)}"' for k in ("title", "url") if meta.get(k))
+        safe_text = re.sub(r'<(/?source)', r'<\\\1', text, flags=re.IGNORECASE)
         blocks.append(f"<source {attr}>\n{safe_text}\n</source>")
         
     return "\n\n".join(blocks)

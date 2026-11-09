@@ -6,3 +6,5 @@ backend/__pycache__/
 backend/.pytest_cache/
 backend/scripts/.eval_cache/
 backend/scripts/meta_eva_cache.sqlite
+previous/
+helpers/

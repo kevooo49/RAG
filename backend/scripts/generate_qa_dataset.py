@@ -2,13 +2,16 @@
 import os
 import json
 import sys
+from pathlib import Path
 from openai import OpenAI
 from dotenv import load_dotenv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 load_dotenv()
 
-EVALUATION_DIRECTORY = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
+from sites import load_or_exit  # noqa: E402  # type: ignore
+EVALUATION_DIRECTORY = str(load_or_exit().eval_dir)
 OUTPUT_FILE = "test_dataset_balanced.json"
 
 BASE_FILES = [

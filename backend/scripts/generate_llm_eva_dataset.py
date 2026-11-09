@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import time
 import logging
 from pathlib import Path
@@ -7,11 +8,15 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
-DOCS_DIR = Path("C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\data\\Ewaluacja_Probka") 
-INPUT_FILE = "test_dataset_balanced.json"
-OUTPUT_FILE = "llm_golden_dataset.json"
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR.parents[1] / "config"))
+from sites import load_or_exit  # noqa: E402 # type: ignore
 
-load_dotenv("../.env")
+DOCS_DIR = load_or_exit().eval_dir
+INPUT_FILE = str(SCRIPT_DIR / "test_dataset_balanced.json")
+OUTPUT_FILE = str(SCRIPT_DIR / "llm_golden_dataset.json")
+
+load_dotenv(SCRIPT_DIR.parent / ".env")
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 log = logging.getLogger(__name__)

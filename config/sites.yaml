@@ -1,0 +1,1169 @@
+# Single source of truth for: which sites are crawled, how, and which folders get indexed.
+# Add a site = add an entry under `sites:`; no Python changes needed.
+
+paths:
+  data_root: data/Baza_Wiedzy_AGH
+  eval_dir: data/Ewaluacja_Probka
+  index_dir: data/Baza_Wektorowa_Chroma_ASYM   # indexer manifest (_manifest_indeksu.json)
+  id_prefix: ../../data/Baza_Wiedzy_AGH
+layout:
+  pages: '{prefix}_Strony'
+  raw_documents: '{prefix}_Dokumenty_Surowe'
+  processed_documents: '{prefix}_Dokumenty_Przetworzone'
+  temp_documents: '{prefix}_Dokumenty_Tymczasowe'
+crawl_defaults:
+  content_selectors:
+  - '#mainContent'
+  - main
+  - '[role=main]'
+  - article
+  - '#main'
+  - '#content'
+  footer_selectors:
+  - '#pageFooter'
+  - footer
+  additional_junk_selectors: []
+  excluded_paths: []
+  foreign_language_prefixes:
+  - /en
+  - /de
+  - /ru
+  - /uk
+  - /fr
+  - /es
+  allowed_languages:
+  - pl
+  min_chars: 300
+  max_depth: 12
+  requires_js: false
+sites:
+  bg:
+    prefix: Biblioteka
+    start_url: https://bg.agh.edu.pl/
+    source: Biblioteka Główna AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      additional_junk_selectors:
+      - '#pageFooter'
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - .skip-to-content
+      excluded_paths:
+      - /wydarzenia
+      - /aktualnosci
+      - /galeria
+      - /galerie
+      - /konferencje
+      - /archiwum
+      - /blog
+      - /webinaria
+      - /noc-bibliotek-2026
+      - /mapa-strony
+      - /intranet-bg
+      - /typo3
+      - /typo3conf
+      - /szukaj
+      - /wyszukiwarka
+      - /login
+  css:
+    prefix: CSS
+    start_url: https://css.agh.edu.pl/
+    source: Centrum Spraw Studenckich AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - '#mainMenuNav'
+      - '#pageFooter'
+      - .skip-to-content
+      excluded_paths:
+      - /swiadczenia/archiwum-dokumentow
+  ms:
+    prefix: Miasteczko
+    start_url: https://www.miasteczko.agh.edu.pl/
+    source: Miasteczko Studenckie AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors:
+      - '#maincontent'
+      footer_selectors:
+      - '#footer'
+      additional_junk_selectors:
+      - '#header'
+      - .content-right
+      - '#search'
+      - .facebook-like
+      excluded_paths:
+      - /galeria-zdjec.html
+      - /pl/horizontal/pjm.html
+  ck:
+    prefix: Centrum_Karier
+    start_url: https://www.ck.agh.edu.pl/
+    source: Centrum Karier AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - '#mainMenuNav'
+      - '#unitMenu'
+      - .fw-block
+      - .skip-to-content
+      - .news__container_stud
+      - header
+      excluded_paths:
+      - /aktualnosci
+      - /szukaj
+      - /login
+  rekrutacja:
+    prefix: Rekrutacja
+    start_url: https://rekrutacja.agh.edu.pl/
+    source: Rekrutacja AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: true
+      content_selectors:
+      - '#tabs-content-wrapper'
+      - .menu-content-result__option
+      - .site-main
+      - '#content'
+      footer_selectors:
+      - '#colophon'
+      - '#pageFooter'
+      additional_junk_selectors:
+      - .cr-counter-wrapper
+      - .navbar-row
+      - .menu-vertical
+      - .socialmedia-logos
+      - .social-section
+      - .dontforget-wrapper
+      - .menuslider-wrapper
+      - .faq-wrapper
+      - .sticky-icons
+      - '#cai-user-widget'
+      - iframe
+      - script
+      - style
+      - noscript
+      - .owl-carousel
+      - .owl-stage
+      excluded_paths:
+      - /aktualnosci
+      - /kalkulator
+      - /rejestracja
+  csm:
+    prefix: Centrum_Spraw_Miedzynarodowych
+    start_url: https://csm.agh.edu.pl/
+    source: Centrum Spraw Międzynarodowych AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - .skip-to-content
+      - '#cookieconsent'
+      - '#scroller'
+      - .carousel-indicators
+      - .carousel-control
+      excluded_paths:
+      - /aktualnosci
+      - /szukaj
+      - /login
+  cyfronet:
+    prefix: Cyfronet
+    start_url: https://www.cyfronet.pl/pl
+    source: Cyfronet AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors:
+      - main
+      footer_selectors:
+      - footer
+      additional_junk_selectors:
+      - header
+      - .searchbox-wrapper
+      - '#skip-link'
+      - '#sitemap'
+      - '#return-to-top'
+      - noscript
+      - script
+      - style
+      excluded_paths:
+      - /search/query
+      - /login
+      - /newsletter
+  swfis:
+    prefix: SWFiS
+    start_url: https://swfis.agh.edu.pl/
+    source: SWFiS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - .skip-to-content
+      - '#cookieconsent'
+      - '#scroller'
+      - .carousel-indicators
+      - .carousel-control
+      excluded_paths:
+      - /szukaj
+      - /login
+  sjo:
+    prefix: SJO
+    start_url: https://www.sjo.agh.edu.pl/
+    source: SJO AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors:
+      - '#main'
+      footer_selectors:
+      - footer
+      additional_junk_selectors:
+      - header
+      - .header
+      - '#cookieconsent'
+      - .mobile-menu-head
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+  ckim:
+    prefix: CKiM
+    start_url: https://ckim.agh.edu.pl/
+    source: CKiM AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+  cok:
+    prefix: COK
+    start_url: https://cok.agh.edu.pl/
+    source: COK AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+  cri:
+    prefix: CRI
+    start_url: https://cri.agh.edu.pl/
+    source: CRI AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - '#ai'
+      - .skip-to-content
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /en
+  ka:
+    prefix: KA
+    start_url: https://ka.agh.edu.pl/
+    source: KA AGH
+    documents:
+      legal_headers: true
+    pages: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /app/
+  sd:
+    prefix: SD
+    start_url: https://sd.agh.edu.pl/
+    source: SD AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  podyplomowe:
+    prefix: Podyplomowe
+    start_url: https://www.podyplomowe.agh.edu.pl/
+    source: Podyplomowe AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /en
+  samorzad:
+    prefix: Samorzad
+    start_url: https://samorzad.agh.edu.pl/
+    source: Samorzad AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - footer.footer
+      additional_junk_selectors:
+      - nav
+      - header.header
+      - '#cookieconsent'
+      - '[data-popup-wrapper]'
+      - '[data-search]'
+      - .wp-block-aktualnosci
+      - .wp-block-gallery
+      - .swiper
+      - .skip-to-content
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /en
+  fundacja:
+    prefix: Fundacja
+    start_url: https://fundacja.agh.edu.pl/
+    source: Fundacja AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors:
+      - main
+      - .entry-content
+      - .wp-block-kadence-rowlayout
+      footer_selectors:
+      - '#colophon'
+      additional_junk_selectors:
+      - nav
+      - header
+      - '#cookieconsent'
+      - '#search-drawer'
+      - '#mobile-drawer'
+      - .g-recaptcha-bubble-arrow
+      - .skip-link
+      - .screen-reader-text
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /tag/
+  eaiiib:
+    prefix: EAIIB
+    start_url: https://eaiib.agh.edu.pl/
+    source: EAIIB AGH
+    pages: true
+    crawl:
+      content_selectors:
+      - main#jupiterx-main
+      footer_selectors:
+      - footer.jupiterx-footer
+      additional_junk_selectors:
+      - nav
+      - header.jupiterx-header
+      - '#cookie-notice'
+      - '#search-drawer'
+      - '#mobile-drawer'
+      - .g-recaptcha-bubble-arrow
+      - .skip-link
+      - .screen-reader-text
+      - .jupiterx-corner-buttons
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /tag/
+      - /doktorant
+  wh:
+    prefix: WH
+    start_url: https://wh.agh.edu.pl/
+    source: WH AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  odlewnictwo:
+    prefix: Odlewnictwo
+    start_url: https://odlewnictwo.agh.edu.pl/
+    source: Odlewnictwo AGH
+    pages: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '[data-elementor-type=''footer'']'
+      - footer
+      additional_junk_selectors:
+      - '[data-elementor-type=''header'']'
+      - .elementor-widget-nav-menu
+      - .elementor-widget-search-form
+      - '#cookie-notice'
+      - .elementor-widget-image-carousel
+      - .elementor-widget-posts
+      - .swiper
+      - .dialog-lightbox-close-button
+      - .skip-link
+      - .screen-reader-text
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /category/
+      - /tag/
+      - /author/
+  wnig:
+    prefix: WNIG
+    start_url: https://wnig.agh.edu.pl/
+    source: WNIG AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  zarz:
+    prefix: Zarz
+    start_url: https://zarz.agh.edu.pl/
+    source: Zarz AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  wimic:
+    prefix: WIMIC
+    start_url: https://wimic.agh.edu.pl/
+    source: WIMIC AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+      - /nauka/osiagniecia/detail
+      - /wydzial/odeszli
+  wilgz:
+    prefix: WILGZ
+    start_url: https://wilgz.agh.edu.pl/
+    source: WILGZ AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  metal:
+    prefix: Metal
+    start_url: https://www.metal.agh.edu.pl/
+    source: Metal AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: true
+      content_selectors:
+      - main
+      - article
+      - .page-content
+      footer_selectors:
+      - footer
+      additional_junk_selectors:
+      - header
+      - '#news-section'
+      - .search-wrapper
+      - '[class*=''_sliderContainer_'']'
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /news/
+      - /category/
+      - /en
+  iet:
+    prefix: IET
+    start_url: https://iet.agh.edu.pl/
+    source: IET AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - footer.jupiterx-footer
+      additional_junk_selectors:
+      - header.jupiterx-header
+      - '#cmplz-cookiebanner-container'
+      - '#iet-search-overlay'
+      - .jupiterx-corner-buttons
+      - .jet-mobile-menu
+      - .elementor-widget-jet-custom-menu
+      - .slick-slider
+      - .swiper
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /wydarzenia-wydzialowe
+      - /category/
+      - /tag/
+      - /en
+  rps:
+    prefix: RPS
+    start_url: https://rps.agh.edu.pl/
+    source: RPS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#unitMenu'
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /formularz
+      - /en
+  wggiis:
+    prefix: WGGIIS
+    start_url: https://wggiis.agh.edu.pl/
+    source: WGGIIS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .formularz
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  wggiis-studiuj:
+    prefix: WGGIIS_Studiuj
+    start_url: https://studiuj.wggiis.agh.edu.pl/
+    source: WGGIIS_Studiuj AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      allowed_languages: null
+      content_selectors: []
+      footer_selectors:
+      - '#footer'
+      - footer
+      additional_junk_selectors:
+      - nav
+      - '#header'
+      - .back-to-top
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+  informatyka:
+    prefix: Informatyka
+    start_url: https://www.informatyka.agh.edu.pl/pl/
+    source: Informatyka AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - footer
+      additional_junk_selectors:
+      - header
+      - .pre-header
+      - '#CookieInfoBanner'
+      - '#inner-headline'
+      - .slider-section
+      - .news-section
+      - .event-section
+      - .media-section
+      - .scrollup
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /pl/blog
+      - /en
+      - /search
+  spacetech:
+    prefix: Spacetech
+    start_url: https://spacetech.agh.edu.pl/pl/
+    source: Spacetech AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /pl/aktualnosci
+      - /pl/wydarzenia
+      - /category/
+      - /en
+  wms:
+    prefix: WMS
+    start_url: https://www.wms.agh.edu.pl/
+    source: WMS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+      - /detail
+      - /detail-1
+  fis:
+    prefix: FIS
+    start_url: https://www.fis.agh.edu.pl/
+    source: FIS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  weip:
+    prefix: WEIP
+    start_url: https://weip.agh.edu.pl/
+    source: WEIP AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .formularz
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /news-pl
+      - /wydarzenia
+      - /event-pl
+      - /category/
+      - /en
+  wmn:
+    prefix: WMN
+    start_url: https://wmn.agh.edu.pl/
+    source: WMN AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  wggios:
+    prefix: WGGIOS
+    start_url: https://www.wggios.agh.edu.pl/
+    source: WGGIOS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors: []
+      footer_selectors:
+      - '#pageFooter'
+      additional_junk_selectors:
+      - nav
+      - '#mainMenuNav'
+      - '#cookieconsent'
+      - '#scroller'
+      - .skip-to-content
+      - .formularz
+      - .carousel
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+      - /wydzial/postepowania-awansowe
+  historia:
+    prefix: Historia
+    start_url: https://historia.agh.edu.pl/
+    source: Historia AGH
+    pages: true
+    crawl:
+      requires_js: false
+      max_depth: 1
+      content_selectors:
+      - .mw-parser-output
+      footer_selectors:
+      - '#footer'
+      - .mw-footer
+      additional_junk_selectors:
+      - nav
+      - '#mw-navigation'
+      - '#mw-panel'
+      - '#left-navigation'
+      - '#right-navigation'
+      - .vector-header-container
+      - .vector-column-start
+      - .vector-column-end
+      - .mw-footer-container
+      - '#catlinks'
+      - .printfooter
+      - .mw-indicators
+      - script
+      - style
+      - noscript
+      - iframe
+      - .mw-references-wrap
+      excluded_paths:
+      - '/wiki/Specjalna:'
+      - '/wiki/Dyskusja:'
+      - '/wiki/Plik:'
+      - '/wiki/Kategoria:'
+      - '/wiki/Szablon:'
+      - '/wiki/Pomoc:'
+      - '/wiki/Historia_AGH:'
+      - /mediawiki/index.php
+  imir:
+    prefix: IMIR
+    start_url: https://imir.agh.edu.pl/
+    source: IMIR AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: true
+      content_selectors:
+      - '#page-detail-content'
+      - main
+      - '#root'
+      footer_selectors:
+      - footer
+      additional_junk_selectors:
+      - nav
+      - header
+      - .element-breadcrumbs
+      - .element-breadcrumbs-last
+      - .carousel-root
+      - .slider--main
+      - .slider--news-list
+      - .hamburger-react
+      - '#cookieyes-banner'
+      - .cky-consent-container
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /aktualnosci
+      - /wydarzenia
+      - /category/
+      - /en
+  azs:
+    prefix: AZS
+    start_url: https://azs.agh.edu.pl/
+    source: AZS AGH
+    pages: true
+    documents:
+      legal_headers: true
+    crawl:
+      requires_js: false
+      content_selectors:
+      - '[data-elementor-type=''single-page'']'
+      - '[data-elementor-type=''wp-post'']'
+      - '[data-elementor-type=''wp-page'']'
+      - main
+      footer_selectors:
+      - '[data-elementor-type=''footer'']'
+      - footer
+      additional_junk_selectors:
+      - '[data-elementor-type=''header'']'
+      - nav
+      - '#cookieyes-banner'
+      - .cky-consent-container
+      - '#sb_instagram'
+      - .fb_iframe_widget
+      - .elementor-widget-video
+      - .elementor-widget-icon-list
+      - .dialog-lightbox-close-button
+      - script
+      - style
+      - noscript
+      - iframe
+      excluded_paths:
+      - /category/
+      - /tag/
+      - /author/
+      - /feed/
+      - /imprezy-azs/
+      - /aktualnosci/
+  skos:
+    prefix: Skos
+    start_url: https://skos.agh.edu.pl/
+    source: Skos AGH
+    pages: true
+    crawl:
+      requires_js: true
+      content_selectors:
+      - main
+      footer_selectors:
+      - footer
+      - .sc-7bb83908-0
+      additional_junk_selectors:
+      - nav
+      - .sc-e826046d-0
+      - form
+      - svg
+      - script
+      - style
+      - noscript
+      - iframe
+      - '#skip-to'
+      excluded_paths:
+      - /search
+      - /advanced
+      - /tel
+      - old.skos.agh.edu.pl
+extra_collections:
+- path: Sylabusy_Markdown/2021_2022
+  source: Sylabusy AGH
+  type: sylabus
+- path: Sylabusy_Markdown/2022_2023
+  source: Sylabusy AGH
+  type: sylabus
+- path: Sylabusy_Markdown/2023_2024
+  source: Sylabusy AGH
+  type: sylabus
+- path: Sylabusy_Markdown/2024_2025
+  source: Sylabusy AGH
+  type: sylabus
+- path: Sylabusy_Markdown/2025_2026
+  source: Sylabusy AGH
+  type: sylabus
+- path: Sylabusy_Markdown/2026_2027
+  source: Sylabusy AGH
+  type: sylabus

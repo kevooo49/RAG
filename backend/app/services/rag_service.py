@@ -28,6 +28,7 @@ MAX_EXPANDED_QUERY_CHARS = 300
 CACHE_TTL_S = 3600
 OPENAI_TIMEOUT_S = 20
 ES_TIMEOUT_S = 10
+_META_KEYS = {"title": "tytul", "source": "zrodlo", "section": "sekcja", "url": "url"}
 
 class RetrievalError(RuntimeError):
     """Raised when both retrieval paths (dense and BM25) fail entirely."""
@@ -350,7 +351,7 @@ async def search_by_query(query: str, top_k: int = DEFAULT_TOP_K) -> List[Tuple[
         ids_dense = []
 
     fusion_ranks = _reciprocal_rank_fusion([ids_dense, ids_bm25])
-    candidates = [doc_id for doc_id, _ in fusion_ranks[: top_k * 2]]
+    candidates = [doc_id for doc_id, _ in fusion_ranks[: top_k * 5]]
 
     combined_sources = {**sources_chroma, **sources_bm25}
     results: List[Tuple[str, Dict[str, Any]]] = []
@@ -364,8 +365,8 @@ async def search_by_query(query: str, top_k: int = DEFAULT_TOP_K) -> List[Tuple[
         if not src or not src.get("tekst"):
             missing_docs += 1
             continue
-            
-        info: Dict[str, Any] = {"score": rrf_score, "meta": {k: src.get(k, "") for k in ("tytul", "zrodlo", "sekcja", "url")}}
+
+        info: Dict[str, Any] = {"score": rrf_score, "meta": {out: src.get(stored, "") for out, stored in _META_KEYS.items()}}
         if doc_id in sim:
             info["dense_sim"] = sim[doc_id]
             

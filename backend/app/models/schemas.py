@@ -8,6 +8,8 @@ class MessageHistory(BaseModel):
     )
     content: str = Field(
         ..., 
+        min_length=1,
+        pattern=r"\S",
         max_length=3000,
         description="Message content."
     )
@@ -15,6 +17,8 @@ class MessageHistory(BaseModel):
 class ChatRequestPayload(BaseModel):
     query: str = Field(
         ..., 
+        min_length=1,
+        pattern=r"\S",
         max_length=1000,
         description="Current question asked by a user.",
         examples=["Gdzie znajdę dziekanat WIEiT?"]

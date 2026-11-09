@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-Downloading documents (PDF / Word / ...) detected by the HTML crawler (scraper_html.py).
+Downloading documents (PDF / Word / ...) detected by the HTML crawler (scrape_html.py).
 
 DOES NOT crawl the site again: it reads the <folder>_meta/pdf_linki.txt list,
 which the HTML crawler saves alongside (url + link texts + source pages).
 
 Order of execution:
-    python scraper_html.py bg                  # 1) HTML pages (creates document list)
-    python download_documents.py bg            # 2) documents from that list
+    python scrape_html.py bg                   # 1) HTML pages (creates document list)
+    python scrape_documents.py bg              # 2) documents from that list
 
 Other options:
-    python download_documents.py css --max 20  # test on 20 files
-    python download_documents.py bg --reset    # ignore manifest, download everything again
+    python scrape_documents.py css --max 20  # test on 20 files
+    python scrape_documents.py bg --reset    # ignore manifest, download everything again
 
 Output:
     <documents_folder>/                        files (readable_name_<hash>.pdf)
     <folder>_meta/documents_manifest.jsonl     metadata of each file: working title (link text),
                                                source page, sha256, size, status...
-Both scripts must be in the same folder (import from scraper_html.py).
+Both scripts must be in the same folder (import from scrape_html.py).
 """
 import argparse
 import hashlib
@@ -133,16 +133,20 @@ def load_links_txt(path):
 
 def main():
     ap = argparse.ArgumentParser(description="Download documents from a list detected by the HTML crawler")
-    ap.add_argument("profile", nargs="?", default="bg", choices=sorted(S.PROFILES))
+    ap.add_argument("profile", help="site key from config/sites.yaml (see: python scrape_html.py --list)")
+    ap.add_argument("--config", help="alternative sites.yaml")
     ap.add_argument("--max", type=int, default=None, help="file limit for this session (for testing)")
     ap.add_argument("--reset", action="store_true", help="ignore the manifest and download everything again")
     a = ap.parse_args()
 
-    cfg = {**S.DEFAULT_CONFIG, **S.PROFILES[a.profile]}
+    sites = S.get_sites(a.config)
+    if a.profile not in sites.crawl_sites():
+        sys.exit(f"Unknown site {a.profile!r}. Available: {', '.join(sites.crawl_sites())}")
+    cfg = sites.crawl_profile(a.profile)
     meta = cfg["folder"] + "_meta"
     input_file = os.path.join(meta, "pdf_linki.txt")
     if not os.path.exists(input_file):
-        sys.exit(f"Missing {input_file}\nFirst run the HTML crawler:  python scraper_html.py {a.profile}")
+        sys.exit(f"Missing {input_file}\nFirst run the HTML crawler:  python scrape_html.py {a.profile}")
     folder = cfg.get("documents_folder") or (cfg["folder"] + "_Raw_Documents")
     os.makedirs(folder, exist_ok=True)
     manifest_path = os.path.join(meta, "documents_manifest.jsonl")

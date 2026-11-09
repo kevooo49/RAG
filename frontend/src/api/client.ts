@@ -10,7 +10,10 @@ export async function sendChatMessage(
   onError?: (error: string) => void
 ): Promise<void> {
   try {
-    const safePayload = { ...payload };
+    const safePayload = {
+      ...payload,
+      history: payload.history ? payload.history.slice(-6) : []
+    };
 
     const response = await fetch(API_URL, {
       method: 'POST',
