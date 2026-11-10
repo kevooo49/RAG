@@ -98,8 +98,8 @@ Uwaga do kroku 5: domyślne `CHROMA_PORT` w `app/core/config.py` to `8000` (popr
 | `RRF_K` | `60` | stała fuzji RRF |
 | `RAG_MIN_DENSE_SIM` | *wyłączone* | minimalne podobieństwo wektorowe |
 | `RAG_MAX_CONTEXT_CHARS` | `12000` | limit znaków kontekstu przekazywanego do LLM |
-| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:4173` | **czytana przez `os.getenv` w `main.py`, nie przez `Settings`** — patrz [`backend.md`](backend.md) |
-| `RAG_SITES_FILE`, `RAG_DATA_ROOT`, `RAG_EVAL_DIR`, `RAG_INDEX_DIR` | — | nadpisania ścieżek, patrz [`config.md`](config.md) |
+| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:4173` | **czytana przez `os.getenv` w `main.py`, nie przez `Settings`** — patrz [`backend.md`](Docs/backend.md) |
+| `RAG_SITES_FILE`, `RAG_DATA_ROOT`, `RAG_EVAL_DIR`, `RAG_INDEX_DIR` | — | nadpisania ścieżek, patrz [`config.md`](Docs/config.md) |
 
 ## 5. Zależności, których nie ma w `backend/requirements.txt`
 
@@ -122,8 +122,6 @@ Katalog `data/` jest w `.gitignore`. Zawiera m.in. `Baza_Wiedzy_AGH/` (korpus Ma
 Pola w indeksach mają **polskie nazwy** (`tekst`, `tytul`, `sekcja`, `zrodlo`, `plik`, `url`, `typ`, `kolekcja`), natomiast odpowiedź API używa **angielskich** (`title`, `section`, `source`, `url`). Mapowanie wykonuje `_META_KEYS` w `rag_service.py`.
 
 ## 8. Najważniejsze wyniki ewaluacji (bez retuszu)
-
-Wszystkie testy: 90 pytań, 30 dokumentów, więc przedziały ufności są szerokie, a większość różnic między wariantami **nie jest istotna statystycznie**. Szczegóły i zastrzeżenia — w plikach `eva_*.md`.
 
 | Pytanie badawcze | Wynik | Dokument |
 |---|---|---|
