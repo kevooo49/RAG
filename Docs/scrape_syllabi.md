@@ -1,46 +1,55 @@
-# Dokumentacja Architektoniczna: Zasilanie Bazy Wiedzy o Sylabusach (`scrape_syllabi.py`)
+# `scrape_syllabi.py` — scraper sylabusów
 
-## 1. Wprowadzenie i Rola Modułu
+Dedykowany skrypt dla serwisu `sylabusy.agh.edu.pl`. Sylabusy nie są zwykłymi stronami (są ładowane jako okna modalne), więc nie obsługuje ich `scrape_html.py`. Wynik trafia do `{data_root}/Sylabusy_Markdown/` i jest indeksowany jako kolekcje `extra_collections` typu `sylabus` ([`config.md`](config.md)).
 
-Aplikacja Sylabusy AGH charakteryzuje się rozbudowaną relacyjną architekturą nawigacyjną i asynchronicznym ładowaniem treści z wykorzystaniem ukrytych widoków interfejsu (tzw. modali). Z tego powodu uniwersalny crawler BFS (`scrape_html.py`) nie był w stanie sprawnie zinterpretować logiki tego systemu. Skrypt `scrape_syllabi.py` stanowi dedykowany moduł pobierający, nazywany *Targeted Scraperem*. Jego zadaniem jest wyłuskanie wszystkich dostępnych roczników, wydziałów, trybów studiów i finalnie pojedynczych przedmiotów, wyeksportowanie ich do ustrukturyzowanych dokumentów Markdown i zasilenie nimi głównego korpusu bazy RAG.
+## 1. Uruchamianie i konfiguracja
 
-## 2. Integracja z Globalną Architekturą Systemu
+```bash
+python scrape_syllabi.py
+```
 
-Skrypt został w pełni zintegrowany z centralnym modułem konfiguracji (`config/sites.yaml`). Zamiast zapisywać dane we wpisanych na sztywno lokalizacjach dyskowych, pobiera on ścieżkę głównego katalogu (`data_root`) bezpośrednio z obiektu `SitesConfig`. Struktura zapisywanych plików (np. `Sylabusy_Markdown/2021_2022/...`) ściśle odwzorowuje deklaracje z sekcji `extra_collections` pliku konfiguracyjnego. Dzięki temu baza wektorowa (`build_database.py`) automatycznie uwzględnia pobrane sylabusy jako pełnoprawne kolekcje przypisując im odpowiedni typ dokumentu (`type: sylabus`), bez konieczności rekonfiguracji indeksatora.
+Skrypt **nie ma argumentów CLI** i wykonuje się w całości przy imporcie modułu (kod na poziomie pliku, bez funkcji `main`). Ustawienia zmienia się w stałych na górze pliku:
 
-## 3. Inżynieria Pobierania i Odporność (Retry Strategy)
+| Stała | Wartość | Znaczenie |
+|---|---|---|
+| `TEST_LIMIT` | `False` | po zmianie na `True` skrypt zatrzymuje się po `MAX_SYLLABUSES` (5) zapisanych plikach |
+| `START_URL` | `https://sylabusy.agh.edu.pl/pl/1/2/22/0/0` | strona startowa (bieżący rocznik) |
+| `BASE_FOLDER` | `data_root` z `sites.yaml` | korzeń zapisu; nazwa `Sylabusy_Markdown` jest wpisana na sztywno |
+| `User-Agent` | `Mozilla/5.0 … Chrome/120` | **nie** identyfikuje bota (inaczej niż `scrape_html.py`) |
 
-Platformy dziedzinowe o rozbudowanych strukturach podatne są na zastoje wydajnościowe, a nagminne zapytania sieciowe ryzykują natychmiastowym nałożeniem blokady w postaci błędu `429 Too Many Requests`.
-Aby temu zapobiec, mechanizm komunikacyjny skryptu:
+Brak `robots.txt` i brak kontaktu w nagłówku — skrypt ogranicza obciążenie tylko przerwą 0,2 s po każdym sylabusie. Ponowienia: do 3 prób (429/500/502/503/504, `backoff_factor=1`, `Retry-After`).
 
-* Inicjuje globalną sesję HTTP z nagłówkami mimicznymi nowoczesnej przeglądarki.
-* Aplikuje adapter z potężną strategią ponawiania (Retry). Definiuje on m.in. operacje tzw. wykładniczego wycofywania zapytań (backoff) w przypadku wystąpienia niestabilności serwera (`500, 502, 503, 504`) oraz respektuje dyrektywę z nagłówków serwera `Retry-After`. Pozwala to na długotrwałą i całkowicie bezobsługową pracę crawlera.
+## 2. Przebieg
 
-## 4. Heurystyka Nawigacji DOM (Parsowanie)
+1. Pobranie strony startowej; z filtra „Rozpoczęcie studiów” odczytywana jest lista **roczników** (aktywny = `START_URL`, pozostałe z linków). Nazwa rocznika przechodzi przez `clean_name`, więc `2025/2026` → `2025_2026`. Brak strony startowej kończy skrypt kodem 1.
+2. Dla każdego rocznika: lista **wydziałów** → dla każdego wydziału lista **kierunków** (nagłówki) → dla każdego kierunku lista **trybów/rodzajów studiów** (linki, np. „stacjonarne, I stopień” → `stacjonarne_I stopień`).
+3. Na stronie trybu zbierane są przyciski z `data-syllabus-id`; w obrębie jednej strony trybu powtórzone identyfikatory są pomijane.
+4. Dla każdego sylabusa pobierany jest fragment `/pl/document/{id}.html?partialType=modal&forceEpd=false` i konwertowany `markdownify` (nagłówki ATX, bez `script`/`style`, zredukowane puste linie). **Nie jest dodawany front matter** — tytuł dokumentu ustala indeksator z pierwszego nagłówka `#` lub nazwy pliku.
 
-Scraper w sposób w pełni deterministyczny rekonstruuje strukturę serwisu na podstawie drzewa DOM, odtwarzając relacje uczelniane:
+Struktura wyniku:
 
-1. Skrypt identyfikuje węzły roczników (tzw. filtry "Rozpoczęcie studiów"), uwzględniając najnowszą ofertę dydaktyczną oraz archiwum.
-2. Agreguje instytuty i wydziały, schodząc o warstwę niżej do rodzaju form dydaktycznych (studia stacjonarne / niestacjonarne).
-3. **Identyfikacja Ukrytych Modali:** System sylabusów nie renderuje kart przedmiotów jako osobnych dokumentów, lecz jako wywołania dynamicznych okien pop-up na podstawie identyfikatorów zagnieżdżonych w atrybutach HTML (np. `<button data-syllabus-id="2137">`). Skrypt kolekcjonuje te klucze do lokalnego słownika w pamięci, co naturalnie zapobiega redundantnemu pobieraniu duplikatów z poziomu tego samego wydziału.
+```text
+Sylabusy_Markdown/{rocznik}/{wydział}/{kierunek}/{tryb}/{przedmiot}.md
+```
 
-## 5. Optymalizacja Przez API (Reverse Engineering)
+## 3. Nazwy plików
 
-Zamiast pobierać dla każdego przedmiotu "ciężką" obudowę front-endu całej platformy (ważącą dziesiątki kilobajtów z uwagi na osadzone menu oraz style CSS), skrypt odwołuje się bezpośrednio do adresów udostępnianych dla wewnętrznego frameworka aplikacji AGH:
-`.../document/{ID}.html?partialType=modal&forceEpd=false`.
+`clean_name` zamienia znaki niedozwolone w Windows (`\ / * ? : " < > |`) na `_`, usuwa końcowe spacje i kropki, **przycina do 120 znaków i dopisuje `...`**, a nazwy zarezerwowane (`CON`, `PRN`, `AUX`, `NUL`, `COM1–3`, `LPT1–3`) uzupełnia sufiksem `_file`. Nazwa pliku = nazwa przedmiotu, bez identyfikatora sylabusa.
 
-Jest to krytyczna optymalizacja w pipeline pobierania. Pozyskiwany w ten sposób zwięzły kod HTML formatowany jest do postaci Markdown w sposób czysty – bez sztucznego szumu elementów pobocznych. Usunięciu ulegają również niedopuszczalne z perspektywy wektorowej sekcje z tagami `<script>` i `<style>`.
+## 4. Wznawianie i idempotentność
 
-## 6. Zabezpieczenia Nazewnictwa i Drzewa Plików
+Brak pliku stanu: jeśli plik docelowy już istnieje, sylabus jest pomijany (`Skipped`). Błąd sieci przy sylabusie zwiększa licznik błędów i nie tworzy pliku, więc następne uruchomienie ponowi próbę. Konsekwencje:
 
-Dynamiczne budowanie katalogów ze ścieżką w formacie `Rocznik/Wydział/Kierunek/Tryb/Przedmiot.md` wymusiło wdrożenie zaawansowanej sanityzacji danych w funkcji `clean_name`:
+* **zmiany treści istniejącego sylabusa nie są odświeżane** — trzeba usunąć plik;
+* **dwa przedmioty o tej samej nazwie w tym samym trybie** dają jeden plik — drugi jest pomijany jako „istniejący”, więc jego sylabus nie trafi do bazy;
+* ten sam sylabus występujący w kilku kierunkach jest pobierany osobno dla każdej ścieżki (deduplikacja dotyczy tylko jednej strony trybu).
 
-* Usunięcie zakazanych dla systemu Windows znaków strukturalnych (`\ / : * ? " < > |`). Domyślne wartości jak "2021/2022" transformowane są poprawnie na bezpieczne "2021_2022".
-* Sztywne ograniczanie długości wyjściowej pojedynczej nazwy do 120 znaków w celu uniknięcia błędu maksymalnej ścieżki w systemach z rodziny FAT/NTFS.
-* Aktywne weryfikowanie powstawania nazw będących zarezerwowanymi słowami rdzeniowymi Windowsa (takimi jak `CON`, `PRN`, `AUX`), omijające niezwykle rzadki, ale krytyczny błąd zapisu do pliku na serwerze operacyjnym.
+Foldery są tworzone przed pobraniem listy przedmiotów, więc mogą zostać puste.
 
-## 7. Bezstanowość i Generowanie Metryk
+## 5. Raport
 
-Skrypt jest całkowicie bezstanowy (ang. *stateless*). Przed rozpoczęciem zapisu, algorytm wykorzystuje standardowe sprawdzenie obecności pliku na dysku. Dzięki temu można w dowolnej chwili przerwać operację na terminalu, a wznowienie crawlera pominie tysiące pobranych do tej pory kart (generując wyłącznie lekkie wywołania przeglądania).
+Zapisywany do `syllabuses_statistics.txt` w **bieżącym katalogu roboczym** (nie w katalogu danych): czas działania, liczba przetworzonych plików, zapisanych, pominiętych, błędów, rozmiar tekstu (MB) i średni czas na plik.
 
-Proces zostaje zakończony zrzutem dokładnych statystyk do metryki tekstowej (`syllabuses_statistics.txt`), co gwarantuje łatwy nadzór nad stabilnością całego cyklu agregacji wiedzy do modelu RAG.
+## 6. Powiązanie z indeksem
+
+Rocznik wykryty w serwisie, którego nie ma w `extra_collections`, zostanie pobrany, ale **nie zostanie zindeksowany**, dopóki nie dopiszesz wpisu (`path: Sylabusy_Markdown/2027_2028`, `source: Sylabusy AGH`, `type: sylabus`). Nazwa folderu musi dokładnie odpowiadać wynikowi `clean_name` z nazwy rocznika.

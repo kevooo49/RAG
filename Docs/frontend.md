@@ -1,62 +1,111 @@
-# Dokumentacja Architektoniczna: Frontend Aplikacji RAG
+# Frontend (TypeScript + Vite)
 
-## 1. Wprowadzenie i Środowisko Uruchomieniowe
+Jednostronicowa aplikacja czatu bez frameworka UI: czysty TypeScript, Vite, ręczne operacje na DOM. Komunikuje się z backendem przez `POST /api/chat` (SSE — patrz [`backend.md`](backend.md), §6.2). Brak zależności uruchomieniowych; `devDependencies`: TypeScript `~6.0`, Vite 8, Vitest 4, `happy-dom`, Playwright.
 
-Interfejs użytkownika (Frontend) systemu RAG został zaprojektowany z myślą o maksymalnej wydajności i natychmiastowej responsywności. Zamiast obciążać przeglądarkę "ciężkimi" frameworkami takimi jak React czy Angular, podjęto decyzję architektoniczną o implementacji w czystym TypeScript (tzw. Vanilla TS) z wykorzystaniem narzędzia budującego Vite. Gwarantuje to najkrótszy możliwy czas ładowania (First Contentful Paint) oraz pełną kontrolę nad cyklem życia drzewa DOM.
+## 1. Struktura
 
-* **Narzędzia Budujące (`package.json`)**: Ekosystem zarządzany jest przez menedżer pakietów NPM. Aplikacja korzysta z bundlera `vite`, który zapewnia błyskawiczne przeładowania modułów w trybie deweloperskim (HMR) i kompiluje zoptymalizowane, zminifikowane pakiety wynikowe na środowisko produkcyjne. Środowisko deweloperskie zostało również wzbogacone o frameworki testowe: `vitest` do testów jednostkowych oraz `@playwright/test` do testów end-to-end (E2E).
-* **Kompilator i Bezpieczeństwo (`tsconfig.json`)**: Kod podlega rygorystycznej, statycznej analizie typów. Konfiguracja kompilatora TypeScript celuje w nowoczesny standard `es2023`, aktywując surowe reguły bezpieczeństwa (m.in. `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`). Wymusza to pisanie czystego, bezbłędnego kodu i eliminuje ryzyko błędów typu *Runtime Error* u użytkownika końcowego.
+```text
+frontend/
+├── index.html                  # szkielet UI, nagłówek, pole #message-input, #send-button, #loading-indicator, stopka z ostrzeżeniem
+├── vite.config.ts              # proxy /api → localhost:8000 oraz konfiguracja Vitest
+├── src/
+│   ├── main.ts                 # logika UI: historia, wysyłanie, renderowanie
+│   ├── api/client.ts           # sendChatMessage: limity historii, fetch, parser SSE
+│   ├── components/sources.ts   # createSourcesComponent: panel źródeł
+│   ├── utils/formatters.ts     # escapeHTML, formatText
+│   ├── types/index.ts          # Message, SourceDocument, ChatRequestPayload…
+│   └── styles/                 # variables.css (paleta AGH), main.css, chat.css, sources.css
+├── tests/
+│   ├── helpers/sse.ts          # sztuczne odpowiedzi fetch ze strumieniem SSE
+│   ├── unit/                   # client / formatters / sources / main (Vitest)
+│   └── e2e/chat.spec.ts        # Playwright
+├── playwright.config.ts, tsconfig.json
+└── Dockerfile                  # build Node → nginx (patrz docker.md)
+```
 
-## 2. Struktura Interfejsu i Inicjalizacja Aplikacji
+Skrypty `package.json`: `dev` (Vite), `build` (`tsc && vite build`), `preview`, **`test:unit`** (`vitest run`), **`test:e2e`** (`playwright test`).
 
-Architektura warstwy wizualnej opiera się na wyraźnym podziale ról między statycznym dokumentem HTML a dynamicznym kontrolerem w języku TypeScript.
+`tsconfig.json` obejmuje tylko `src` i `playwright.config.ts` — **testy i `vite.config.ts` nie są sprawdzane przez `tsc` w `npm run build`**. Włączone są m.in. `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`, `erasableSyntaxOnly`, `verbatimModuleSyntax`; opcji `strict` nie ustawiono jawnie (decydują domyślne ustawienia używanej wersji TypeScript).
 
-### Struktura Znaczników (`index.html`)
+## 2. Konfiguracja Vite (`vite.config.ts`)
 
-Plik HTML definiuje semantyczny szkielet aplikacji. Centralnym punktem interfejsu jest kontener czatu (`#chat-messages`), który służy jako dynamiczna oś czasu (ang. *timeline*) dla wiadomości. Bezpośrednio pod nim zlokalizowano ukryty wskaźnik ładowania (`#loading-indicator`), zaprojektowany do informowania użytkownika o statusie wyszukiwania wektorowego (animacja z dynamicznym statusem kroku). Na samym dole umieszczono bezpieczny formularz (`#chat-form`), wymuszający wywołanie autorskiej logiki biznesowej zamiast domyślnego przeładowania strony.
+* `server.proxy`: `/api` → `http://localhost:8000`. Dzięki temu **`npm run dev` działa z backendem uruchomionym lokalnie lub z Compose** (port `8000` jest publikowany — [`docker.md`](docker.md), §3), a przeglądarka widzi jeden origin (CORS nie jest potrzebny). W produkcji tę rolę pełni nginx.
+* Sekcja `test` (Vitest): `include: tests/unit/**/*.test.ts`, domyślne `environment: 'node'`, `restoreMocks` i `unstubGlobals` włączone (atrapy są czyszczone między testami).
+* Plik importuje `defineConfig` z `vitest/config`.
 
-### Definicje Typów (`types.ts` / `index.ts`)
+## 3. Klient API (`client.ts`)
 
-Aby w pełni wykorzystać zalety TypeScriptu, wydzielono plik definiujący ścisłe struktury danych (interfejsy).
-Zadeklarowano w nim model żądania `ChatRequestPayload`, przesyłany do serwera (zawierający treść pytania, identyfikator modelu i historię), oraz struktury reprezentujące odpowiedź, takie jak `SourceMeta` i `SourceDocument`. Dzięki temu system jest świadomy, jakiego kształtu obiektów może się spodziewać, chroniąc przed dostępem do niezdefiniowanych właściwości.
+* Adres względny: `/api/chat`. Brak uwierzytelniania — jedyny nagłówek to `Content-Type: application/json`.
+* **Dopasowanie do limitów backendu** (`backend.md`, §3: historia ≤ 100 wiadomości, treść ≤ 3000 znaków): przed wysłaniem historia jest przycinana do **ostatnich 6** wiadomości (`HISTORY_LIMIT`), każda treść do **3000** znaków (`MAX_MESSAGE_CHARS`), a z każdej wiadomości wysyłane są tylko `role` i `content` (bez `id` i źródeł). Oryginalny obiekt przekazany do funkcji nie jest modyfikowany. Backend dodatkowo zawęża historię do 4 wiadomości po 1500 znaków (`backend.md`, §6.1).
+* Odpowiedź jest czytana strumieniowo (`ReadableStream`, `TextDecoder` w trybie `stream`, więc znaki wielobajtowe rozcięte między porcjami są składane poprawnie). Bufor dzielony jest po `\n\n`, niepełna ostatnia ramka czeka na kolejną porcję. Ramki `[DONE]`, komentarze/keep-alive, puste ramki i nieznane typy zdarzeń są ignorowane; niepoprawny JSON w jednej ramce jest pomijany z ostrzeżeniem w konsoli.
+* Zdarzenia: `token` → `onChunk`, `sources` → `onSources`, `status` → `onStatus` (jeśli podano), `error` → `onError`; bez `onError` komunikat trafia do treści odpowiedzi (`[Błąd serwera]: …` / `[Błąd połączenia]: …`).
+* Błędy HTTP (np. 429, 422): komunikat z pola `detail` odpowiedzi JSON, a gdy go brak lub odpowiedź nie jest JSON-em (np. strona błędu nginx) — `Server error: <kod>`. Brak ciała odpowiedzi → `No stream in the response.`; błąd sieci → treść wyjątku, a przy pustej treści — komunikat po polsku.
+* **Funkcja nigdy nie odrzuca obietnicy** — każdy błąd kończy się wywołaniem `onError`/`onChunk`, dzięki czemu UI zawsze może odblokować pole. Tokeny odebrane przed zerwaniem połączenia zostają zachowane. Błędy w trakcie generowania przychodzą z backendu jako zdarzenia `error` przy statusie HTTP 200.
 
-### Orkiestracja Interfejsu (`main.ts`)
+## 4. Logika UI (`main.ts`)
 
-Plik `main.ts` stanowi główny kontroler (ang. *Entry Point*) aplikacji frontendowej. Łączy on elementy statyczne (DOM) z mechaniką komunikacyjną i obsługą stanu.
+* **Flagi na stałe:** `DEV_MODE_SOURCES = true` i `DEV_MODE_SWITCHER = true` to stałe w kodzie. W obecnej konfiguracji **każdy użytkownik widzi panel źródeł i selektor modelu** (GPT-4o, GPT-4o-mini, Bielik 11B). Wyłączenie wymaga zmiany stałych i przebudowania.
+* **Model:** wybór zapisywany w `localStorage` (`rag_selected_model`). Pierwsza opcja selektora to `gpt-4o`. Jeśli zapisana wartość nie pasuje do żadnej opcji, selektor zwykle nie ma zaznaczenia, a żądanie używa wartości zapasowej `gpt-4o-mini` — backend nie dostaje więc nieznanego modelu.
+* **Historia (`sessionStorage`, klucz `chatHistory`):**
+  * zapisywane są wyłącznie `id`, `role`, `content`; **źródła nie są zapisywane**, więc po odświeżeniu wiadomości wracają bez paneli źródeł; historia trwa do zamknięcia karty;
+  * przy odczycie każdy element jest walidowany (`id` i `content` — teksty, `role` — `user` lub `assistant`); niepoprawne elementy są odrzucane. Jeśli po filtracji nie zostaje żadna wiadomość (uszkodzony JSON, `null`, obiekt zamiast listy itp.), historia jest resetowana do powitania, a klucz usuwany;
+  * **wiadomość asystenta jest zapisywana tylko, gdy ma niepustą treść.** Pusta (np. po błędzie HTTP) zajęłaby później miejsce w historii wysyłanej do backendu, który odrzuca puste wiadomości (422).
+* **Wysyłanie:** puste lub składające się z białych znaków pytanie jest ignorowane, treść jest przycinana (`trim`). Pole i przycisk są blokowane do końca strumienia, a po zakończeniu pole odzyskuje fokus. Pierwszy tekst statusu to „Analiza zapytania…”, potem tekst z serwera (backend wysyła jeden status: „Przeszukuję bazę wiedzy AGH…”). Wskaźnik ładowania znika przy pierwszym zdarzeniu.
+* **Renderowanie:** przy każdym tokenie cała treść wiadomości jest renderowana od nowa przez `formatText`. Pytanie użytkownika również przechodzi przez `formatText` (czyli przez `escapeHTML`).
+* **Błędy:** komunikat jest dodawany jako element `.error-msg` z `textContent` (czerwony tekst, styl inline), więc nie jest interpretowany jako HTML. Komunikat **nie jest zapisywany w historii** — po odświeżeniu znika.
+* Pole `<input>` ma atrybut `required`, więc w przeglądarce natywna walidacja zwykle blokuje wysłanie pustego formularza jeszcze przed zdarzeniem `submit`.
 
-* **Zarządzanie Historią (Sesja)**: Skrypt utrzymuje ciągłość konwersacji (Context). Tablica `chatHistory` jest synchronizowana ze wbudowaną w przeglądarkę pamięcią `sessionStorage`. Dzięki temu ewentualne przypadkowe odświeżenie karty nie powoduje utraty dotychczasowej rozmowy, a uszkodzone dane sesyjne są automatycznie wykrywane i usuwane.
-* **Reaktywność i Manipulacja DOM**: Algorytm powiązany ze zdarzeniem `submit` formularza blokuje interfejs, chroniąc przed wysłaniem powielonych zapytań przez użytkownika (zapobieganie spamowi). Następnie powołuje na osi czasu nowy, pusty dymek asystenta (`botMsg`) i buduje dynamiczne ładunki (payloads) do wstrzyknięcia do klienta SSE.
-* **Środowisko Testowe (Dev Mode)**: Moduł posiada zaszytą, przełączalną logikę diagnostyczną (`DEV_MODE_SWITCHER`). W środowisku uruchomieniowym dynamicznie wstrzykuje do nagłówka aplikacyjny element `<select>`, umożliwiając inżynierom i promotorom szybką zmianę silnika generacyjnego w locie (np. pomiędzy `gpt-4o`, `gpt-4o-mini`, a lokalnym modelem `bielik`). Wybór ten utrwalany jest w `localStorage`, zapewniając jego ciągłość na poziomie przeglądarki.
+## 5. Formatowanie tekstu (`formatters.ts`)
 
-## 3. Warstwa Komunikacji Sieciowej i Strumieniowania (`client.ts`)
+`formatText` najpierw wykonuje `escapeHTML` (`& < > ' "`), dopiero potem dokłada znaczniki:
 
-Aby oddzielić logikę wizualną od logiki transportowej, komunikacja z serwerem API została wyekstrahowana do modułu `client.ts`. Plik ten obsługuje autoryzację żądań, przycinanie historii konwersacji (domyślnie wysyłanych jest tylko 6 ostatnich wiadomości, co chroni przed błędami przepełnienia modelu) oraz parsowanie niestandardowych ładunków strumieniowych.
+* linie zaczynające się od `-` lub `*` i białego znaku → `<li>`; **każda grupa kolejnych punktów dostaje własny `<ul>`**, a tekst pomiędzy dwiema listami zostaje poza listami;
+* `**tekst**` → `<strong>` (niedomknięte `**` w trakcie strumieniowania pozostaje dosłowne, a pogrubienie nie obejmuje łamania linii);
+* `[n]` (same cyfry) → `<span class="citation" data-id="n">`; styl jest w CSS, ale **interakcji (hover, przewijanie do źródła) w kodzie nie ma**;
+* pozostałe znaki nowej linii → `<br/>`; całość owinięta w jeden `<p>`.
 
-Kluczowym elementem modułu jest implementacja protokołu Server-Sent Events (SSE). Zamiast czekać na wygenerowanie całej odpowiedzi przez model LLM, klient używa `response.body.getReader()`, by asynchronicznie i w czasie rzeczywistym konsumować kolejne tokeny przysyłane przez backend. Parser dekoduje ramki tekstowe UTF-8, oddziela je po znacznikach nowej linii i identyfikuje zdarzenia za pomocą prefiksu `data:`. Następnie rozdziela poszczególne typy zdarzeń do odpowiednich wywołań zwrotnych (callbacks):
+Nieobsługiwane (zostają jako zwykły tekst): listy numerowane, nagłówki, linki Markdown, kursywa, kod. Wynik zawiera wyłącznie elementy `P`, `UL`, `LI`, `STRONG`, `SPAN`, `BR` z atrybutami `class` i `data-id` (sprawdzają to testy, również dla każdego prefiksu strumieniowanej odpowiedzi).
 
-* `token` – wstrzykuje i renderuje kolejny znak do dymka wiadomości.
-* `sources` – przekazuje tablicę z metadanymi i fragmentami tekstu użytego przez RAG do zbudowania cytowań.
-* `status` – aktualizuje wskaźnik ładowania, pokazując etap, na którym aktualnie znajduje się backend (np. wyszukiwanie, reranking).
-* `error` – płynnie przechwytuje awarie (np. przerwane połączenie lub kod błędu 429) i wstrzykuje odpowiedni komunikat ostrzegawczy bezpośrednio do interfejsu.
+## 6. Panel źródeł (`sources.ts`)
 
-## 4. Przetwarzanie i Prezentacja Treści (`formatters.ts`)
+Przycisk „Zobacz źródła i cytowane fragmenty (N)” rozwija listę kart (przycisk `<button>`, więc działa z klawiatury). Karta zawiera: numer i tytuł (`meta.title`, zapasowo „Dokument AGH”), znacznik `RRF: <wynik>` (5 miejsc po przecinku; `N/A`, gdy brak wyniku), sekcję (`meta.section`, zapasowo „Baza główna”), opcjonalny link i tekst fragmentu. Tytuł, sekcja i tekst przechodzą przez `escapeHTML`.
 
-Ze względów bezpieczeństwa aplikacja frontendowa nigdy nie ufa surowym danym napływającym z serwera. Moduł `formatters.ts` odpowiada za transformację znaczników Markdown na wizualne komponenty HTML, kładąc szczególny nacisk na sanityzację kodu.
+* **Link „🔗 Otwórz stronę” pojawia się tylko dla adresów `http://` i `https://`** (`target="_blank"`, `rel="noopener noreferrer"`). Dla pustego, brakującego lub innego adresu (`javascript:`, ścieżka względna, `mailto:`…) nie ma ani linku, ani separatora ` | `. Dotyczy to m.in. dokumentów z `document_parser`, które nie mają pola `url` ([`build_database.md`](build_database.md), §9.1a).
+* Tekst fragmentu jest w DOM w całości, ale CSS (`line-clamp: 4`) pokazuje **tylko cztery linie**; nie ma przycisku „rozwiń”.
+* **Wynik RRF nie jest miarą pewności** — to suma `1/(rank+60)` z dwóch list (zakres ok. 0,008–0,033), przydatna do porównań w obrębie jednej odpowiedzi.
+* `meta.source` (nazwa źródła) jest w typach, ale nie jest wyświetlana; pole `id` przesyłane przez backend nie występuje w typie `SourceDocument`.
 
-Głównym mechanizmem obronnym jest funkcja `escapeHTML`, która zamienia wszystkie newralgiczne znaki (takie jak `<`, `>`, `&`, `"` czy `'`) na ich bezpieczne encje (HTML entities). Blokuje to możliwość wstrzyknięcia złośliwego kodu JavaScript (ataki XSS). Po usunięciu zagrożeń autorski silnik wyrażeń regularnych transformuje bezpieczny tekst:
+## 7. Typy (`types/index.ts`)
 
-* Formatuje akapity za pomocą znaczników `<br/>` oraz `<p>`.
-* Interpretuje asertywy Markdownu (np. `**tekst**` staje się tagiem `<strong>`).
-* Bezpiecznie obudowuje struktury list (zamiana myślników na tagi `<li>` otoczone tagiem `<ul>`).
-* Zamienia wygenerowane przez LLM numery cytatów (np. `[1]`) na span'y o klasie `citation` ze wskazanym atrybutem danych, co pozwala na późniejsze podpinanie funkcji najechania i podświetlania źródeł na czacie.
+`Role` i `ChatRequestPayload.history[].role` dopuszczają także `'system'`, choć backend akceptuje tylko `user` i `assistant` (`backend.md`, §3), a aplikacja nigdy nie wysyła roli `system` (walidacja historii z `sessionStorage` ją odrzuca). To tylko rozluźnienie typów.
 
-## 5. Zarządzanie Metadanymi i Cytowaniami (`sources.ts`)
+## 8. Testy
 
-Przejrzystość działania systemu RAG opiera się na dostarczaniu użytkownikowi dowodów na prawdomówność modelu. Moduł `sources.ts` generuje interaktywne komponenty DOM wstrzykiwane bezpośrednio pod odpowiedzią asystenta.
+```bash
+npm run test:unit                 # Vitest
+npm run test:e2e                  # Playwright (wymaga: npx playwright install chromium)
+E2E_LIVE=1 npm run test:e2e       # dodatkowo test z prawdziwym backendem
+```
 
-Funkcja `createSourcesComponent` mapuje tablicę obiektów `SourceDocument` na rozwijaną listę (akordeon). Każdy węzeł reprezentuje jeden wyekstrahowany chunk z bazy wektorowej. Komponent bezpiecznie renderuje:
+**Testy jednostkowe** (`tests/unit/`, `include` w `vite.config.ts`):
 
-* Oryginalny, pełny tekst (chunk), z którego skorzystał asystent (również poddany sanityzacji).
-* Tzw. chlebek kontekstowy, wypisując wydział lub źródło (`source.meta.title`) i konkretną sekcję (`source.meta.section`).
-* Metrykę pewności dopasowania RRF zwracaną z Elasticsearch i ChromaDB, zaokrągloną do 5 miejsc po przecinku.
-* Automatycznie generowany odnośnik hipertekstowy (Hiperlink). Przed zbudowaniem tagu `<a>`, algorytm weryfikuje poprawność adresów sieciowych (upewniając się, że zaczynają się one od protokołu `http://` lub `https://`), blokując potencjalne błędy nawigacji czy wstrzyknięcia złośliwego protokołu w formacie URL.
+| Plik | Zakres |
+|---|---|
+| `client.test.ts` | żądanie i limity historii (6 wiadomości, 3000 znaków, brak mutacji), parsowanie SSE (m.in. przecięcie strumienia w **każdym** miejscu, także wewnątrz znaku UTF-8, oraz dostarczanie bajt po bajcie), wszystkie ścieżki błędów, gwarancja braku odrzucenia obietnicy |
+| `formatters.test.ts` | `escapeHTML` (w tym test własności na losowych napisach), struktura `formatText`, cytowania, lista dozwolonych elementów/atrybutów przy próbach XSS, odporność na strumieniowanie, wydajność na patologicznych danych |
+| `sources.test.ts` | renderowanie kart, reguły linków (w tym `javascript:`, `data:`, `//host`), XSS, przełącznik |
+| `main.test.ts` | cała aplikacja zamontowana z `index.html?raw` z atrapą `fetch`: pierwszy render, cykl pytanie–odpowiedź, treść żądania, trwałość w `sessionStorage`, błędy, niezaufana treść |
+| `helpers/sse.ts` | atrapy odpowiedzi `fetch` (`sseResponse`, `controlledStream`, `errorResponse`, `cutAt`, `recorder`) |
+
+`formatters.test.ts` i `sources.test.ts` deklarują środowisko `happy-dom` w komentarzu `@vitest-environment`, `client.test.ts` działa w domyślnym `node`.
+
+
+**Testy E2E** (`tests/e2e/chat.spec.ts`, Chromium, `fullyParallel`): **odpowiedzi backendu są atrapami** (`page.route('**/api/chat')`), więc większość testów nie wymaga backendu, bazy ani klucza OpenAI. Obejmują: powitanie, pełny cykl (stan ładowania, strumień, pogrubienie, cytowania, rozwijanie źródeł), wysyłany model i historia, Enter i puste wiadomości, błąd 429 i powrót do działania, niedostępny serwer, zachowanie rozmowy po odświeżeniu, uszkodzone dane w `sessionStorage`, brak wykonania skryptów (XSS w pytaniu, odpowiedzi, błędzie i źródłach), ekran 375 px bez poziomego przewijania. Jeden test „live” (prawdziwe pytanie o stypendium rektora) uruchamia się **tylko z `E2E_LIVE=1`** — kosztuje i zużywa limit zapytań. `playwright.config.ts` ustawia `baseURL` `http://localhost:5173` i uruchamia `npm run dev` (z `reuseExistingServer` — działa też na frontendzie z Compose na tym samym porcie).
+
+## 9. Ograniczenia i obserwacje
+
+* **Niezdefiniowana zmienna CSS `--agh-dark-red`.** Jest używana w `chat.css` (kolor `strong`), `main.css` (tło przycisku wysyłania po najechaniu) i `sources.css` (tytuł źródła), ale `variables.css` jej nie definiuje. Skutek: pogrubienia i tytuły źródeł nie dostają koloru akcentu, a przycisk wysyłania traci tło po najechaniu (ikona jest biała). Zmienna `--accent` w `.citation` ma wartość zapasową `#007bff`, więc cytowania są niebieskie, nie w palecie AGH.
+* Flagi trybu deweloperskiego (`DEV_MODE_*`) włączone na stałe.
+* Źródła i komunikaty błędów nie przetrwają odświeżenia strony.
+* Prosty parser Markdown (§5); brak interakcji dla cytowań.
+* Brak uwierzytelniania i brak własnego limitu po stronie klienta poza oknem historii.

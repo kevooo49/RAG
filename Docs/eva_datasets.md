@@ -1,34 +1,66 @@
-# Dokumentacja Architektoniczna: Tworzenie Zbioru Ewaluacyjnego (Data Collection & Ground Truth)
+# Zbiory ewaluacyjne
 
-## 1. Wprowadzenie i Rola Środowiska Testowego
+Wszystkie testy jakości (`evaluate_*.py`) opierają się na tych samych zbiorach. Ta strona opisuje, jak powstają, co zawierają i — co równie ważne — czego **nie** mierzą.
 
-Aby zapewnić miarodajną i powtarzalną ewaluację modeli językowych oraz wektorowych (odpowiedzialnych za retrieval w architekturze RAG), konieczne było stworzenie statycznego, zablokowanego wycinka danych korpusu. Trzy moduły analityczne: `background_files.py`, `generate_qa_dataset.py` oraz `generate_llm_eva_dataset.py` odpowiadają za pełny cykl preparacji danych testowych – od wyselekcjonowania reprezentatywnych dokumentów, przez wygenerowanie zbalansowanych pytań o zróżnicowanym stopniu trudności lingwistycznej, aż po wygenerowanie referencyjnych odpowiedzi modelu bazowego.
+## 1. Korpus testowy (`eval_dir`)
 
-## 2. Losowanie Korpusu Testowego (`background_files.py`)
+Katalog `data/Ewaluacja_Probka` (ścieżka z `sites.yaml`) zawiera ok. **200 plików Markdown**, płaskich (bez podfolderów):
 
-Skrypt ten gwarantuje, że do testów trafi zbalansowana próbka dokumentów z różnych wydziałów i domen uczelni.
+* **30 plików bazowych** — lista `BASE_FILES` jest wpisana na sztywno w `generate_qa_dataset.py` (regulaminy, kontakty, cenniki, sylabusy, uchwała rekrutacyjna, FAQ miasteczka);
+* **170 plików tła** — losowo dobranych przez `background_files.py` (`TOTAL_BACKGROUND_FILE_COUNT = 170`).
 
-* **Integracja Konfiguracji**: Skrypt bezpośrednio korzysta z konfiguracji `sites.yaml`, mapując główną bazę danych (`MAIN_DATABASE_DIRECTORY`) oraz ścieżkę folderu ewaluacyjnego (`EVALUATION_DIRECTORY`).
-* **Zrównoważone Próbkowanie (Stratified Sampling)**: Algorytm najpierw skanuje wszystkie katalogi głównej bazy wiedzy, traktując je jako rozdzielne kategorie (straty). Dzieli pulę 170 plików docelowych (`TOTAL_BACKGROUND_FILE_COUNT`) równomiernie przez liczbę znalezionych kategorii, zapewniając, że do próbki trafią w równym stopniu regulaminy ze strefy Studenta, jak i techniczne sylabusy wydziałowe.
-* **Idempotentność Działania**: Moduł weryfikuje już istniejące na dysku pliki za pomocą zrzutu struktury folderów (`set(os.listdir)`), dobudowując braki. Kopiowanie odbywa się przy użyciu `shutil.copy2`, aby zachować oryginalne metadane plików dla poprawności statystyk systemowych.
+### `background_files.py`
 
-## 3. Generowanie Zapytań Opartych na Heurystykach Wyszukiwarki (`generate_qa_dataset.py`)
+1. Skanuje `data_root`; **kategorią jest każdy folder najwyższego poziomu** (np. `Biblioteka_Strony`, `Biblioteka_Dokumenty_Przetworzone`, `Sylabusy_Markdown` — ten ostatni liczy się jako *jedna* kategoria, mimo podfolderów roczników).
+2. Rozdziela 170 plików równo między kategorie (`170 // n`), a resztę po jednym dodatkowym pliku dla pierwszych kategorii.
+3. Losuje bez ustawionego ziarna (`random.sample`) — **każde uruchomienie daje inny zestaw**, więc wyników z różnych próbek nie wolno bezpośrednio porównywać.
+4. Kopiuje tylko pliki `.md` do `eval_dir` pod **nazwą bazową**; plik, którego nazwa już tam jest, jest pomijany (kolizje nazw z różnych folderów, np. sylabusy o tej samej nazwie, są więc gubione).
 
-Skrypt odpowiedzialny za wytworzenie ustrukturyzowanego pliku JSON z zapytaniami używanymi do rygorystycznych testów porównawczych silników wektorowych i wyszukiwarki słownikowej.
+Tło ma imitować prawdziwą bazę: dokument docelowy musi „wygrać” z setkami podobnie wyglądających.
 
-* **Wykorzystanie Modelu Instrukcyjnego**: Pytania generowane są automatycznie przez model GPT-4o (`gpt-4o`), z precyzyjnie zaaplikowaną inżynierią promptu, symulującą zachowanie studentów. Narzucony został ścisły format odpowiedzi wymuszony przez opcję `response_format={"type": "json_object"}`.
-* **Trójdrożny Podział Zapytań**: Każdy dokument (reprezentowany przez wycinek pierwszych 5000 znaków) służy do wygenerowania dokładnie 3 pytań, zaprojektowanych w celu faworyzowania (obciążania) konkretnych algorytmów systemu RAG:
-1. *Lexical (Precyzyjne)* – faworyzujące klasyczny Elasticsearch. Wymaga wyłuskania kodów, numerów dzienników czy kwot.
-2. *Semantic (Opisowe)* – faworyzujące wyszukiwanie gęste (ChromaDB / Dense). Zadaniem modelu jest unikanie kluczowych terminów, stosując parafrazę.
-3. *Colloquial (Potoczne)* – faworyzujące wyszukiwanie hybrydowe (RRF). Zapytania korzystają ze slangu i skrótów uczelnianych (np. "wuef", "warunek", "dziekanka").
+## 2. Zbiór główny — `generate_qa_dataset.py` → `test_dataset_balanced.json`
 
+Dla każdego z 30 plików bazowych `gpt-4o` (`temperature=0.8`, `response_format=json_object`) generuje **trzy pytania**, na podstawie **pierwszych 5000 znaków** dokumentu:
 
-* **Ustrukturyzowany Eksport**: Skrypt buduje plik `test_dataset_balanced.json`, zagnieżdżając w nim słowniki wiążące treść pytania, przypisaną strategię algorytmu oraz referencyjną nazwę pliku, będącą kluczem (Ground Truth) w ewaluacji metryki *Hit@k*.
+| `type` | Instrukcja w prompcie | Intencja |
+|---|---|---|
+| `lexical` | użyj dokładnych, unikalnych terminów, sygnatur, kodów, kwot, nazw własnych | faworyzować Elasticsearch |
+| `semantic` | zapytaj o proces/warunek/cel, **celowo bez** głównych słów kluczowych i nazw własnych (parafrazy) | faworyzować ChromaDB |
+| `colloquial` | slang studencki, skróty i niedbały język (stypa, wuef, hajs, oblać…) | faworyzować hybrydę RRF |
 
-## 4. Wyznaczanie Standardu Odpowiedzi / Ground Truth (`generate_llm_eva_dataset.py`)
+Etykiety `type` oznaczają więc **zamierzony charakter pytania**, a nie zmierzoną trudność. Zbiór jest celowo zbilansowany pod kątem różnych algorytmów, co ułatwia ich porównanie, ale powoduje, że wyniki per typ nie są próbą „naturalnych” pytań użytkowników.
 
-Końcowym etapem jest przygotowanie zestawu idealnych odpowiedzi systemu, stanowiących referencję przy mierzeniu ewentualnych halucynacji w głównym RAG-u. Wykorzystano model klasy analitycznej *o3* (O-series reasoning).
+Wynik: **90 pytań** (30 × 3), pola `query`, `expected_file`, `type`. Plik jest zapisywany do bieżącego katalogu roboczego (`OUTPUT_FILE` jest ścieżką względną), a repozytorium trzyma go w `backend/scripts/`. Poprawna odpowiedź = **nazwa pliku** (ocena na poziomie dokumentu, nie fragmentu).
 
-* **Model Rozumujący i Detachment (o3)**: Ze względu na to, że model referencyjny nie ma prawa wnosić własnej wiedzy o świecie (tzw. "out-of-domain knowledge"), użyto o3 – nie obsługuje on parametru temperatury (zablokowany na zero / powtarzalność absolutna).
-* **Architektura Strict Prompting**: Prompt wymusza na modelu zachowanie w formie klasycznego, rzetelnego asystenta. Zasady narzucają kategoryczny zakaz dedukcji informacji spoza dostarczonego `<dokumentu>` i wymuszają profesjonalny język (nawet przy zapytaniu typu *Colloquial*).
-* **Pamięć Postępu i Przewidywalność (Resuming)**: Operacja ta generuje duże obciążenie dla drogich i limitowanych punktów dostępowych (endpoints) modeli serii O. Skrypt implementuje kontrolę błędów; przed wywołaniem API wczytuje dotychczasowy dorobek z pliku `llm_golden_dataset.json` (przy użyciu `load_progress`) i w razie błędu sieci przerywa działanie, umożliwiając łagodne wznowienie procedury od ostatnio przetworzonego zapytania.
+Zastrzeżenia: pytania pisze model, który widział dokument, więc „semantyczne” mogą mimo instrukcji zachować jego terminologię; liczność (30 dokumentów, po 3 pytania) sprawia, że przedziały ufności w raportach są szerokie, a pytania z tego samego dokumentu nie są niezależne (dlatego raporty stosują bootstrap po dokumentach).
+
+## 3. Zbiór odpowiedzi wzorcowych — `generate_llm_eva_dataset.py`
+
+Dla każdego z 90 pytań model **`o3`** (model rozumujący, **nie przyjmuje parametru `temperature`**; jego wyniki nie są przez to deterministyczne) odpowiada na podstawie **pełnej treści** pliku i w co najwyżej 3–4 zdaniach. Rekord wyjściowy: `query`, `type`, `expected_file`, `context` (cały plik), `golden_answer`.
+
+* Wznawianie: istniejące rekordy (po tekście pytania) są pomijane; pierwszy błąd API przerywa pętlę; przerwa 1 s między wywołaniami.
+* **Rozbieżność nazw plików:** skrypt zapisuje `llm_golden_dataset.json`, a `evaluate_models.py` (i repozytorium) używa `llm_eva_dataset.json` (90 rekordów). Po wygenerowaniu plik trzeba ręcznie zmienić nazwę lub poprawić stałą.
+* Pytania powstały z początku dokumentu (5000 zn.), a wzorzec z całości — odpowiedź wzorcowa może więc zawierać informacje, których pytanie nie zakładało.
+
+## 4. Zbiór pełny — `generate_full_dataset.py` → `full_db_dataset.json`
+
+W odróżnieniu od §2 próbkuje pliki z **prawdziwego indeksu Elasticsearch**, równo po źródłach (`zrodlo`), po `--per-source` (domyślnie 3) plików na źródło, pomijając pliki krótsze niż `--min-chars` (800). Argumenty: `--seed` (42), `--model` (`gpt-4o`), `--out`, `--yes`, `--refresh-inventory` oraz parametry połączenia. Przed wywołaniami LLM wypisuje ich liczbę i pyta o zgodę.
+
+Zbiór w repozytorium: **366 pytań, 122 pliki, 41 źródeł**; rekord ma dodatkowo `expected_plik` (pełna ścieżka z indeksu, rozstrzyga kolizje nazw) i `source`. Próbkowanie jest równe na źródło, **nie proporcjonalne** do rozmiaru (sylabusy są niedoreprezentowane w stosunku do udziału w indeksie), dlatego raporty należy czytać per źródło, nie tylko po średniej globalnej.
+
+> **Brak pliku w repozytorium:** skrypt i jego docstring odwołują się do `evaluate_production_full.py`, którego nie ma w archiwum. Zbiór jest więc gotowy, ale narzędzie, które miało go zużywać, nie jest dołączone.
+
+## 5. Który zbiór do czego
+
+| Zbiór | Używany przez |
+|---|---|
+| `test_dataset_balanced.json` (90) + `eval_dir` | `evaluate_chunking`, `evaluate_embeddings`, `evaluate_metadata`, `evaluate_search`, `evaluate_production` |
+| `llm_eva_dataset.json` (90) | `evaluate_models` |
+| `full_db_dataset.json` (366) | *brak dołączonego konsumenta* (patrz §4) |
+
+## 6. Czego te zbiory nie mierzą
+
+* Pytań wielokrokowych i z historią rozmowy.
+* Pytań, na które baza nie zawiera odpowiedzi (zachowanie odmowy).
+* Pytań o treść w środku długich dokumentów (pytania powstały z pierwszych 5000 znaków).
+* Jakości cytowań i poprawności linków.

@@ -1,51 +1,62 @@
-# Dokumentacja Architektoniczna: Parser Dokumentów Binarnych (`document_parser.py`)
+# `document_parser.py` — PDF/DOCX → Markdown
 
-## 1. Wprowadzenie i Rola Modułu
+Skrypt zamienia pobrane pliki (`{prefix}_Dokumenty_Surowe`) na pliki Markdown z front matter (`{prefix}_Dokumenty_Przetworzone`), gotowe dla indeksera ([`build_database.md`](build_database.md)). Jest trzecim krokiem potoku: `scrape_html.py` → `scrape_documents.py` → **`document_parser.py`**.
 
-Skrypt `document_parser.py` pełni funkcję pomostu technologicznego między surowymi plikami binarnymi (pobranymi uprzednio przez moduł `scrape_documents.py`) a indeksatorem bazy wektorowej. Modele osadzające operują wyłącznie na tekście, co wymusza transformację dokumentów takich jak regulaminy (PDF) czy wnioski dziekanatowe (DOCX) do ustrukturyzowanego formatu Markdown. Skrypt wyróżnia się inteligentnym zarządzaniem kosztami ekstrakcji oraz pełną integracją z centralnym systemem konfiguracji, automatycznie mapując katalogi źródłowe i docelowe.
+## 1. Uruchamianie
 
-## 2. Hybrydowy Silnik Ekstrakcji (Heurystyka Kosztów)
+```bash
+python document_parser.py bg                          # foldery z config/sites.yaml
+python document_parser.py --raw R --processed P --temp T --domain https://…   # bez konfiguracji
+```
 
-Zastosowanie potężnych modeli wizyjnych (VLM) do każdego pliku PDF wygenerowałoby gigantyczne koszty i opóźnienia. Aby zoptymalizować budżet, parser implementuje autorską heurystykę (`requires_advanced_parsing`), która analizuje strukturę dokumentu i decyduje o ścieżce przetwarzania:
+Argumenty: `site` (opcjonalny klucz z `sites.yaml`), `--raw`, `--processed`, `--temp`, `--domain` (adres zapisywany do front matter), `--config`. Wartości podane jawnie mają pierwszeństwo nad tymi z konfiguracji. Skrypt kończy się błędem, gdy folder źródłowy nie istnieje. Klucz `LLAMA_CLOUD_API_KEY` jest czytany z `.env` przez `load_dotenv()` (nie przez `Settings` backendu); jego brak daje tylko ostrzeżenie — pliki wymagające chmury zakończą się wtedy błędem i zostaną pominięte.
 
-* **Przetwarzanie Lokalne (PyMuPDF / fitz)**: Jeśli dokument zawiera czysty, wyselekcjonowany tekst, moduł przetwarza go lokalnie na procesorze maszyny. Operacja ta jest błyskawiczna i całkowicie darmowa.
-* **Przetwarzanie w Chmurze (LlamaParse)**: Algorytm kieruje plik do płatnego API LlamaCloud w trzech precyzyjnie zdefiniowanych przypadkach:
-1. **Brak warstwy tekstowej (skany)**: Gdy strona zawiera mniej niż 50 wyekstrahowanych znaków (konieczność użycia OCR).
-2. **Nagromadzenie grafik**: Gdy wykryto więcej niż 2 obrazy na stronie, co sugeruje złożony układ graficzny wymagający modelu wizyjnego.
-3. **Obecność tabel strukturalnych**: Gdy lokalny detektor wykryje osadzone tabele. Klasyczne parsery niszczą strukturę tabel, zlewając kolumny w nieczytelny tekst. LlamaParse w trybie `agentic` perfekcyjnie rekonstruuje je do składni tabelarycznej Markdown, co jest krytyczne dla późniejszego podziału tekstu w `build_database.py`.
+## 2. Przetwarzanie pliku
 
+Folder źródłowy jest czytany **płasko** (bez podfolderów). Dla każdego pliku:
 
+1. Rozszerzenie inne niż `pdf`/`docx` → komunikat `Skipped … unsupported format` (dotyczy m.in. `.doc`, `.odt`).
+2. Jeśli wynik `{nazwa}.md` już istnieje i ma > 150 bajtów → plik pomijany (idempotentność; plik krótszy, np. sam front matter po pustej odpowiedzi chmury, zostanie przetworzony ponownie).
+3. **DOCX** jest konwertowany do tymczasowego PDF-a przez `docx2pdf`. Ten pakiet jest opcjonalny i (zgodnie ze swoją konstrukcją) wymaga zainstalowanego Microsoft Word. **Bez `docx2pdf` pliki DOCX są po cichu pomijane** — jedyną informacją jest ostrzeżenie przy starcie skryptu. Błąd konwersji kończy się pominięciem pliku.
+4. **Wybór metody dla PDF** (`requires_advanced_parsing`) — przetwarzanie w chmurze, jeśli *którakolwiek* strona:
+   * ma mniej niż 50 znaków tekstu (skan, strona-obraz, ale też prawie pusta strona zwykłego dokumentu),
+   * zawiera więcej niż 2 obrazy,
+   * zawiera tabelę wykrytą przez `page.find_tables()`.
 
-## 3. Normalizacja Formatów i Obsługa DOCX
+   Błąd analizy też wymusza chmurę. W pozostałych przypadkach używane jest lokalne PyMuPDF (`fitz`), bez kosztów.
+5. Zapis `{nazwa}.md`; plik tymczasowy jest usuwany.
 
-System RAG wymaga ujednoliconego wejścia tekstowego. Dokumenty pakietu Microsoft Office (pliki `.docx`) są przechwytywane i normalizowane przed procesem ekstrakcji:
+Konsekwencja heurystyki „dowolna strona”: długi, jednolity dokument z jedną tabelą lub jedną niemal pustą stroną trafi w całości do płatnego LlamaParse.
 
-* Moduł weryfikuje dostępność biblioteki `docx2pdf`. W przypadku jej obecności, plik Word przenoszony jest do wyizolowanego katalogu tymczasowego (`temp`).
-* Następuje lokalna konwersja do formatu PDF.
-* Wygenerowany PDF trafia do hybrydowego silnika ekstrakcji, a po pomyślnym wyciągnięciu tekstu, plik tymczasowy jest bezpowrotnie usuwany. Gwarantuje to czystość przestrzeni roboczej.
+## 3. Metody ekstrakcji
 
-## 4. Wstrzykiwanie Metadanych (Frontmatter)
+| Metoda | Wynik | Uwagi |
+|---|---|---|
+| `pymupdf` | **zwykły tekst** (`get_text("text")`), strony rozdzielone pustą linią | bez nagłówków Markdown, tabel i list — struktura, na której opiera się chunkowanie, jest wtedy uboższa |
+| `llamaparse` | Markdown (`markdown_full`) | API v2 (`/api/v2/parse/upload`), `tier: agentic`, `version: latest`; zadanie odpytywane co 2 s, maksymalnie 60 razy (~2 min) |
 
-Wyekstrahowany tekst nie jest zapisywany w formie surowej. Aby system wektorowy nie zgubił kontekstu pliku binarnego, funkcja `add_frontmatter` dokleja na samym szczycie pliku nagłówek w formacie YAML. Obejmuje on:
+Błędy LlamaParse (brak klucza, odrzucone zadanie `FAILED/CANCELLED`, przekroczony czas, błąd HTTP) powodują pominięcie pliku bez zapisu, więc kolejne uruchomienie spróbuje go ponownie. Plik jest przetwarzany sekwencyjnie i synchronicznie.
 
-* `plik`: oryginalną nazwę pliku z rozszerzeniem, niezbędną do generowania poprawnych cytowań w interfejsie użytkownika.
-* `typ_dokumentu`: rozszerzenie (np. `pdf`, `docx`), używane przy logicznym filtrowaniu bazy.
-* `zrodlo`: oficjalną domenę źródłową lub nazwę jednostki AGH.
-* `metoda_ekstrakcji`: znacznik (`llamaparse` lub `pymupdf`) ułatwiający późniejsze debugowanie błędów w parsowaniu tekstu.
+## 4. Front matter
 
-## 5. Integracja z Konfiguracją i Interfejs CLI
+```yaml
+---
+plik: "regulamin_studiow_ab12cd34.pdf"   # nazwa pliku źródłowego (z rozszerzeniem)
+typ_dokumentu: docx                      # rozszerzenie ORYGINAŁU (DOCX zostaje docx)
+zrodlo: https://bg.agh.edu.pl/           # start_url witryny lub --domain; puste, jeśli brak
+metoda_ekstrakcji: pymupdf               # pymupdf | llamaparse
+---
+```
 
-Skrypt bezpośrednio dziedziczy architekturę ścieżek z pliku `config/sites.yaml`. Dzięki importowi modułu `sites.py` nie wymaga on ręcznego wprowadzania skomplikowanych adresów systemowych.
+`zrodlo` to adres **domeny**, a nie URL konkretnego dokumentu. Indekser nadpisuje `zrodlo` nazwą źródła z `sites.yaml`, a pola `url` dokumenty nie mają — w efekcie chunki dokumentów nie niosą linku do pliku (patrz [`build_database.md`](build_database.md), §9.1a). Tytuł dokumentu wybierany jest przez indekser: pierwszy nagłówek `#`, a gdy go brak (tekst z PyMuPDF) — nazwa pliku.
 
-Interfejs linii poleceń pozwala na elastyczne uruchamianie procesu w dwóch trybach:
+## 5. Raport
 
-* **Wywołanie z kluczem domeny (np. `python document_parser.py cok`)**: Skrypt automatycznie pobiera z konfiguracji YAML ścieżki do folderu surowego (`raw`), docelowego (`processed`) oraz tymczasowego (`temp`), a także ładuje oficjalną nazwę domeny.
-* **Wywołanie z jawnym nadpisaniem ścieżek (Override)**: Przydatne w potokach CI/CD lub przy testowaniu niestandardowych zbiorów danych. Użytkownik może samodzielnie zdefiniować flagi: `--raw`, `--processed`, `--temp`, `--domain` oraz wskazać alternatywny plik konfiguracyjny flagą `--config`.
+Na końcu: `DOCX->PDF: n | Local (Free): n | AI Cloud: n`.
 
-## 6. Bezstanowość i Odporność (Resilience)
+## 6. Ograniczenia
 
-Podobnie jak poprzednie narzędzia potoku pobierania, skrypt został zaprojektowany do długotrwałej pracy asynchronicznej:
-
-* **Idempotentność**: Algorytm sprawdza, czy docelowy plik `.md` już istnieje i czy jego rozmiar przekracza 150 bajtów (co chroni przed plikami zapisanymi z błędem pustego frontmattera). Jeśli warunek jest spełniony, kosztowne parsowanie jest pomijane. Pozwala to na bezpieczne przerywanie i wznawianie procesu.
-* **Odporność na Timeouty API**: Komunikacja z chmurą LlamaParse opiera się na mechanizmie asynchronicznego odpytywania (ang. polling). Skrypt odpytuje serwer o status zadania co 2 sekundy (przez maksymalnie 2 minuty), a w przypadku odrzucenia (status `FAILED` lub `CANCELLED`) precyzyjnie raportuje komunikat błędu z serwera, po czym przechodzi do kolejnego dokumentu bez przerywania całej kolejki.
-* Na koniec działania generowany jest czytelny raport w konsoli, sumujący liczbę pomyślnie znormalizowanych plików DOCX, plików przetworzonych za darmo lokalnie oraz dokumentów poddanych zaawansowanej obróbce w chmurze AI.
+* Brak obsługi `.doc`, `.odt` i podfolderów.
+* Zależność DOCX od Microsoft Word (przez `docx2pdf`) ogranicza ten krok do Windows/macOS z Wordem.
+* Jakość lokalnej ekstrakcji (zwykły tekst) jest niższa niż chmurowej; nie ma kontroli jakości wyniku poza progiem 150 bajtów.
+* Koszt zależy od liczby plików kierowanych do chmury; skrypt go nie szacuje.

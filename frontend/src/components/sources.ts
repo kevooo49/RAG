@@ -26,10 +26,8 @@ sources.forEach((source, index) => {
     const safeText = escapeHTML(source.text);
     const score = source.score ? source.score.toFixed(5) : 'N/A';
 
-    let url = source.meta?.url || '#';
-    if (url !== '#' && !url.startsWith('http://') && !url.startsWith('https://')) {
-      url = '#';
-    }
+    const url = source.meta?.url ?? '';
+    const hasLink = url.startsWith('http://') || url.startsWith('https://');
 
     card.innerHTML = `
       <div class="source-header">
@@ -37,22 +35,20 @@ sources.forEach((source, index) => {
         <span class="rrf-badge">RRF: ${score}</span>
       </div>
       <div class="source-meta">
-        Sekcja: <i>${section}</i> | <span class="link-placeholder"></span>
+        Sekcja: <i>${section}</i>${hasLink ? ' | <span class="link-placeholder"></span>' : ''}
       </div>
       <div class="source-text">${safeText}</div>
     `;
-    
-    const linkEl = document.createElement('a');
-    linkEl.href = url;
-    linkEl.target = '_blank';
-    linkEl.rel = 'noopener noreferrer';
-    linkEl.textContent = '🔗 Otwórz stronę';
-    
-    const placeholder = card.querySelector('.link-placeholder');
-    if (placeholder) {
-      placeholder.replaceWith(linkEl);
+
+    if (hasLink) {
+      const linkEl = document.createElement('a');
+      linkEl.href = url;
+      linkEl.target = '_blank';
+      linkEl.rel = 'noopener noreferrer';
+      linkEl.textContent = '🔗 Otwórz stronę';
+      card.querySelector('.link-placeholder')?.replaceWith(linkEl);
     }
-    
+
     list.appendChild(card);
   });
 

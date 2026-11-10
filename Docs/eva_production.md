@@ -1,41 +1,51 @@
-# Dokumentacja Architektoniczna: Ewaluacja Ostatecznego Stosu Produkcyjnego (`evaluate_production.py`)
+# Ewaluacja zintegrowanego stosu (`evaluate_production.py`)
 
-## 1. Wprowadzenie i Rola Modułu
+W odróżnieniu od testów pojedynczych komponentów ten skrypt sprawdza **cały potok wyszukiwania naraz**: asymetryczne indeksowanie, hybrydę RRF i rozszerzanie zapytań. Zbiory: [`eva_datasets.md`](eva_datasets.md). Wyniki: `production_eva_stats/` — trzy przebiegi (patrz §3).
 
-Skrypt `evaluate_production.py` stanowi ostateczny punkt weryfikacji całego rurociągu przetwarzania danych w systemie RAG. W przeciwieństwie do poprzednich modułów analitycznych, które testowały izolowane komponenty w celu podjęcia decyzji projektowych, ten skrypt ewaluuje zintegrowany, finalny stos technologiczny. Sprawdza on, jak wszystkie wybrane wcześniej optymalizacje współpracują ze sobą w jednym, spójnym środowisku, dostarczając ostateczne metryki gotowości systemu do wdrożenia na produkcję.
+## 1. Konfiguracja skryptu (stan kodu)
 
-## 2. Architektura Docelowa (Stos Produkcyjny)
+| Element | Wartość |
+|---|---|
+| Embeddingi | `text-embedding-3-small` (stała `EMBED_MODEL`) |
+| Rozszerzanie zapytań | `gpt-4o-mini`, własny prompt skryptu (zachowaj oryginał + dopisz 3–5 słów kluczowych) |
+| Indeksy | Chroma `eval_production` (cosine), ES `eval_production_idx` (analizator `polish`) |
+| Pula kandydatów / RRF | 40 chunków na ścieżkę, `k = 60` (jak w produkcji) |
+| Statystyka | cluster bootstrap po plikach, 2000 prób, ziarno 42 |
+| Cache | `.eval_cache_production/` (odcisk SHA-256 korpusu, kodu i wersji formatu) |
 
-Moduł implementuje i testuje następujący zestaw technologii, uznany za optymalny na podstawie wcześniejszych badań:
+Wyniki trzech przebiegów powstały przy **różnych wartościach `EMBED_MODEL`/formatu chunków** (zmienianych między przebiegami w kodzie), więc ich nagłówki różnią się opisem architektury.
 
-* **Model Osadzający**: `text-embedding-3-small` – wybrany ze względu na optymalny stosunek kosztów do wydajności.
-* **Strategia Chunkowania**: Asymetryczna produkcja (`Production_Asymmetric`) – podział strukturalny zachowujący spójność tabel i list, minimalizujący jednocześnie nadmierną fragmentację.
-* **Wyszukiwarka**: Fuzja algorytmu wektorowego (ChromaDB) oraz wyszukiwania leksykalnego (Elasticsearch), łączona za pomocą algorytmu RRF ze wskaźnikiem stałym równym 60.
-* **Warstwa Lingwistyczna**: Algorytm rozszerzania zapytań obsługiwany przez szybki model `gpt-4o-mini`, weryfikujący i transformujący zapytanie użytkownika przed wysłaniem go do bazy danych.
+## 2. „Asymetria” — co jest w kodzie, a co w produkcji
 
+* **W produkcji** (`build_database.py`, `FORMAT_VERSION = "asym-v2"`): embedding liczony jest z `text_emb` (breadcrumb `Tytuł › Sekcja` + treść, bez URL-i i bez etykiety źródła), a do Elasticsearch i do LLM trafia `text` z nagłówkiem `[Źródło] Tytuł › Sekcja` i linkami. Wersje się więc różnią. Szczegóły: [`build_database.md`](build_database.md), §7.
+* **W skrypcie ewaluacyjnym** funkcja `chunk_file_asymmetric` buduje wersję wektorową jako `Tytuł › Sekcja` + treść, ale wersję dla ES też bierze z `text_emb`; w efekcie **oba indeksy mają praktycznie ten sam tekst**, bez etykiety `[Źródło]` i bez linków. Docstring funkcji twierdzi, że ES dostaje „pełny nagłówek”, co sugeruje, że skrypt pisano dla starszej wersji `build_database`, w której `text_emb` go zawierał (to wniosek z lektury kodu). Ewaluacja nie odwzorowuje więc w pełni leksykalnej strony obecnej produkcji. Dodatkowo `chunk_file_asymmetric` przekazuje konfigurację w starym formacie kluczy (`sciezka`, `zrodlo`…) — patrz [`eva_chunking.md`](eva_chunking.md), §5.
+* Prompt rozszerzania w skrypcie (z przykładami „stypa → stypendium…”, „wuef → wychowanie fizyczne…”) różni się od promptu w `rag_service.py` (słownik skrótów AGH, obsługa historii). Przykłady slangu pochodzą z tej samej puli słów, której użyto do generowania pytań `colloquial` — zysk z rozszerzania w tej ewaluacji może być zatem lekko optymistyczny.
+* Skrypt nie testuje historii rozmowy, progu podobieństwa ani cache'u.
 
+## 3. Wyniki trzech przebiegów (90 zapytań)
 
-## 3. Asymetryczne Zarządzanie Kontekstem
+| Przebieg | Konfiguracja | Hit@1 | Hit@5 | MRR@10 [95% CI] | Mediana wyszukiwania | LLM (śr.) |
+|---|---|---|---|---|---|---|
+| `run_…204829` (**odpowiada obecnemu kodowi**) | `3-small` + kontekst asymetryczny | 0.667 | 0.856 | 0.752 [0.67–0.83] | 278,7 ms (p95 390,7) | 1209 ms |
+| `run_…212623` | `3-large` + kontekst asymetryczny | 0.711 | 0.922 | 0.801 [0.72–0.87] | 258,4 ms (p95 348,4) | 976 ms |
+| `run_…141303` | `3-large` + „Enriched Context” | 0.678 | 0.944 | 0.795 [0.72–0.86] | 268,9 ms (p95 330,6) | 996 ms |
 
-Skrypt wdraża kluczową innowację architektoniczną w postaci asymetrycznego generowania treści dla różnych wyszukiwarek, rozwiązaną w funkcji `chunk_file_asymmetric`.
-Ponieważ bazy wektorowe są wysoce wrażliwe na powtarzający się szum, a bazy leksykalne korzystają na maksymalnym nasyceniu słowami kluczowymi, pojedynczy chunk jest przed wdrożeniem rozwidlany na dwie wersje:
+Hit@1 / MRR@10 według typu zapytania:
 
-* Wersja dla bazy wektorowej (ChromaDB) otrzymuje skrócony, sterylny nagłówek w formacie ścieżki nawigacyjnej (Tytuł › Sekcja), dołączony bezpośrednio nad właściwą treścią.
-* Wersja dla indeksu leksykalnego (Elasticsearch) zachowuje pełny, techniczny format nagłówka generowany przez system chunkowania, maksymalizując szansę na twarde dopasowanie słów kluczowych.
+| Przebieg | colloquial | lexical | semantic |
+|---|---|---|---|
+| `3-small`, asymetryczny | 0.67 / 0.727 | 0.77 / 0.873 | 0.57 / 0.655 |
+| `3-large`, asymetryczny | 0.70 / 0.800 | 0.83 / 0.908 | 0.60 / 0.696 |
+| `3-large`, enriched | 0.70 / 0.796 | 0.77 / 0.878 | 0.57 / 0.713 |
 
+## 4. Interpretacja
 
+* **Jakość:** konfiguracja zgodna z obecnym kodem (`3-small`) trafia właściwy plik na pierwsze miejsce w 2/3 przypadków (Hit@1 0.667) i w top-5 w 85,6% (Hit@5 0.856), czyli w ok. **14% zapytań właściwego dokumentu nie ma w pierwszej piątce**. Nie przekłada się to na „pełne nasycenie” kontekstu poprawnymi źródłami.
+* **Porównanie z pojedynczymi komponentami:** MRR 0.752 wobec 0.705 dla samej hybrydy bez rozszerzania i 0.779 dla `Hybrid + Expansion` z [`eva_search.md`](eva_search.md) — wyniki w granicach błędu, mimo różnic w chunkowaniu i prompcie.
+* **Embeddingi:** `3-large` daje w pełnym stosie MRR ok. 0.80 wobec 0.75 (`3-small`) przy praktycznie takim samym opóźnieniu wyszukiwania (opóźnienie zapytania zależy od API OpenAI). Różnica ≈ 0.05 mieści się w nakładających się CI. Wybór `3-small` w produkcji jest więc decyzją kosztową; jakościowo `3-large` pozostaje nieco lepszy (patrz [`eva_embeddings.md`](eva_embeddings.md), §5).
+* **Opóźnienia:** wyszukiwanie w bazach + RRF to ułamek sekundy (mediana ≈ 0,26–0,28 s). Rozszerzenie zapytania przez LLM dodaje średnio ok. 1,0–1,2 s, więc łączny narzut przed rozpoczęciem generowania wynosi **ok. 1,3–1,5 s w średniej** (mediana wyszukiwania + średnia LLM); dla p95 wyszukiwania i wolniejszych wywołań LLM będzie wyższy. W produkcji powtarzające się zapytania omijają LLM dzięki cache'owi (`backend.md`, §5.2).
+* **Typy zapytań:** najlepiej `lexical`, najsłabiej `semantic` — zgodnie z projektem zbioru (n = 30 na typ).
 
-## 4. Wyniki Ewaluacji (Precyzja i Opóźnienia)
+## 5. Analiza błędów
 
-Uruchomienie skryptu dla 90 zapytań testowych (z próbnikiem ustawionym na 2000 iteracji klastrowego bootstrapu) potwierdziło wysoką stabilność i trafność zintegrowanego systemu.
-
-* **Precyzja Wyszukiwania**: Ostateczna architektura osiągnęła metrykę MRR@10 na poziomie 0.752. Wskaźnik Hit@1 wyniósł 0.667, co oznacza, że w 2/3 przypadków idealny dokument znajduje się na absolutnie pierwszym miejscu. Co więcej, w 85.6% przypadków oczekiwany plik trafia do czołowej piątki wyników (Hit@5), co gwarantuje pełne nasycenie okna kontekstowego dla ostatecznego modelu generacyjnego.
-* **Opóźnienia Systemowe (Wydajność)**: Zapytanie do połączonych baz danych (wektorowej i leksykalnej) oraz sprzężenie ich algorytmem RRF zajmuje zaledwie ułamek sekundy (mediana 278.7 ms, 95. percentyl 390.7 ms). Główne obciążenie czasowe generuje weryfikacja i rozszerzanie zapytania przez model językowy, trwająca średnio 1209.1 ms. Sumaryczny narzut nie przekracza jednak bariery 1.5 sekundy, co gwarantuje doskonałe doświadczenie użytkownika.
-
-
-
-## 5. Rozbicie Semantyczne i Analiza Błędów
-
-Szczegółowa metryka potwierdza skuteczność obsługi różnych intencji użytkownika. System dobrze radzi sobie z oficjalnymi terminami w trybie leksykalnym (Hit@1: 0.77). Dobrze interpretowane są również zapytania potoczne, w których studenci używają slangu uczelnianego (Hit@1: 0.67). Zgodnie z przewidywaniami, najtrudniejsze pozostają silnie sparafrazowane zapytania semantyczne (Hit@1: 0.57).
-
-Raport wyszczególnia również skrajne przypadki błędów (zapytania poza Top 5). Dogłębna analiza tych przypadków udowadnia granice możliwości systemu wektorowego. Przykładowo, system zapytany potocznie o to, co trzeba zaliczyć na kolokwium z konkretnego przedmiotu, zwraca sylabusy z języków obcych oraz uchwały o warunkach rekrutacji, myląc luźny żargon z ogólnymi regulacjami uczelni. Zapytania te stanowią unikalny materiał do późniejszego dostrajania (fine-tuningu) własnych modeli embeddingowych.
+Raport wypisuje zapytania, dla których oczekiwany plik nie znalazł się w top-5. Powtarzają się w trzech przebiegach m.in. pytanie o roczną pomoc finansową (oczekiwane: `kredyty-studenckie`; zwracane są regulaminy świadczeń i Erasmus) oraz pytanie o nagrodę dla studenta pierwszego roku. W przebiegu `3-small` pojawia się też zapytanie potoczne o „kolos z krychy” (oczekiwana `Krystalizacja.md`), na które system zwrócił nieistotne sylabusy i uchwałę rekrutacyjną. To dobre kandydaty do: (a) sprawdzenia, czy etykieta pytania jest jednoznaczna (kilka regulaminów dotyczy podobnych świadczeń), (b) rozbudowy słownika skrótów w prompcie rozszerzania, (c) ewentualnego strojenia embeddingów. Twierdzenie, że takie błędy „udowadniają granice możliwości systemu wektorowego”, byłoby za mocne — przy 90 pytaniach to pojedyncze przypadki.

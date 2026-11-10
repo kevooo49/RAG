@@ -1,48 +1,97 @@
-# Dokumentacja Architektoniczna: Crawler HTML (`scrape_html.py`)
+# `scrape_html.py` — crawler stron HTML → Markdown
 
-## 1. Wprowadzenie i Rola w Systemie
+Jeden crawler dla wszystkich witryn AGH. Zachowanie każdej witryny opisuje wpis w `config/sites.yaml` ([`config.md`](config.md)). Wynik: pliki Markdown z front matter, lista linków do PDF-ów oraz stan umożliwiający wznowienie.
 
-Skrypt `scrape_html.py` to główny moduł odpowiedzialny za zasilanie bazy wiedzy systemu RAG danymi ze stron internetowych uczelni. Działa on jako asynchroniczny crawler oparty o algorytm przeszukiwania wszerz (BFS). Skrypt jest w pełni sterowany przez plik konfiguracyjny `sites.yaml` i nie wymaga modyfikacji kodu źródłowego przy dodawaniu nowych wydziałów czy jednostek AGH. Jego głównym celem jest pobranie treści, rygorystyczne oczyszczenie jej z elementów interfejsu graficznego (szumu) i wyeksportowanie czystego tekstu do formatu Markdown z zachowaniem metadanych.
+Crawler jest **synchroniczny i jednowątkowy** (`requests` + `sync_playwright`), przechodzi witrynę wszerz (BFS, kolejka `deque`). Import `playwright` jest bezwarunkowy — pakiet trzeba mieć zainstalowany nawet dla witryn bez JavaScriptu.
 
-## 2. Hybrydowy Silnik Pobierania Danych
+## 1. Uruchamianie
 
-Ze względu na różnorodność technologiczną uczelnianych stron internetowych, crawler implementuje dwa równoległe mechanizmy pobierania treści:
+```bash
+python scrape_html.py --list            # lista witryn z sites.yaml
+python scrape_html.py bg                # crawl (wznawia, jeśli istnieje stan)
+python scrape_html.py bg --max-pages 50 # test
+python scrape_html.py bg --reset        # crawl od zera
+python scrape_html.py bg --config inny.yaml
+```
 
-* **Sesje HTTP (`requests` + `urllib3.util.retry`)**: Używane domyślnie dla klasycznych, statycznych stron HTML. Mechanizm sesji wykorzystuje wbudowany adapter Retry, który automatycznie ponawia żądania w przypadku napotkania błędów serwera (np. 500, 502) lub uderzenia w Rate Limiter (błąd 429).
-* **Renderowanie Dynamiczne (Playwright)**: Wiele nowych systemów uczelnianych to aplikacje SPA (Single Page Application) oparte na frameworkach takich jak React. Jeśli profil źródła posiada flagę `requires_js: true`, skrypt uruchamia przeglądarkę Chromium w trybie headless, czeka na pełne załadowanie asynchronicznych zapytań sieciowych (stan `networkidle`) i dopiero wtedy ekstrahuje wyrenderowany obiekt DOM.
+`--reset` ignoruje zapisany `stan.json` i usuwa `manifest.jsonl`; **nie usuwa** wcześniej zapisanych plików `.md` (zostaną nadpisane lub pozostaną jako osierocone, jeśli strona zniknęła).
 
-## 3. Nawigacja i Zarządzanie Kolejką (BFS)
+## 2. Parametry globalne (stałe w kodzie)
 
-Proces poruszania się po witrynie opiera się na kolejce FIFO (`deque`), co gwarantuje płaskie i przewidywalne przeszukiwanie struktury drzewa podstron.
+| Stała | Wartość | Znaczenie |
+|---|---|---|
+| `USER_AGENT` | `AGH-RAG-Crawler/1.0 (+contact: …)` | jawny identyfikator z adresem kontaktowym |
+| `DELAY` | 0,3 s | minimalna przerwa; jeśli `robots.txt` ma większy `Crawl-delay`, obowiązuje on |
+| `TIMEOUT` | 5 s połączenie / 20 s odczyt | |
+| `MAX_BYTES` | 5 MB | większe strony są odrzucane |
+| `MAX_QUERY_VARIANTS` | 15 | limit wariantów zapytania (`?a=…`) dla jednej ścieżki |
+| `SAVE_STATE_EVERY` | 25 | częstotliwość zapisu stanu |
+| `MAX_JUNK_CHARS` | 3000 | ochrona przed usunięciem „zbyt dużego” elementu (§5) |
 
-* **Inicjalizacja i Sitemapy**: Crawler rozpoczyna pracę od adresu `start_url` oraz weryfikacji pliku `robots.txt`. Jeśli serwer udostępnia mapę witryny (`sitemap.xml`), jej linki są natychmiast wrzucane do kolejki.
-* **Higiena i Normalizacja URL**: Każdy wykryty adres jest normalizowany przed dodaniem do kolejki. Crawler usuwa parametry śledzące (np. `fbclid`, `utm_*`), ujednolica schematy i obcina kotwice (`#`). Dodatkowo mechanizm detekcji wyłapuje tzw. pułapki zapytań – jeśli dany widok ma wygenerowanych zbyt wiele wariantów parametrów sortowania, crawler ignoruje kolejne.
-* **Walidacja Zasięgu**: Skrypt pilnuje, aby nie opuścić zdefiniowanej domeny (z uwzględnieniem wyjątków takich jak `cdn.imir.agh.edu.pl`), pomija strony w językach obcych (np. prefiksy `/en`, `lang=en`) oraz respektuje wykluczenia ścieżek zdefiniowane w konfiguracji YAML.
+Ponowienia HTTP: do 3 prób z narastającym opóźnieniem (`backoff_factor=1`) dla kodów 429/500/502/503/504, z uwzględnieniem `Retry-After`.
 
-## 4. Odszumianie DOM i Konwersja (Junk Removal)
+## 3. Wybór pobierania: `requests` albo Playwright
 
-Jakość systemu RAG zależy bezpośrednio od czystości wektorów. Pobranie strony wraz z jej bocznym menu czy stopką doprowadziłoby do drastycznego spadku precyzji wyszukiwania semantycznego (Context Poisoning).
+To **alternatywa wybierana per witryna** (`requires_js` w profilu), a nie dwa równoległe mechanizmy. Dla `requires_js: true` (w repo: `rekrutacja`, `metal`, `imir`, `skos`) każda strona jest ładowana w Chromium (`wait_until="networkidle"`, limit 30 s); **dla każdej strony uruchamiana jest nowa przeglądarka**, co jest wolne, ale proste. Wymaga `playwright install chromium`. Dla stron z Playwrighta nie ma nagłówka `Last-Modified`, więc `modification_date` jest pusty. Odpowiedzi nie-HTML (po `Content-Type`) są odrzucane w obu trybach.
 
-* **Filtrowanie Strukturalne**: Biblioteka BeautifulSoup namierza główny kontener z treścią bazując na selektorach z pliku `sites.yaml` (np. `#mainContent`, `article`). Następnie bezlitośnie usuwane są tagi nawigacji (`nav`), stopki, ukryte skrypty, iframy, panele logowania, ciasteczka oraz karuzele zdjęć.
-* **Optymalizacja Linków**: Linki względne (np. `/kontakt`) są w locie zamieniane na bezwzględne, aby zachowały użyteczność w wygenerowanym dokumencie Markdown.
-* **Ekstrakcja Stopki**: Elementy takie jak adres wydziału, e-mail czy telefon dziekanatu powtarzają się na każdej podstronie. Crawler ekstrahuje te informacje ze stopki tylko z pierwszej odwiedzonej strony i zapisuje do pojedynczego pliku `_stopka.md`, co zapobiega zanieczyszczaniu każdego chunku w bazie wektorowej powtarzającymi się danymi kontaktowymi.
-* **Transformacja do Markdown**: Oczyszczony obiekt DOM trafia do biblioteki `markdownify`, która generuje ustrukturyzowany tekst. Do każdego pliku dopisywany jest nagłówek Frontmatter zawierający kluczowe metadane (oryginalny URL, język, czas pobrania, wyekstrahowany tytuł), co warunkuje późniejsze poprawne generowanie cytowań w interfejsie użytkownika.
+## 4. Kolejka i filtrowanie adresów
 
-## 5. Odporność i Persystencja Stanu
+**Start:** adres startowy trafia do kolejki, a następnie (tylko przy świeżym starcie, nie przy wznowieniu) adresy z map witryny — z `robots.txt` lub, gdy ich brak, `/sitemap.xml`; indeksy map są rozwijane do głębokości 2.
 
-Aby zapobiec utracie danych podczas wielogodzinnych operacji pobierania (np. w przypadku awarii sieci lub ręcznego przerwania skryptu), wprowadzono system ciągłego zapisu stanu:
+**Normalizacja (`normalize_url`):** wymuszony `https`, bez fragmentu `#…`, bez domyślnych portów, sklejone `//`, usunięty `/index.html|htm|php` i końcowy `/`, posortowane parametry zapytania, usunięte parametry śledzące (`utm_*`, `mc_*`, `pk_*`, `fbclid`, `gclid`, `chash`, `no_cache`, `phpsessid`, `sid`, `jsessionid`).
 
-* Zrzut środowiska (checkpoint) następuje co 25 pobranych stron. Stan kolejki, zbiór odwiedzonych linków oraz statystyki zapisywane są do pliku `stan.json`. Pozwala to na wznowienie crawlera w dowolnym momencie.
-* **Deduplikacja treści**: Zdarza się, że pod różnymi adresami URL kryje się ta sama treść. Skrypt liczy skrót SHA-1 z tekstu każdego dokumentu; jeśli zawartość jest identyczna z już zapisaną, plik jest pomijany.
-* **Delegacja zadań binarnych**: Crawler HTML nie pobiera plików PDF ani DOCX. Po natrafieniu na link binarny dodaje go do osobnego rejestru w pliku `pdf_linki.txt`. Lista ta służy jako punkt startowy dla kolejnego modułu pipeline'u: skryptu `scrape_documents.py`.
+**Odrzucane adresy (`evaluate_url`)** — kolejność sprawdzeń: schemat inny niż http(s) → inna domena → wersja obcojęzyczna (prefiks z `foreign_language_prefixes` lub `?lang=` ≠ `pl`) → ścieżka z `excluded_paths` → PDF (trafia na listę, nie do kolejki) → inny plik binarny (`doc(x)`, `xls(x)`, `zip`, obrazy, `csv`, `txt`, …) → parametr „widoku” (`print`, `sort`, `order`, `orderby`, `sortby`, `format`, `output`, `ical`).
 
-## 6. CLI i Generowanie Raportów
+**Domena:** porównanie hosta bez `www.` i portu; wyjątki zaszyte w kodzie: `cdn.imir.agh.edu.pl`, `cok.agh.edu.pl`, `www.cok.agh.edu.pl`.
 
-Skrypt oferuje przejrzysty interfejs linii poleceń. Flagą `--list` można wylistować wszystkie zdefiniowane źródła, a flagą `--max-pages` ograniczyć czas działania w celach testowych.
+**Pułapki zapytań:** dla jednej ścieżki dozwolonych jest najwyżej 15 różnych zestawów parametrów; kolejne są liczone jako `skipped_query_trap`. Dodatkowo odrzucana jest głębokość powyżej `max_depth`.
 
-Na zakończenie każdego cyklu (lub po przechwyceniu sygnału przerwania klawiatury), crawler generuje w konsoli i logach wyczerpujący raport końcowy. Prezentuje on podsumowanie operacji, wyszczególniając:
+**Przekierowania:** po pobraniu adres końcowy jest ponownie normalizowany i sprawdzany (domena, ścieżki); odwiedzone adresy nie są powtarzane.
 
-* Liczbę odwiedzonych podstron oraz faktycznie zapisanych plików `.md`.
-* Liczbę wyodrębnionych linków do plików PDF.
-* Powody odrzucenia dokumentów (zbyt krótki tekst, duplikat treści, zablokowanie przez `robots.txt`, błąd pobierania).
-* Stan kolejki oczekującej, uświadamiając operatora, ile pracy pozostało do zakończenia pełnego cyklu dla danego profilu.
+**robots.txt:** respektowany (`can_fetch`). Brak pliku lub odpowiedź inna niż poprawna oznacza zgodę na wszystko.
+
+## 5. Czyszczenie HTML i konwersja
+
+1. **Wybór treści:** pierwszy selektor z `content_selectors`, który zwraca niepusty element; gdy lista pusta lub nic nie pasuje — `<body>`.
+2. **Usuwanie bezwarunkowe:** `script, style, noscript, template, svg, iframe, canvas, object, embed, link, meta`.
+3. **Usuwanie ostrożne** (nawigacja, formularze, przyciski, breadcrumbs, cookies, udostępnianie, paginacja…): element jest usuwany **tylko jeśli ma ≤ 3000 znaków tekstu** — by selektor typu `[class*=share]` nie skasował całej strony.
+4. **Usuwanie strukturalne** (`header`, `footer`, `aside`) — tylko gdy treść pochodzi z `<body>` (fallback).
+5. Selektory z `additional_junk_selectors` są usuwane dodatkowo.
+6. Konwersja `markdownify` (nagłówki ATX); obrazy są usuwane; linki względne zamieniane na bezwzględne; odnośniki `#kotwica` i `javascript:` zostają samym tekstem, `mailto:`/`tel:` pozostają.
+7. **Stopka:** jeśli profil ma `footer_selectors`, stopka jest wyciągana z **pierwszej** odwiedzonej strony i zapisywana raz jako `_stopka.md` (`document_type: footer`). Dzięki temu dane kontaktowe są w indeksie, ale nie powielają się na każdej stronie.
+
+**Wyjątki zależne od witryny (zaszyte w kodzie, nie w YAML):**
+* adresy zawierające `historia` — usuwana sekcja „Rocznice”, a linki w sekcjach „Bibliografia”/„Źródła” są odlinkowywane (struktura Wikipedii/MediaWiki);
+* strona główna `imir` — do kolejki wstrzykiwane są ręcznie wskazane adresy podstron (11 URL-i), bo nie wynikają z nawigacji.
+
+Dlatego „nowa witryna = tylko wpis w YAML” jest prawdą dla typowych serwisów, ale nie dla takich przypadków.
+
+## 6. Kryteria zapisu strony
+
+Strona jest pomijana (ze statystyką), gdy: `<meta robots>` zawiera `noindex`; `<html lang>` nie należy do `allowed_languages` (puste `lang` przechodzi; `allowed_languages: null` wyłącza filtr); Markdown ma mniej niż `min_chars` znaków; jej **treść** powtarza już zapisaną stronę — porównywany jest SHA-1 tekstu po usunięciu adresów linków, zamianie na małe litery i normalizacji znaków (`skipped_duplicates`).
+
+## 7. Wynik
+
+```text
+{Prefix}_Strony/
+   nazwa_ze_ścieżki_ab12cd34.md     # slug ścieżki (do 80 zn.) + 8 znaków SHA-1 URL
+   _stopka.md
+{Prefix}_Strony_meta/
+   stan.json        # visited, queue, hashes, statystyki — wznowienie
+   pdf_linki.txt    # posortowane adresy .pdf, po jednym w linii
+   manifest.jsonl   # wpis na każdą zapisaną stronę
+   crawler.log
+```
+
+Front matter każdej strony (wartości zapisane jako JSON): `url`, `title`, `document_type: html`, `language`, `url_path` (segmenty ścieżki), `modification_date` (nagłówek `Last-Modified`), `download_date`, `char_count`. Indekser używa `url` jako linku w odpowiedzi.
+
+Stan jest zapisywany w pętli (przy zapisanej stronie, gdy licznik przetworzonych adresów jest wielokrotnością 25), przy `Ctrl+C` i na końcu (`finally`); adres przetwarzany w chwili przerwania wraca na początek kolejki. Wznowienie = to samo polecenie.
+
+**Raport końcowy:** odwiedzone, zapisane `.md`, znalezione linki PDF, zbyt krótkie, duplikaty treści, błędy/nie-HTML, wykluczone ścieżki, pułapki zapytań, pozostałe w kolejce.
+
+## 8. Ograniczenia
+
+* `pdf_linki.txt` zawiera **tylko PDF-y**; DOCX/XLS/ODT są pomijane jako pliki binarne (patrz [`scrape_documents.md`](scrape_documents.md)).
+* Playwright startuje przeglądarkę per strona (wolno przy dużych serwisach z JS).
+* Nie ma równoległości — duże witryny crawluje się godzinami.
+* Duplikaty wykrywane są tylko dla identycznej treści, nie dla podobnej.

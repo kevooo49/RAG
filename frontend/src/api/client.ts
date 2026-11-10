@@ -2,6 +2,9 @@ import type { ChatRequestPayload, SourceDocument } from '../types';
 
 const API_URL = '/api/chat';
 
+const HISTORY_LIMIT = 6;
+const MAX_MESSAGE_CHARS = 3000;
+
 export async function sendChatMessage(
   payload: ChatRequestPayload,
   onChunk: (text: string) => void,
@@ -12,7 +15,10 @@ export async function sendChatMessage(
   try {
     const safePayload = {
       ...payload,
-      history: payload.history ? payload.history.slice(-6) : []
+      history: (payload.history ?? []).slice(-HISTORY_LIMIT).map((m) => ({
+        role: m.role,
+        content: String(m.content ?? '').slice(0, MAX_MESSAGE_CHARS),
+      })),
     };
 
     const response = await fetch(API_URL, {

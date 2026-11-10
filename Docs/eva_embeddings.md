@@ -1,54 +1,45 @@
-# Dokumentacja Architektoniczna: Ewaluacja Modeli Osadzających (`evaluate_embeddings.py`)
+# Ewaluacja modeli embeddingowych (`evaluate_embeddings.py`)
 
-## 1. Cel i Środowisko Badawcze
+Skrypt mierzy samą warstwę wektorową: jakość wyszukiwania, opóźnienie zapytania i czas budowy indeksu dla czterech modeli. Zbiory: [`eva_datasets.md`](eva_datasets.md). Wyniki: `embed_eva_stats/run_20261021_134404/` (`report.txt`, `results.json`, `per_query.csv`, wykresy).
 
-Skrypt `evaluate_embeddings.py` to zautomatyzowane środowisko testowe służące do benchmarkingu modeli wektorowych w systemie RAG. Moduł całkowicie izoluje warstwę wyszukiwania wektorowego (pomijając np. Elasticsearch), aby precyzyjnie zmierzyć trzy krytyczne parametry: precyzję wyszukiwania, latencję (czas zapytania) oraz narzut czasowy na indeksowanie bazy.
+## 1. Metoda
 
-Zastosowano w nim zaawansowane mechanizmy optymalizacyjne:
+* **Te same chunki dla wszystkich modeli.** Skrypt importuje chunker z `build_database.py` i dzieli korpus ewaluacyjny jego metodą; do wektoryzacji idzie `text_emb`. Elasticsearch jest zastąpiony atrapą (`unittest.mock`), bo import `build_database` go wymaga — ewaluacja jej nie używa.
+* **Baza:** ChromaDB w trybie trwałym (`PersistentClient`) w katalogu cache, metryka `cosine`; zapytanie zwraca pulę 40 chunków, z której liczone są rankingi unikalnych plików (K = 10).
+* **Odcisk palca (fingerprint) kolekcji:** SHA-256 z nazw i treści plików korpusu, **całego kodu źródłowego `build_database.py`**, nazwy modelu i metryki odległości (`cosine`). Zmiana któregokolwiek elementu unieważnia cache i wymusza ponowną wektoryzację; `--rebuild` robi to na żądanie.
+* **Wsady:** 16 elementów na wywołanie `collection.add`.
+* **Statystyka:** cluster bootstrap po plikach (2000 prób) dla przedziałów ufności 95%. Skrypt **nie wykonuje testów istotności różnic między modelami** — dostępne są wyłącznie CI pojedynczych modeli.
 
-* **Odcisk palca korpusu (Fingerprinting):** Autorski mechanizm oblicza skrót SHA-256 dla wszystkich plików w zbiorze referencyjnym, kodu chunkera oraz nazwy weryfikowanego modelu. Jeśli korpus i kod nie uległy zmianie, skrypt ładuje wektory z lokalnej pamięci podręcznej (ChromaDB Persistent Client), co pozwala uniknąć przepalania budżetu API i powtarzania wielogodzinnych obliczeń lokalnych.
+## 2. Co dokładnie jest mierzone
 
+| Kolumna | Znaczenie |
+|---|---|
+| Mediana ms | mediana czasu pełnego `collection.query(query_texts=…)`: obejmuje **wektoryzację zapytania** (dla OpenAI — wywołanie sieciowe, dla modeli lokalnych — inferencja) oraz wyszukiwanie w Chroma |
+| Czas budowy | czas `collection.add` (wektoryzacja + wstawienie) **przy pierwszym zbudowaniu**; przy wczytaniu z cache raportowana jest zapamiętana wartość |
 
-* **Izolacja przez Mockowanie:** Moduł używa systemowej biblioteki `unittest.mock` do wirtualizacji połączeń z Elasticsearch w skrypcie `build_database.py`. Pozwala to mierzyć czystą wydajność bazy wektorowej bez ryzyka zakłóceń wywołanych narzutem sieciowym lub timeoutami innych serwisów.
+Sprzęt użyty do modeli lokalnych **nie jest zapisany w raporcie**, więc czasów budowy i opóźnień BGE-m3 oraz PL-Retriever nie da się odnieść do innej maszyny. Czasy modeli OpenAI zależą głównie od opóźnień sieci i limitów API.
 
+## 3. Wyniki (90 zapytań, 30 plików, K = 10)
 
-* **Statystyka Bootstrapowa:** Podobnie jak w teście chunkowania, skrypt korzysta z techniki Cluster Bootstrap (2000 iteracji ze zwracaniem), grupując zapytania względem plików referencyjnych w celu wygenerowania twardych, 95-procentowych przedziałów ufności dla miar `Hit@k` oraz `MRR@10`.
+| Model | Hit@1 | Hit@5 | MRR@10 [95% CI] | Mediana zapytania | Czas budowy |
+|---|---|---|---|---|---|
+| `text-embedding-3-large` (OAI-Large) | **0.711** | **0.967** | **0.820** [0.74–0.89] | 220,6 ms | 38,8 s |
+| `BAAI/bge-m3` (BGE-m3) | 0.667 | 0.878 | 0.757 [0.69–0.82] | 415,6 ms | 4903 s (≈ 82 min) |
+| `ipipan/silver-retriever-base-v1` (PL-Retriever) | 0.633 | 0.900 | 0.748 [0.67–0.83] | 235,4 ms | 1208 s (≈ 20 min) |
+| `text-embedding-3-small` (OAI-Small) | 0.556 | 0.811 | 0.662 [0.58–0.74] | **186,8 ms** | **26,4 s** |
 
+Rozbicie na typy zapytań (Hit@1 / MRR@10):
 
+| Model | colloquial | lexical | semantic |
+|---|---|---|---|
+| OAI-Small | 0.57 / 0.703 | 0.80 / 0.838 | **0.30 / 0.447** |
+| OAI-Large | 0.67 / 0.791 | 0.77 / 0.868 | **0.70 / 0.803** |
+| BGE-m3 | 0.73 / 0.797 | 0.77 / 0.832 | 0.50 / 0.642 |
+| PL-Retriever | 0.60 / 0.689 | 0.80 / 0.889 | 0.50 / 0.666 |
 
-## 2. Profilowanie Modeli (Jakość vs Koszt)
+## 4. Interpretacja
 
-Ewaluacji poddano cztery wiodące modele: dwa komercyjne udostępniane przez API (OpenAI) oraz dwa otwarte modele lokalne. Wyniki testów na 90 zróżnicowanych zapytaniach przy `K=10` jednoznacznie zdefiniowały ich możliwości:
-
-* **OAI-Large (`text-embedding-3-large`):** Zdecydowany lider jakościowy z `MRR@10` na poziomie 0.820 i najwyższym współczynnikiem `Hit@1` (0.711). Czas wektoryzacji korpusu, wspierany infrastrukturą OpenAI, wyniósł zaledwie 38,7 sekundy, przy w pełni akceptowalnej latencji pojedynczych zapytań (220 ms).
-
-
-* **BGE-m3 (`BAAI/bge-m3`):** Ciężki model open-source, który osiągnął wysoką precyzję (`MRR@10`: 0.757), jednak jego uruchomienie bez potężnej akceleracji GPU spowodowało drastyczny czas budowy indeksu trwający ponad 81 minut (4903 sekundy) i relatywnie powolne odpytywanie bazy (415 ms).
-
-
-* **PL-Retriever (`ipipan/silver-retriever-base-v1`):** Specjalistyczny, lokalny model przetrenowany pod język polski. Wykazał bardzo solidną celność (`MRR@10`: 0.748), z rozsądniejszym czasem budowy indeksu (około 20 minut) i świetnym czasem zapytania na poziomie 235 ms.
-
-
-* **OAI-Small (`text-embedding-3-small`):** Budżetowy model bazowy, który zamknął stawkę z najniższym wynikiem `MRR@10` (0.662). Wyróżnił się natomiast bezkonkurencyjnym czasem indeksowania całego zbioru (26,3 sekundy) i najniższym opóźnieniem w wyszukiwaniu (186 ms).
-
-
-
-## 3. Luki Semantyczne w Wyszukiwaniu
-
-Rozbicie twardych wyników na poszczególne typy zapytań zidentyfikowało krytyczną słabość budżetowego modelu OAI-Small w kategorii zapytań "semantic" (mocno sparafrazowanych, pozbawionych dokładnych słów kluczowych). Zauważono tu gigantyczną przepaść:
-
-* OAI-Small dla abstrakcyjnych zapytań osiąga `Hit@1` na poziomie zaledwie 0.30.
-
-
-* OAI-Large radzi sobie z takimi strukturami bez większego problemu, notując `Hit@1` równe 0.70.
-
-
-* Modele lokalne (BGE-m3 i PL-Retriever) utrzymały stabilny kompromis (w obu przypadkach `Hit@1` równe 0.50).
-
-
-
-## 4. Wnioski Architektoniczne
-
-Pomimo ewidentnej, wręcz miażdżącej przewagi technicznej wariantu `text-embedding-3-large`, to model `text-embedding-3-small` pozostaje z racjonalnych powodów docelowym wyborem dla środowiska produkcyjnego. Wynika to wprost ze skali systemu – model Large charakteryzuje się ogromnym kosztem tokenów, co przy potężnej, żywej i aktualizowanej bazie danych uczelni AGH niepotrzebnie windowałoby budżet.
-
-Udowodniona empirycznie "luka semantyczna" mniejszego modelu wektorowego nie przekreśla projektu, ponieważ zostaje kompensowana na późniejszych etapach RAG. Moduł korzysta z mechanizmu wstrzykiwania hybrydowego (Reciprocal Rank Fusion - RRF) wspieranego przez silnik tekstowy Elasticsearch, a także posiłkuje się Query Expansion (przepisywaniem kontekstowym przez LLM), dzięki czemu jakość wyszukiwania na samej górze potoku zostaje wyrównana do poziomu droższych systemów.
+* **Jakość:** `3-large` ma najwyższe średnie, a `3-small` najniższe. Przedziały ufności `3-large` ([0.74–0.89]) i `3-small` ([0.58–0.74]) stykają się, a modele BGE-m3, PL-Retriever i `3-large` nakładają się wyraźnie — przy 30 dokumentach nie ma podstaw, by uznać kolejność trzech lepszych modeli za rozstrzygniętą. Sformułowania w rodzaju „miażdżąca przewaga” nie wynikają z danych.
+* **Najsłabszy punkt `3-small` to zapytania `semantic`:** Hit@1 0.30 wobec 0.70 dla `3-large` i 0.50 dla obu modeli lokalnych (po n = 30 zapytań). Na `lexical` wszystkie modele są podobne (0.77–0.80).
+* **Czas i koszt:** modele lokalne są ok. 30–130 razy wolniejsze w budowie indeksu niż API OpenAI (na nieopisanym sprzęcie) i nie mają przewagi jakościowej nad `3-large`. `3-small` jest najszybszy w obsłudze, ale nie jest „bezkonkurencyjny” — różnica względem `3-large` to ok. 12 s przy budowie i 34 ms w medianie zapytania.
+* **Wybór produkcyjny:** system używa `text-embedding-3-small` (`EMBED_MODEL`). `3-large` jest według cennika OpenAI kilkukrotnie droższy za token (aktualne ceny należy sprawdzić) i ma 3072 wymiary, więc zwiększa też rozmiar bazy. To decyzja kosztowa, a nie wynik rankingu jakości.

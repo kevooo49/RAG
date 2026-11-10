@@ -40,10 +40,17 @@ if (DEV_MODE_SWITCHER) {
 let chatHistory: Message[] = [
   { id: Date.now().toString(), role: 'assistant', content: 'Cześć! Jestem asystentem Akademii Górniczo-Hutniczej. W czym mogę Ci pomóc?' }
 ];
+const isStoredMessage = (m: any): m is Message =>
+  m !== null && typeof m === 'object' && typeof m.id === 'string' && typeof m.content === 'string'
+  && (m.role === 'user' || m.role === 'assistant');
+
 const savedHistory = sessionStorage.getItem('chatHistory');
 if (savedHistory) {
   try {
-    chatHistory = JSON.parse(savedHistory);
+    const parsed = JSON.parse(savedHistory);
+    const valid = Array.isArray(parsed) ? parsed.filter(isStoredMessage) : [];
+    if (valid.length === 0) throw new Error('stored history is not a list of messages');
+    chatHistory = valid;
   } catch (e) {
     console.error("Uszkodzona historia w sessionStorage, resetuję.", e);
     sessionStorage.removeItem('chatHistory');
@@ -139,14 +146,18 @@ form.addEventListener('submit', async (e) => {
     (err) => {
       handleFirstEvent();
       if (botContentDiv) {
-        botContentDiv.innerHTML += `<div class="error-msg" style="color: red; margin-top: 10px;">${err}</div>`;
+        const errorEl = document.createElement('div');
+        errorEl.className = 'error-msg';
+        errorEl.style.cssText = 'color: red; margin-top: 10px;';
+        errorEl.textContent = err;
+        botContentDiv.appendChild(errorEl);
       }
     }
   );
 
   if (isFirstEvent) loadingIndicator.classList.add('hidden');
 
-  chatHistory.push(botMsg);
+  if (botMsg.content) chatHistory.push(botMsg);
   saveHistory();
 
   input.disabled = false;

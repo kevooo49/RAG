@@ -1,47 +1,51 @@
-# Dokumentacja Architektoniczna: Pobieranie Dokumentów Binarnych (`scrape_documents.py`)
+# `scrape_documents.py` — pobieranie dokumentów
 
-## 1. Wprowadzenie i Rola w Systemie
+Drugi krok potoku danych. Skrypt **nie przeszukuje witryny ponownie** — wczytuje listę linków zapisaną przez `scrape_html.py` i pobiera z niej pliki. Importuje `scrape_html` (sesja HTTP, `User-Agent`, konfiguracja), więc oba pliki muszą leżeć w `scrapers/`.
 
-Skrypt `scrape_documents.py` to moduł odpowiedzialny za masowe i bezpieczne pobieranie plików binarnych (takich jak PDF, DOCX, XLSX) ze stron internetowych uczelni. Został zaprojektowany jako drugi etap potoku zasilania danych (pipeline'u) – uruchamia się go dopiero po zakończeniu działania crawlera HTML (`scrape_html.py`). Moduł ten nie crawluje sieci ponownie; opiera się na wygenerowanym wcześniej rejestrze `pdf_linki.txt`, co znacząco redukuje obciążenie uczelnianych serwerów i optymalizuje czas wykonania.
+```bash
+python scrape_html.py bg            # 1) tworzy {Prefix}_Strony_meta/pdf_linki.txt
+python scrape_documents.py bg       # 2) pobiera pliki z tej listy
+python scrape_documents.py bg --max 20     # test na 20 plikach
+python scrape_documents.py bg --reset      # usuwa manifest i pobiera wszystko od nowa
+```
 
-## 2. Pamięć Stanu i Zarządzanie Rejestrem
+Argumenty: `profile` (klucz z `sites.yaml`), `--config`, `--max`, `--reset`. Brak pliku `pdf_linki.txt` → komunikat z poleceniem uruchomienia crawlera.
 
-W celu zapewnienia odporności na przerwania (np. utratę połączenia internetowego) i eliminacji powtarzalnych operacji, skrypt implementuje mechanizm logowania strukturalnego (JSONL):
+## 1. Wejście i wyjście
 
-* **Manifest (`documents_manifest.jsonl`)**: Każda próba pobrania pliku jest atomowo logowana do pliku JSONL. Manifest ten pełni funkcję bazy danych dla operacji pobierania. Rejestruje on nie tylko udane pobrania, ale również błędy sieciowe (np. HTTP 404, 410) czy odrzucenia (np. błędna sygnatura pliku).
-* **Wznawianie (Resuming)**: Przed podjęciem próby pobrania, algorytm weryfikuje historię w manifeście. Pliki o statusach uznanych za finalne (np. `ok`, `duplicate`, `missing`, `rejected`) są całkowicie pomijane. Pobierane są wyłącznie nowe linki oraz te, które wcześniej zakończyły się tymczasowym błędem sieciowym.
-* **Flaga `--reset**`: Przeznaczona dla wymuszenia ponownego pobrania wszystkich plików z listy, ignorując wygenerowany dotychczas manifest.
+| Element | Ścieżka |
+|---|---|
+| lista linków | `{Prefix}_Strony_meta/pdf_linki.txt` (jeden URL na linię) |
+| pobrane pliki | folder `documents_folder` witryny (`{Prefix}_Dokumenty_Surowe`) |
+| manifest | `{Prefix}_Strony_meta/documents_manifest.jsonl` (dopisywany linia po linii) |
+| log | `{Prefix}_Strony_meta/documents.log` |
 
-## 3. Bezpieczeństwo i Weryfikacja Plików
+**Uwaga o zakresie:** crawler dopisuje do `pdf_linki.txt` wyłącznie linki kończące się na `.pdf`. Linki do `.docx`, `.xlsx`, `.odt` itp. są przez niego tylko zliczane jako pominięte pliki binarne. Mimo że `scrape_documents.py` zna rozszerzenia `.pdf`, `.docx`, `.doc`, `.odt`, w obecnym potoku realnie pobiera **tylko PDF-y**. Plik listy zawiera same adresy, więc pole „roboczy tytuł” w manifeście zostaje puste (kod przewiduje teksty linków, ale crawler ich nie zapisuje).
 
-Pobieranie plików binarnych niesie za sobą ryzyko zablokowania pamięci RAM serwera lub zapisania danych uszkodzonych. Moduł wdraża rygorystyczne warstwy obronne:
+## 2. Przebieg pobierania
 
-* **Strumieniowanie Pobierania (Streaming)**: Skrypt nie ładuje plików w całości do pamięci RAM. Korzysta z `iter_content` w pakietach po 64 KB, co pozwala na bezpieczne przetwarzanie plików niezależnie od ich rozmiaru.
-* **Obrona przed atakami (Bomba dekompresyjna/OOM)**: Ustawiono sztywny limit wielkości pobieranego pliku (`MAX_SIZE = 50 MB`). Pliki przekraczające tę wartość są natychmiast odrzucane z logiem błędu.
-* **Weryfikacja Sygnatur (Magic Numbers)**: Ze względu na częste błędy systemów CMS, adres URL z rozszerzeniem `.pdf` może w rzeczywistości serwować stronę błędu w HTML. Zamiast ufać nagłówkom HTTP, system pobiera pierwszy 1 KB pliku i analizuje jego fizyczną sygnaturę (np. sprawdzając, czy plik zaczyna się od bajtów `b"%PDF"` dla PDF lub `b"PK\x03\x04"` dla dokumentów Office).
-* **Zapis Atomowy**: Pliki są pobierane z dopiskiem `.part`. Dopiero po pomyślnej weryfikacji i zakończeniu strumieniowania, system operacyjny wykonuje atomową zmianę nazwy (`os.replace`). Zapobiega to przerwaniu działania w połowie zapisu i pozostawieniu uszkodzonego pliku na dysku.
+Dla każdego adresu z rozszerzeniem ze zbioru dozwolonych, który nie ma w manifeście statusu końcowego:
 
-## 4. Deduplikacja i Ujednolicanie Nazw
+1. **robots.txt** — sprawdzany per host (`can_fetch` z tym samym `User-Agent` co crawler). Zakaz → status `robots`.
+2. **Pobranie strumieniowe** (timeout 5 s połączenie / 30 s odczyt) do pliku `.part`.
+3. **Kontrole:** odpowiedź `404/410` → `missing`; inne `≥400` albo błąd sieci → `error`; `Content-Type: text/html` → `rejected` (serwer podał stronę zamiast pliku); `Content-Length` lub rzeczywisty rozmiar > 50 MB → `rejected`; pusty plik → `rejected`.
+4. **Sygnatura pliku** (pierwszy kawałek strumienia, sprawdzane pierwsze 1024 B): PDF musi zawierać `%PDF` w tym zakresie; DOCX/ODT — nagłówek `PK\x03\x04`; DOC — `D0 CF 11 E0`. Niezgodność → `rejected`.
+5. **Deduplikacja po treści:** skrót SHA-256 pobranego pliku. Jeśli już jest wśród plików o statusie `ok` — `.part` jest usuwany, status `duplicate` (z polem `duplicate_of`).
+6. W pozostałych przypadkach `.part` → `os.replace` do docelowej nazwy (w folderze nigdy nie ma pliku urwanego w połowie).
+7. Przerwa po pobraniu: `max(0,5 s, Crawl-delay z robots.txt)` (robots.txt jest pobierany raz na host). Przerwanie Ctrl+C zachowuje manifest i pozwala wznowić tym samym poleceniem; pliki `.part` są sprzątane w bloku `finally`.
 
-W środowiskach akademickich te same zarządzenia czy druki (np. "wniosek o urlop") często występują pod różnymi adresami URL lub ukrywają się pod nieczytelnymi nazwami typu `download.php?id=123`.
+Nazwa pliku: czytelna nazwa z URL (znaki spoza `[\w\-.]` → `_`, do 80 znaków) + `_` + 8 znaków SHA-1 adresu URL + rozszerzenie małymi literami.
 
-* **Tworzenie Nazwy Pliku (Slugify)**: Algorytm odkodowuje parametry URL (`unquote`), wydobywa ostatni logiczny człon ścieżki i poddaje go operacji slugify, zamieniając znaki specjalne na podkreślenia.
-* **Haszowanie Zabezpieczające**: Ponieważ nazwy plików mogłyby być identyczne ("zalacznik_1.pdf"), na końcu nazwy każdego dokumentu doklejany jest 8-znakowy skrót SHA-1 wygenerowany z oryginalnego adresu URL.
-* **Deduplikacja Zawartości (SHA-256)**: W locie (podczas strumieniowania chunków po 64 KB) generowany jest również hash SHA-256 całej zawartości pliku. Jeśli po pobraniu okaże się, że identyczny dokument został już wcześniej zapisany na dysku przez inny URL, nowo pobrana kopia jest natychmiast usuwana (`os.remove`), a w manifeście oznaczana jako `duplicate` ze wskazaniem referencji do oryginału. Oszczędza to pamięć dyskową, czas późniejszego przetwarzania i miejsce w przestrzeni wektorowej.
+## 3. Statusy i wznawianie
 
-## 5. Przestrzeganie Etykiety Sieciowej
+Statusy końcowe (nie są ponawiane): `ok`, `duplicate`, `missing`, `rejected`, `robots`. Status `error` (problem przejściowy) jest ponawiany przy następnym uruchomieniu. Manifest jest ostatnim stanem dla każdego URL-a (wystarczy rzut oka na ostatni wpis).
 
-Moduł w pełni szanuje reguły serwerów zewnętrznych:
+Wpis manifestu: `url`, `file`, `extension`, `working_title` i `link_texts` (puste, patrz wyżej), `source_pages` (puste), `download_date` (UTC), `status` oraz — zależnie od wyniku — `sha256`, `size`, `content_type`, `last_modified`, `reason`, `duplicate_of`.
 
-* Używa instancji parsera `RobotFileParser` z wbudowanym mechanizmem buforowania (per domena), by respektować blokady zdefiniowane w pliku `robots.txt`.
-* Posiada wbudowany opóźniacz zapytań (Throttle), domyślnie zdefiniowany na `0.5` sekundy między kolejnymi plikami lub ustawiany dynamicznie, jeśli serwer zadeklarował parametr `Crawl-delay`.
+Na końcu skrypt drukuje podsumowanie: liczby `ok / duplicate / missing / rejected / robots / error`.
 
-## 6. Generowanie Raportu Diagnostycznego
+## 4. Ograniczenia
 
-Podobnie jak narzędzia HTML, downloader implementuje statystyki użycia. Raport generowany po zakończeniu pobierania prezentuje jasny podział na:
-
-* Sukcesy pobierania,
-* Oszczędność wynikającą z deduplikacji (`duplicate`),
-* Braki w systemie (`missing` - HTTP 404),
-* Odrzucenia z uwagi na politykę wielkości lub bezpieczeństwa (`rejected`),
-* Żądania zablokowane przez administratora serwisu (`robots`).
+* Zakres ograniczony do PDF przez format `pdf_linki.txt` (sekcja 1).
+* Dalsze przetwarzanie (`document_parser.py`) obsługuje tylko `pdf` i `docx`; `.doc` i `.odt` zostałyby pobrane, ale pominięte.
+* `--reset` kasuje manifest, ale **nie usuwa** już pobranych plików (nazwy zależą od URL-a, więc zostaną nadpisane tym samym plikiem).

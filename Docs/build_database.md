@@ -455,6 +455,25 @@ Indeks Elasticsearch jest tworzony z polskim analizatorem
   `url`      `keyword`
   `plik`     `keyword`
 
+### 9.1a. Metadane zapisywane przy każdym chunku
+
+Każdy chunk dostaje w ChromaDB metadane złożone z (a) wartości z front matter po `clean_metadata` i (b) pól wyliczanych przez indekser, które **mają pierwszeństwo**:
+
+  Pole         Źródło / znaczenie
+  ------------ -------------------------------------------------------------
+  `zrodlo`     nazwa źródła z `sites.yaml` (`source`) — nadpisuje `zrodlo` z front matter
+  `kolekcja`   nazwa folderu kolekcji (np. `Biblioteka_Strony`)
+  `typ`        `strona`, `dokument` lub `sylabus`
+  `tytul`      tytuł dokumentu (§4.2)
+  `sekcja`     ścieżka nagłówków chunka (§5.2)
+  `plik`       ścieżka względna pliku
+  `chunk_nr`, `chunk_z`   numer chunka i liczba chunków w pliku
+  `tokeny`     liczba tokenów chunka
+  `tabela`     czy chunk zawiera tabelę
+  `url`, `title`, `document_type`, `language`, `url_path`, `modification_date`, `download_date`   pozostałe klucze front matter stron z `scrape_html.py` (przechodzą przez `clean_metadata`, §4.2); dokumenty z `document_parser.py` mają `plik`, `typ_dokumentu`, `zrodlo` (adres domeny), `metoda_ekstrakcji`
+
+Uwaga praktyczna: `chunk_file` zawiera fragment zamieniający `zrodlo` zaczynające się od `http` na `url`, ale `extra_meta` jest następnie wyliczane ponownie z front matter, więc ta zamiana **nie przenosi się do wyniku**. Dla stron HTML nie ma to znaczenia (crawler zapisuje `url` wprost), natomiast dokumenty z `document_parser.py` mają we front matter tylko `zrodlo` z adresem domeny — **ich chunki nie mają pola `url`**, a więc w odpowiedzi API nie mają linku do źródła.
+
 Operacje zapisu i usuwania wykonywane są przez mechanizm `bulk`. Błąd
 404 przy usuwaniu dokumentu jest traktowany jako nieszkodliwy ---
 oznacza, że dokumentu nie było już w indeksie. Pozostałe błędy operacji
@@ -516,7 +535,7 @@ indeksu.
 Tryb `--rebuild-es` służy do odtworzenia indeksu tekstowego
 Elasticsearch na podstawie plików źródłowych i manifestu.
 
-Zamierzony przebieg jest następujący:
+Przebieg (zgodny z funkcją `rebuild_es`):
 
 1.  Odczyt manifestu; pusty manifest powoduje przerwanie.
 2.  Zebranie aktualnych plików źródłowych.
@@ -583,6 +602,8 @@ Skrypt udostępnia następujące argumenty:
 Przykłady:
 
 ``` bash
+# Z hosta: Chroma w Dockerze jest pod portem 8001 -> ustaw CHROMA_PORT=8001
+# (domyślne 8000 działa tylko wewnątrz sieci Docker)
 # Standardowa aktualizacja indeksu
 python build_database.py
 
@@ -608,7 +629,7 @@ python build_database.py --confirm-deletion
 # Kontynuacja mimo brakujących katalogów źródłowych
 python build_database.py --allow-missing-dirs
 
-# Odbudowa Elasticsearch (po sprawdzeniu i poprawieniu uwagi z sekcji 11)
+# Odbudowa Elasticsearch (bez kosztów API; patrz sekcja 11)
 python build_database.py --rebuild-es
 ```
 
@@ -680,52 +701,16 @@ podpisie pliku spowodują ponowne przetworzenie dokumentów.
     podpisie pliku. Zmiana tej wartości może wymusić ponowne
     indeksowanie.
 
-## 16. Słownik pojęć
+10. **Skrypt działa z hosta, nie z kontenera.** `CHROMA_PORT` musi
+    wskazywać port opublikowany przez Compose (`8001`).
+11. **Katalog `index_dir` zawiera tylko manifest** (`_manifest_indeksu.json`);
+    wektory są w wolumenie Chroma, a teksty w Elasticsearch. Usunięcie
+    wolumenów bez manifestu wymaga `--rebuild`, usunięcie samego
+    Elasticsearch — `--rebuild-es`.
+12. **`--rebuild` kasuje też manifest** przed zbudowaniem indeksu od nowa.
+13. **Dokumenty z parsera nie mają pola `url`** (patrz §9.1a).
 
-  -----------------------------------------------------------------------
-  Pojęcie                             Znaczenie w tym skrypcie
-  ----------------------------------- -----------------------------------
-  RAG                                 podejście, w którym odpowiedź
-                                      modelu jest wspierana treścią
-                                      pobraną z indeksu
-
-  Embedding                           wektorowa reprezentacja tekstu
-                                      generowana przez model
-
-  Chunk                               fragment dokumentu przeznaczony do
-                                      indeksowania i wyszukiwania
-
-  Chunkowanie                         proces podziału dokumentu na chunki
-
-  Token                               jednostka tekstu liczona przez
-                                      tokenizer modelu
-
-  Front Matter                        metadane YAML umieszczone na
-                                      początku pliku Markdown
-
-  Manifest                            lokalny rejestr podpisów plików i
-                                      identyfikatorów chunków
-
-  Indeks przyrostowy                  aktualizacja wyłącznie nowych i
-                                      zmienionych danych
-
-  Idempotentność                      możliwość ponawiania operacji bez
-                                      niezamierzonego mnożenia tych
-                                      samych rekordów
-
-  ChromaDB                            baza przechowująca wektorowe
-                                      reprezentacje dokumentów
-
-  Elasticsearch                       silnik indeksowania i wyszukiwania
-                                      tekstowego
-
-  Dry run                             symulacja/analiza bez wykonywania
-                                      operacji wymagających API
-                                      embeddingów
-
-------------------------------------------------------------------------
-
-## 17. Podsumowanie
+## 16. Podsumowanie
 
 `build_database.py` jest warstwą przygotowania i synchronizacji korpusu
 dokumentów dla systemu RAG. Jego najważniejsze cechy to parsowanie

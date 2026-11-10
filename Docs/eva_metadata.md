@@ -1,49 +1,69 @@
-# Dokumentacja Architektoniczna: Strategie Wzbogacania Metadanych (Contextual Enrichment)
+# Ewaluacja wzbogacania chunków o metadane (`evaluate_metadata.py`)
 
-## 1. Cel i Rola Modułu
+Skrypt sprawdza, czy doklejenie do chunka metadanych (tytuł, ścieżka sekcji, słowa z URL) poprawia wyszukiwanie wektorowe, leksykalne (BM25) i hybrydowe (RRF) — tzw. problem *context loss* osieroconego akapitu. Zbiory: [`eva_datasets.md`](eva_datasets.md). Wynik: `meta_eva_stats/run_20261021_202848/raport.md` (+ `results.json`).
 
-Skrypt `evaluate_metadata.py` to dedykowane środowisko analityczne do weryfikacji zjawiska tzw. **utraty kontekstu** (context loss) w systemach RAG. Moduł bada, czy i w jakim stopniu doklejenie do surowego fragmentu tekstu (chunku) metadanych — takich jak tytuł, ścieżka sekcji czy adres URL — poprawia jego pozycjonowanie w przestrzeni wektorowej oraz w indeksie leksykalnym. Narzędzie służy wyłonieniu formatu, który optymalnie zakotwicza osierocony akapit w szerszym dokumencie, nie wprowadzając przy tym nadmiarowego szumu.
+## 1. Metoda
 
-## 2. Rygor Metodologiczny i Architektura Testów
+* **Korpus:** 2834 chunków z parsera `build_database.py`, 90 zapytań / 30 plików, model `text-embedding-3-small`.
+* **Warianty** każdy chunk jest wzbogacany inaczej, a `raw` jest punktem odniesienia:
 
-W celu oddzielenia faktycznego wzrostu precyzji wyszukiwania od artefaktów losowych i p-hackingu, środowisko wdraża zaawansowane mechanizmy badawcze:
+| Wariant | Treść dodawana do chunka |
+|---|---|
+| `raw` | nic (baseline) |
+| `title` | tytuł dokumentu |
+| `section` | ścieżka sekcji, bez tytułu |
+| `breadcrumb` | `Tytuł › Sekcja › Podsekcja` |
+| `prod_header` | `[Źródło] Tytuł › Sekcja` (format nagłówka z `build_database`) |
+| `breadcrumb+url` | breadcrumb + słowa ze ścieżki URL |
+| `labelled` | pola z etykietami (`Dokument:` / `Sekcja:`) |
+| `sentence` | zdanie opisowe po polsku |
+| `suffix` | breadcrumb **po** treści chunka |
 
-* **Izolacja Biasu Tytułowego ("Title in query"):** Moduł wykrywa zapytania testowe zawierające fragmenty tytułu oczekiwanego dokumentu (za pomocą heurystyki opartej na 4-znakowych rdzeniach słów). Identyfikacja 31 takich zapytań (na 90 testowych) pozwala uniknąć błędnego wniosku, że proste wstrzyknięcie tytułu jest panaceum — realni użytkownicy rzadko podają idealny tytuł w pytaniu, dlatego ewaluacja wydziela osobno grupę 59 zapytań bez jawnego tytułu.
-* **Korekta Holma i Cluster Bootstrapping:** Skrypt symuluje 5000 próbek (N=5000) losowanych klastrami po plikach referencyjnych (rozwiązując problem skorelowanych zapytań z tego samego dokumentu). Ponieważ równolegle testowanych jest kilkanaście wariantów tekstu, nałożono rygorystyczną korektę Holma dla testów wielokrotnych, co chroni przed zjawiskiem fałszywych odkryć statystycznych (False Discovery Rate).
-* **Trzy Niezależne Silniki (Retrievers):** Metadane wpływają inaczej na transformery, a inaczej na wyszukiwanie słownikowe. Skrypt uruchamia ewaluację trzykrotnie: dla indeksu gęstego (Dense - brute-force cosine similarity na wektorach float32), rzadkiego (BM25 z lokalnym, 5-znakowym stemmingiem prefiksowym) oraz ich fuzji hybrydowej (RRF).
-* **Cache Wektorowy SQLite:** Aby uniknąć kosztów przy wielokrotnych testach ablacyjnych, każdy unikalny ciąg znaków jest hashowany algorytmem SHA-1, a jego wektor `text-embedding-3-small` trafia do lokalnej bazy relacyjnej jako binarny `BLOB`.
+  Dodatkowo, **tylko z opcją `--llm`** (płatne): `llm_context`, `breadcrumb+llm_context`, `breadcrumb+summary`, `doc2query`. W opublikowanym raporcie ich nie ma.
+* **Retrievery:** `dense` (cosine, brute-force), `bm25` (lokalny, stemming prefiksowy 5-znakowy — nie jest to Elasticsearch z analizatorem `polish`, więc wartości bezwzględne różnią się od produkcji), `hybrid` (RRF dense + BM25).
+* **Statystyka:** cluster bootstrap po plikach, **5000 prób**, ziarno 42; przedziały ufności 95%; różnice względem `raw` z korektą **Holma** (8 porównań na retriever). Wektory są cache'owane w `meta_eva_cache.sqlite` (SHA-1 tekstu → wektor `float32`).
+* **Podgrupy** (analiza eksploracyjna, bez korekty): typ zapytania oraz „tytuł dokumentu występuje w pytaniu” (31 z 90) vs „nie występuje” (59). Pierwsza grupa zawyża zysk z doklejania tytułu, bo realni użytkownicy rzadko podają tytuł.
 
+```bash
+python evaluate_metadata.py --list
+python evaluate_metadata.py --variants breadcrumb prod_header --retrievers dense hybrid
+python evaluate_metadata.py --llm --dry-run
+```
 
+Opcje: `--data-dir`, `--dataset`, `--out`, `--cache`, `--variants` (`raw` dodawane automatycznie), `--retrievers`, `--llm`, `--llm-model`, `--n-boot`, `--dry-run`, `--list`. Domyślny katalog wyjściowy w kodzie to `meta_eva_stats_claude/` (w repozytorium wynik leży w `meta_eva_stats/`).
 
-## 3. Analiza Wariantów Wstrzykiwania (Ablacja)
+## 2. Wyniki (MRR@10; w nawiasie ΔMRR vs `raw`)
 
-Zdefiniowano i przetestowano strukturę ablacyjną, która systematycznie włącza lub wyłącza poszczególne elementy kontekstu:
+| Wariant | Dense (raw 0.684) | BM25 (raw 0.558) | Hybrid (raw 0.704) |
+|---|---|---|---|
+| `title` | 0.720 (+0.035) | 0.568 (+0.010) | 0.740 (+0.036) |
+| `section` | 0.705 (+0.021) | 0.554 (−0.004) | 0.719 (+0.015) |
+| `breadcrumb` | 0.705 (+0.021) | 0.585 (+0.028) | **0.746 (+0.043)** |
+| `prod_header` | 0.704 (+0.020) | 0.588 (+0.030) | 0.722 (+0.019) |
+| `breadcrumb+url` | 0.712 (+0.028) | **0.591 (+0.033)** | 0.744 (+0.040) |
+| `labelled` | 0.716 (+0.031) | 0.585 (+0.027) | 0.739 (+0.035) |
+| `sentence` | 0.717 (+0.033) | 0.579 (+0.022) | 0.740 (+0.036) |
+| `suffix` | 0.700 (+0.016) | 0.585 (+0.028) | 0.715 (+0.011) |
 
-* `raw`: Surowy tekst bez żadnych metadanych (tzw. baseline).
-* `title` / `section`: Dodanie wyłącznie tytułu dokumentu lub wyłącznie nazwy sekcji.
-* `breadcrumb`: Standardowa, czysta ścieżka nawigacyjna (Tytuł › Sekcja › Podsekcja).
-* `prod_header`: Format wdrożony w systemie produkcyjnym, zawierający stałą etykietę źródła (np. `[Biblioteka Główna AGH] Tytuł › Sekcja`).
-* `breadcrumb+url`: Wzbogacenie chlebka nawigacyjnego o słowa wyodrębnione z surowej ścieżki adresu URL (rozbite po znakach ukośnika i myślnikach).
-* `sentence`: Pełne, ustrukturyzowane zdanie w języku polskim ("Fragment dokumentu X, sekcja Y.").
-* `suffix`: Odwrócenie kolejności — ścieżka nawigacyjna doklejana jest na samym końcu chunku, po jego treści.
+**Żadna różnica względem `raw` nie jest istotna po korekcie Holma** (najmniejsze skorygowane *p* w całym raporcie to 0.749). Przedziały ufności wszystkich ΔMRR obejmują zero (np. dense `title`: +0.035 [−0.01, +0.08]; hybrid `breadcrumb`: +0.043 [−0.01, +0.10]).
 
+## 3. Co z tego wynika
 
+* **Kierunek jest zgodny we wszystkich wariantach:** prawie każdy wzbogacony wariant ma wyższe MRR niż `raw` w każdym retrieverze (wyjątek: BM25 `section`, −0.004). Skala to +0.01…+0.04 MRR. To spójna wskazówka, że kontekst pomaga, ale przy 90 zapytaniach **nie jest to udowodnione** — wcześniejsze sformułowania w rodzaju „bezsprzecznie udowadnia” i „bezkonkurencyjny” nie są wspierane przez dane.
+* **Różnice między wariantami wzbogaconych są mniejsze od szumu** (np. dense: 0.700–0.720). Wybór między `title`, `breadcrumb`, `labelled` czy `sentence` nie ma w tych danych rozstrzygnięcia.
+* **Pozycja kontekstu (początek vs koniec):** `suffix` jest w każdym retrieverze nieco gorszy od `breadcrumb` (dense 0.700 vs 0.705, hybrid 0.715 vs 0.746), ale różnice są w granicach CI. Interpretacja „działanie mechanizmu uwagi” jest hipotezą, której eksperyment nie sprawdza. W BM25 (bez żadnej „uwagi”) kolejność chunka nie ma znaczenia, a wyniki `suffix` i `breadcrumb` są identyczne (0.585).
+* **Podgrupy (eksploracyjne, surowe CI):**
+  * dense, zapytania `lexical`: `prod_header` +0.104 [+0.01, +0.21] i `breadcrumb+url` +0.103 [+0.02, +0.19] — jedyne „gwiazdkowane” dodatnie wyniki, ale bez korekty na wielokrotne testowanie i w podgrupie 30 zapytań;
+  * dense, `semantic`: efekt zerowy lub lekko ujemny (−0.04…+0.02) — metadane nie pomagają w parafrazach;
+  * BM25: warianty z breadcrumbem pomagają głównie tam, gdzie tytuł występuje w pytaniu (+0.06…+0.08; sam `title` tylko +0.02), a **prawie wcale** w zapytaniach bez tytułu (≈ 0.00…+0.01) — zgodnie z oczekiwaniem, że dodany tytuł to dodatkowe słowa kluczowe wyłącznie dla pytań, które go używają;
+  * hybrid: dodatnie głównie dla `lexical` i `colloquial`, ujemne dla `semantic`.
+* Wyjaśnienie, że `prod_header` wypada gorzej od `breadcrumb` w hybrydzie, bo stała etykieta źródła obniża IDF, jest **hipotezą** — nie testowano jej; różnica (0.722 vs 0.746) mieści się w CI.
 
-## 4. Wyniki Empiryczne i Zjawiska Architektoniczne
+## 4. Związek z wdrożeniem
 
-Ewaluacja 2834 chunków obnażyła fundamentalne różnice w tym, jak silniki wyszukiwania reagują na metadane.
+Obecny `build_database.py` (`FORMAT_VERSION = "asym-v2"`) stosuje **dwie wersje tekstu** każdego chunka:
 
-**Dla Wyszukiwania Wektorowego (Dense - Embeddingi):**
-Model osadzający drastycznie reaguje na położenie kontekstu. Wariant bazowy `raw` wygenerował bazowe MRR@10 na poziomie 0.684. Dodanie tytułu na początku tekstu (`title`) podniosło ten wynik do 0.720, jednak wrzucenie tego samego kontekstu na koniec fragmentu (`suffix`) zdusiło wynik do 0.700. Stanowi to empiryczny dowód na działanie tzw. mechanizmu atencji (attention) w modelach transformerowych, które w architekturach bi-kierunkowych i tak silniej skupiają się na początkowych tokenach sekwencji. Dodatkowo, wariant produkcyjny (`prod_header`) okazał się bezkonkurencyjny w podgrupie zapytań czysto leksykalnych, podbijając trafność o niespotykane, istotne statystycznie +0.104 w metryce MRR.
+* `text_emb` — do embeddingu: breadcrumb `Tytuł › Sekcja` + treść, bez URL-i i bez etykiety źródła (w praktyce wariant `breadcrumb`);
+* `text` — zapisywany w Elasticsearch/Chroma i przekazywany do LLM: nagłówek `[Źródło] Tytuł › Sekcja` + treść (wariant `prod_header` wraz z linkami).
 
-**Dla Wyszukiwania Rzadkiego (BM25 - Leksyka):**
-Klasyczny BM25 bardzo słabo radzi sobie z surowym, urzędowym tekstem (`raw` MRR = 0.558). Co zaskakujące, w zapytaniach bez jawnego tytułu wstrzykiwanie samej nazwy dokumentu okazało się bezużyteczne. Największy wzrost precyzji (MRR = 0.591, Δ +0.033) wygenerował wariant `breadcrumb+url`. Parser wyciągnął ze struktury linków kluczowe pojęcia (np. słowo "rekrutacja" ukryte w ścieżce HTTP), które nie padały w treści samego akapitu, tworząc w ten sposób niewidzialne słowa kluczowe dla silnika leksykalnego.
-
-**Dla Fuzji Hybrydowej (RRF):**
-Algorytm łączący faworyzuje czyste, bezszumowe ścieżki. Wariant `breadcrumb` uzyskał tu szczytowe MRR@10 równe 0.746 (Δ +0.043 względem bazy). Wariant produkcyjny (`prod_header`) zanotował nieco mniejszy, acz bezpieczny zysk (MRR = 0.722, Δ +0.019). Spadek ten względem czystego chlebka wynika z faktu, że powtarzanie stałej etykiety `[Źródło]` w absolutnie każdym chunku obniża nieco wagę odwrotnej częstotliwości dokumentu (IDF) dla algorytmów słownikowych.
-
-## 5. Konkluzje i Decyzja Wdrożeniowa
-
-Badanie bezsprzecznie udowadnia, że surowe chunki są dla LLM-ów nieużyteczne – odcięty od kontekstu akapit staje się "pływającą wyspą". Pomimo iż czysty format `breadcrumb` (Tytuł › Sekcja) oraz wariant z URL generują najwyższe bezwzględne MRR w testach hybrydowych, to na produkcję wybrano wariant `prod_header` (wzbogacony o etykietę źródła).
-
-Podyktowane jest to koniecznością zapewnienia modelowi generacyjnemu (LLM) jednoznacznej, twardej identyfikacji jednostki uczelnianej (np. Wydział vs Samorząd), która minimalizuje ryzyko halucynacji przy generowaniu odpowiedzi dla studenta. Drobny narzut leksykalny w BM25 jest akceptowalną ceną za hermetyzację kontekstu w systemie RAG.
+Uzasadnienie projektowe etykiety `[Źródło]` — jednoznaczna identyfikacja jednostki (np. wydział vs samorząd) w kontekście dla modelu generującego — jest **założeniem projektowym, którego ten benchmark nie mierzy** (nie ocenia halucynacji ani jakości odpowiedzi). Dane nie przemawiają przeciwko takiemu rozwiązaniu: `prod_header` ma w dense/BM25/hybrid wynik zbliżony do `breadcrumb`.
