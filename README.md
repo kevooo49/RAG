@@ -32,23 +32,22 @@ System RAG (*Retrieval-Augmented Generation*) odpowiadający na pytania student�
 
 | Obszar | Plik | O czym jest |
 |---|---|---|
-| Serwer | [`backend.md`](backend.md) | FastAPI, protokół SSE, wyszukiwanie hybrydowe, prompt, testy backendu |
-| Konfiguracja | [`config.md`](config.md) | `config/sites.yaml` i `config/sites.py` — źródło prawdy o stronach i folderach |
-| Dane | [`scrape_html.md`](scrape_html.md) | Crawler stron HTML → Markdown |
-| Dane | [`scrape_documents.md`](scrape_documents.md) | Pobieranie plików PDF/DOCX z listy linków |
-| Dane | [`document_parser.md`](document_parser.md) | PDF/DOCX → Markdown (PyMuPDF / LlamaParse) |
-| Dane | [`scrape_syllabi.md`](scrape_syllabi.md) | Dedykowany scraper sylabusów |
-| Indeks | [`build_database.md`](build_database.md) | Chunkowanie, embeddingi, indeksowanie przyrostowe, manifest |
-| Frontend | [`frontend.md`](frontend.md) | Aplikacja TypeScript (Vite), klient SSE, testy |
-| Wdrożenie | [`docker.md`](docker.md) | Docker Compose, nginx, porty, migracja Chroma |
-| Ewaluacja | [`eva_datasets.md`](eva_datasets.md) | Zbiory pytań i odpowiedzi wzorcowych |
-| Ewaluacja | [`eva_chunking.md`](eva_chunking.md) | Strategie chunkowania |
-| Ewaluacja | [`eva_embeddings.md`](eva_embeddings.md) | Modele embeddingowe |
-| Ewaluacja | [`eva_metadata.md`](eva_metadata.md) | Wzbogacanie chunków o metadane |
-| Ewaluacja | [`eva_search.md`](eva_search.md) | Wektor vs BM25 vs RRF vs rozszerzanie zapytań vs reranking |
-| Ewaluacja | [`eva_production.md`](eva_production.md) | Test zintegrowanego stosu |
-| Ewaluacja | [`eva_models.md`](eva_models.md) | Modele generujące (GPT-4o-mini, GPT-4o, Bielik) |
-| Meta | [`ZMIANY.md`](ZMIANY.md) | Co poprawiono w dokumentacji i jakie rozbieżności w kodzie znaleziono |
+| Serwer | [`backend.md`](Docs/backend.md) | FastAPI, protokół SSE, wyszukiwanie hybrydowe, prompt, testy backendu |
+| Konfiguracja | [`config.md`](Docs/config.md) | `config/sites.yaml` i `config/sites.py` — źródło prawdy o stronach i folderach |
+| Dane | [`scrape_html.md`](Docs/scrape_html.md) | Crawler stron HTML → Markdown |
+| Dane | [`scrape_documents.md`](Docs/scrape_documents.md) | Pobieranie plików PDF/DOCX z listy linków |
+| Dane | [`document_parser.md`](Docs/document_parser.md) | PDF/DOCX → Markdown (PyMuPDF / LlamaParse) |
+| Dane | [`scrape_syllabi.md`](Docs/scrape_syllabi.md) | Dedykowany scraper sylabusów |
+| Indeks | [`build_database.md`](Docs/build_database.md) | Chunkowanie, embeddingi, indeksowanie przyrostowe, manifest |
+| Frontend | [`frontend.md`](Docs/frontend.md) | Aplikacja TypeScript (Vite), klient SSE, testy |
+| Wdrożenie | [`docker.md`](Docs/docker.md) | Docker Compose, nginx, porty, migracja Chroma |
+| Ewaluacja | [`eva_datasets.md`](Docs/eva_datasets.md) | Zbiory pytań i odpowiedzi wzorcowych |
+| Ewaluacja | [`eva_chunking.md`](Docs/eva_chunking.md) | Strategie chunkowania |
+| Ewaluacja | [`eva_embeddings.md`](Docs/eva_embeddings.md) | Modele embeddingowe |
+| Ewaluacja | [`eva_metadata.md`](Docs/eva_metadata.md) | Wzbogacanie chunków o metadane |
+| Ewaluacja | [`eva_search.md`](Docs/eva_search.md) | Wektor vs BM25 vs RRF vs rozszerzanie zapytań vs reranking |
+| Ewaluacja | [`eva_production.md`](Docs/eva_production.md) | Test zintegrowanego stosu |
+| Ewaluacja | [`eva_models.md`](Docs/eva_models.md) | Modele generujące (GPT-4o-mini, GPT-4o, Bielik) |
 
 ## 3. Kolejność uruchamiania (od zera)
 
