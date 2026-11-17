@@ -1,452 +1,267 @@
-"""
-Evaluation of Embeddings Models for the RAG system.
-The script isolates vector search and measures:
-- Index building time (cost of embedding the entire corpus).
-- Inference time (latency of querying the model + searching in ChromaDB).
-- Precision (Hit@K, MRR@10) with confidence intervals.
+"""Embedding model evaluation: which model finds the answer best (dense retrieval only, optionally in the hybrid).
+
+Data: the sample from build_eval_sample.py + questions from generate_eval_questions.py (see eval_common.py).
+All models embed THE SAME production chunks (`text_emb` from build_database.chunk_file) and are searched exactly
+(numpy cosine), so the only difference is the model.
+
+Models (keys for --models):
+    oai-small          text-embedding-3-small (production)
+    oai-large          text-embedding-3-large
+    bge-m3             BAAI/bge-m3 (local, sentence-transformers)
+    silver-retriever   ipipan/silver-retriever-base-v1.1 (local) - Polish QA retriever; queries get the
+                       "Pytanie: " prefix and passages the "title</s>text" form, as on the model card
+    silver-v1          ipipan/silver-retriever-base-v1 (the previous release of the model)
+    e5-base            intfloat/multilingual-e5-base (local; "query: " / "passage: " prefixes)
+    spacy-lg           spaCy pl_core_news_lg - average of static word vectors (stopwords/punctuation skipped);
+                       a classical non-neural baseline: what contextual models add over word vectors
+
+Default: oai-small, oai-large, bge-m3, silver-retriever, spacy-lg. Baseline: oai-small.
+
+Metrics: Hit@k / MRR@10 / nDCG@10 on files, CtxHit@5 on chunks (see eval_common). Plus cost-side numbers:
+    build s      time to embed all chunks of the sample (measured when computed; cached afterwards)
+    query ms     median time to embed ONE query (30 live calls: network for OpenAI, inference for local models)
+    dim          vector size (index size grows linearly with it)
+
+Options:
+    --hybrid        also run RRF(model, BM25 stempel) for every model - does a better model still matter once
+                    BM25 is fused in, as in production? (needs Elasticsearch)
+    --subset N      use only the documents of the questions + N random others, FOR ALL MODELS of the run
+                    (local models on CPU are slow: ~27k chunks can take hours; the cache keeps finished batches,
+                    so an interrupted run continues where it stopped)
+    --device cuda   for local models (default: cuda if available, else cpu)
+
+Install for local models:  pip install sentence-transformers  |  pip install spacy &&
+                           python -m spacy download pl_core_news_lg
 """
 from __future__ import annotations
 
 import argparse
-import csv
-import hashlib
 import json
-import os
+import random
 import sys
 import time
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Any, Dict, List, Tuple
+from dataclasses import dataclass, field
 from pathlib import Path
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from typing import Dict, List, Optional
+
 import numpy as np
-from dotenv import load_dotenv
 
-script_dir = os.path.dirname(__file__)
-sys.path.append(os.path.abspath(os.path.join(script_dir, '..')))
-load_dotenv(os.path.join(script_dir, '..', '.env'))
+import eval_common as ec
 
-import chromadb
-from chromadb.utils import embedding_functions
-from app.core.config import settings
+OUT_ROOT = ec.SCRIPT_DIR / "embed_eva_stats"
+BUILD_TIMES = ec.CACHE_DIR / "embedding_build_times.json"
+N_LATENCY = 30
 
-from unittest.mock import MagicMock
-sys.modules['elasticsearch'] = MagicMock()
-sys.modules['elasticsearch.helpers'] = MagicMock()
-
-import build_database
-
-# =====================================================================
-# 1. CONFIGURATION
-# =====================================================================
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
-EVAL_DATA_DIR = r"C:\Users\micro\Desktop\Bachelors\RAG\data\Ewaluacja_Probka"
-from sites import load_or_exit  # noqa: E402 # type: ignore
-EVAL_DATA_DIR = str(load_or_exit().eval_dir)
-DATASET_PATH = os.path.join(SCRIPT_DIR := os.path.dirname(__file__), "test_dataset_balanced.json")
-CACHE_DIR = os.path.join(SCRIPT_DIR, ".eval_cache")
-OUT_ROOT = os.path.join(SCRIPT_DIR, "embed_eva_stats")
-
-MODELS = {
-    "OAI-Small": {"provider": "openai", "name": "text-embedding-3-small"},
-    "OAI-Large": {"provider": "openai", "name": "text-embedding-3-large"},
-    "BGE-m3": {"provider": "local", "name": "BAAI/bge-m3"},
-    "PL-Retriever": {"provider": "local", "name": "ipipan/silver-retriever-base-v1"}
-}
-
-K_VALUES = (1, 3, 5, 10)
-K_MAX = max(K_VALUES)
-FETCH_POOL = 40  
-N_BOOTSTRAP = 2000
-SEED = 42
-
-# =====================================================================
-# 2. DATA STRUCTURES
-# =====================================================================
 
 @dataclass
-class Query:
-    text: str
-    expected_file: str
-    qtype: str
+class Spec:
+    key: str
+    label: str
+    kind: str                      # openai | st | spacy
+    name: str
+    query_tpl: str = "{q}"
+    doc_tpl: str = "{text}"        # fields: text (= chunk.text_emb), title
+    extra: dict = field(default_factory=dict)
 
-@dataclass
-class QueryResult:
-    model_name: str
-    query: str
-    qtype: str
-    expected_file: str
-    rank: int
-    top_files: List[str]
-    query_latency_ms: float
 
-def load_dataset() -> List[Query]:
-    if not os.path.exists(DATASET_PATH):
-        sys.exit(f"Dataset missing: {DATASET_PATH}. Run the question generator first.")
-    with open(DATASET_PATH, "r", encoding="utf-8") as f:
-        raw = json.load(f)
+MODELS: Dict[str, Spec] = {s.key: s for s in [
+    Spec("oai-small", "OpenAI 3-small (prod)", "openai", "text-embedding-3-small"),
+    Spec("oai-large", "OpenAI 3-large", "openai", "text-embedding-3-large"),
+    Spec("bge-m3", "BGE-m3", "st", "BAAI/bge-m3"),
+    Spec("silver-retriever", "Silver Retriever v1.1", "st", "ipipan/silver-retriever-base-v1.1",
+         query_tpl="Pytanie: {q}", doc_tpl="{title}</s>{text}"),
+    Spec("silver-v1", "Silver Retriever v1", "st", "ipipan/silver-retriever-base-v1",
+         query_tpl="Pytanie: {q}", doc_tpl="{title}</s>{text}"),
+    Spec("e5-base", "multilingual-E5-base", "st", "intfloat/multilingual-e5-base",
+         query_tpl="query: {q}", doc_tpl="passage: {text}"),
+    Spec("spacy-lg", "spaCy pl_core_news_lg (avg)", "spacy", "pl_core_news_lg"),
+]}
 
-    files = {f for f in os.listdir(EVAL_DATA_DIR) if f.endswith(".md")}
-    missing = sorted({r["expected_file"] for r in raw if r["expected_file"] not in files})
-    if missing:
-        print("Missing reference files (check for typos in file names):")
-        for m in missing:
-            print("   -", m)
-        sys.exit(1)
 
-    return [Query(r["query"], r["expected_file"], r.get("type", "unknown")) for r in raw]
+class STEmbedder(ec.Embedder):
+    batch = 32
 
-# =====================================================================
-# 3. PREPARING THE DATABASE AND MEASURING BUILD TIME
-# =====================================================================
+    def __init__(self, model: str, device: Optional[str], max_len: int = 512):
+        from sentence_transformers import SentenceTransformer
+        self.m = SentenceTransformer(model, device=device)
+        self.m.max_seq_length = min(self.m.max_seq_length or max_len, max_len)
+        self.name = f"st:{model}:{self.m.max_seq_length}"
 
-def chunk_advanced_production(filepath: str) -> List[Dict[str, Any]]:
-    cfg_mock = {
-        "sciezka": filepath,
-        "zrodlo": "Zbior_Ewaluacyjny",
-        "typ": "dokument",
-        "naglowki_prawne": True,
-        "pogrubienia_jako_naglowki": True
-    }
-    doc = build_database.prepare_document(filepath, cfg_mock)
-    if not doc:
-        return []
-    return [{"text": c.text_emb, "metadata": md} for _cid, c, md in build_database.chunk_file(filepath, cfg_mock, doc)]
+    def _encode(self, texts):
+        return self.m.encode(texts, batch_size=self.batch, normalize_embeddings=True, convert_to_numpy=True,
+                             show_progress_bar=False)
 
-def corpus_fingerprint(model_name: str) -> str:
-    h = hashlib.sha256()
-    for fn in sorted(os.listdir(EVAL_DATA_DIR)):
-        path = os.path.join(EVAL_DATA_DIR, fn)
-        if fn.endswith(".md") and os.path.isfile(path):
-            h.update(fn.encode("utf-8"))
-            with open(path, "rb") as f:
-                h.update(f.read())
-    with open(build_database.__file__, "rb") as f:
-        h.update(f.read())
-    h.update(f"model:{model_name}|metric:cosine".encode("utf-8"))
-    return h.hexdigest()
 
-def get_embedding_function(model_info: Dict[str, str]):
-    if model_info["provider"] == "openai":
-        return embedding_functions.OpenAIEmbeddingFunction(
-            api_key=settings.OPENAI_API_KEY, 
-            model_name=model_info["name"]
-        )
-    elif model_info["provider"] == "local":
-        return embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=model_info["name"]
-        )
-    raise ValueError("Unknown model provider")
+class SpacyEmbedder(ec.Embedder):
+    """Mean of static word vectors over content tokens (no stopwords, punctuation, numbers-only tokens)."""
+    batch = 256
 
-def load_or_build_collection(chroma_client, model_key: str, model_info: Dict[str, str], force: bool) -> Tuple[Any, float]:
-    fp_path = os.path.join(CACHE_DIR, f"fp_{model_key.lower()}.txt")
-    fp = corpus_fingerprint(model_info["name"])
-    
-    times_file = os.path.join(CACHE_DIR, "build_times.json")
-    build_times = {}
-    if os.path.exists(times_file):
-        with open(times_file, "r") as f:
-            build_times = json.load(f)
+    def __init__(self, model: str):
+        import spacy
+        self.nlp = spacy.load(model, exclude=["parser", "ner", "tagger", "morphologizer", "lemmatizer",
+                                              "attribute_ruler", "senter", "tok2vec", "trainable_lemmatizer"])
+        self.nlp.max_length = 2_000_000
+        self.dim = self.nlp.vocab.vectors.shape[1]
+        if self.dim == 0:
+            sys.exit(f"spaCy model {model} has no word vectors - use pl_core_news_md or _lg.")
+        self.name = f"spacy:{model}:{self.nlp.meta.get('version', '?')}:content-avg"
 
-    cached_fp = None
-    if os.path.exists(fp_path):
-        with open(fp_path, "r", encoding="utf-8") as f:
-            cached_fp = f.read().strip()
+    def _encode(self, texts):
+        out = []
+        for doc in self.nlp.pipe(texts, batch_size=64):
+            vs = [t.vector for t in doc if t.has_vector and not (t.is_stop or t.is_punct or t.is_space or t.like_num)]
+            out.append(np.mean(vs, axis=0) if vs else np.zeros(self.dim, dtype=np.float32))
+        return np.stack(out)
 
-    collection_name = f"eval_emb_{model_key.lower().replace('-', '_')}"
-    embedding_fn = get_embedding_function(model_info)
 
-    if not force and cached_fp == fp and model_key in build_times:
-        try:
-            collection = chroma_client.get_collection(collection_name, embedding_function=embedding_fn)
-            if collection.count() > 0:
-                print(f"   [=] Loaded from cache for {model_key} (Build Time: {build_times[model_key]:.2f}s).")
-                return collection, build_times[model_key]
-        except Exception:
-            pass
+def make_embedder(s: Spec, device: Optional[str]) -> ec.Embedder:
+    if s.kind == "openai":
+        dims = ec.bd.settings.EMBED_DIMENSIONS if s.name == ec.bd.settings.EMBED_MODEL else None
+        return ec.OpenAIEmbedder(s.name, dims)
+    if s.kind == "st":
+        return STEmbedder(s.name, device)
+    return SpacyEmbedder(s.name)
 
-    print(f"   [+] Building index from scratch for {model_key} (measuring time)...")
+
+def pick_device(arg: str) -> Optional[str]:
+    if arg != "auto":
+        return arg
     try:
-        chroma_client.delete_collection(collection_name)
-    except Exception:
-        pass
-        
-    collection = chroma_client.create_collection(
-        name=collection_name,
-        embedding_function=embedding_fn,
-        metadata={"hnsw:space": "cosine"}
-    )
+        import torch
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except ImportError:
+        return None
 
-    doc_ids, documents, metadatas = [], [], []
-    counter = 0
-    for filename in sorted(os.listdir(EVAL_DATA_DIR)):
-        filepath = os.path.join(EVAL_DATA_DIR, filename)
-        if not os.path.isfile(filepath) or not filename.endswith(".md"):
-            continue
-        for c in chunk_advanced_production(filepath):
-            doc_ids.append(f"doc_{counter}")
-            documents.append(c["text"])
-            c["metadata"]["source_file"] = filename
-            metadatas.append(c["metadata"])
-            counter += 1
 
-    t0 = time.perf_counter()
-    batch_size = 16
-    for i in range(0, len(documents), batch_size):
-        collection.add(
-            ids=doc_ids[i:i+batch_size],
-            documents=documents[i:i+batch_size],
-            metadatas=metadatas[i:i+batch_size]
-        )
-        print(f"      Vectorization progress: {min(i+batch_size, len(documents))}/{len(documents)}", end="\r")
-    print()
-    build_time = time.perf_counter() - t0
+def restrict(sample: ec.Sample, qs: List[ec.Question], n_other: int, seed: int) -> ec.Sample:
+    keep = set().union(*(q.relevant for q in qs))
+    rest = sorted(set(sample.file_ids) - keep)
+    keep |= set(random.Random(seed).sample(rest, min(n_other, len(rest))))
+    files = [f for f in sample.files if f["id"] in keep]
+    chunks = [c for c in sample.chunks if c.file_id in keep]
+    return ec.Sample(sample.eval_dir, sample.manifest, files, chunks, f"{sample.fingerprint}-sub{n_other}-{seed}")
 
-    build_times[model_key] = build_time
-    with open(times_file, "w") as f:
-        json.dump(build_times, f)
-    with open(fp_path, "w", encoding="utf-8") as f:
-        f.write(fp)
-        
-    return collection, build_time
-
-# =====================================================================
-# 4. EVALUATION ENGINE
-# =====================================================================
-
-def evaluate_model(model_key: str, queries: List[Query], collection: Any) -> List[QueryResult]:
-    results = []
-    
-    # Warm-up (we do not measure the first shot)
-    collection.query(query_texts=[queries[0].text], n_results=1)
-    
-    for i, q in enumerate(queries, start=1):
-        t0 = time.perf_counter()
-        res = collection.query(query_texts=[q.text], n_results=min(FETCH_POOL, collection.count()))
-        latency_ms = (time.perf_counter() - t0) * 1000
-
-        retrieved_metas = res["metadatas"][0] if res["metadatas"] else []
-        
-        seen, files = set(), []
-        for m in retrieved_metas:
-            sf = m.get("source_file", "")
-            if sf and sf not in seen:
-                seen.add(sf)
-                files.append(sf)
-                if len(files) == K_MAX:
-                    break
-        
-        rank = files.index(q.expected_file) + 1 if q.expected_file in files else 0
-        results.append(QueryResult(model_key, q.text, q.qtype, q.expected_file, rank, files[:3], latency_ms))
-        
-        if i % 10 == 0 or i == len(queries):
-            print(f"      {i}/{len(queries)}", end="\r")
-    print()
-    return results
-
-# =====================================================================
-# 5. METRICS (BOOTSTRAP AND SUMMARY)
-# =====================================================================
-
-def per_query_scores(results: List[QueryResult]) -> Dict[str, np.ndarray]:
-    ranks = np.array([r.rank for r in results])
-    safe = np.maximum(ranks, 1)
-    found = ranks > 0
-    out = {f"Hit@{k}": (found & (ranks <= k)).astype(float) for k in K_VALUES}
-    out["MRR@10"] = np.where(found, 1.0 / safe, 0.0)
-    return out
-
-def make_bootstrap_samples(queries: List[Query], n_boot: int, seed: int) -> List[np.ndarray]:
-    by_file: Dict[str, List[int]] = defaultdict(list)
-    for i, q in enumerate(queries):
-        by_file[q.expected_file].append(i)
-    groups = [np.array(v) for v in by_file.values()]
-    rng = np.random.default_rng(seed)
-    return [np.concatenate([groups[g] for g in rng.integers(0, len(groups), len(groups))])
-            for _ in range(n_boot)]
-
-def mean_ci(values: np.ndarray, samples: List[np.ndarray]) -> Dict[str, float]:
-    means = np.array([values[s].mean() for s in samples])
-    lo, hi = np.percentile(means, [2.5, 97.5])
-    return {"mean": float(values.mean()), "ci_low": float(lo), "ci_high": float(hi)}
-
-def summarize(results_by_mod: Dict[str, List[QueryResult]], build_times: Dict[str, float], queries: List[Query], samples: List[np.ndarray]):
-    types = sorted({q.qtype for q in queries})
-    scores = {name: per_query_scores(res) for name, res in results_by_mod.items()}
-    summary: Dict[str, Any] = {}
-
-    for name, res in results_by_mod.items():
-        entry: Dict[str, Any] = {"n_queries": len(res), "build_time_s": build_times[name]}
-        for metric, vals in scores[name].items():
-            entry[metric] = mean_ci(vals, samples)
-
-        latencies = np.array([r.query_latency_ms for r in res])
-        entry["latency_ms"] = {
-            "mean": float(latencies.mean()), 
-            "median": float(np.median(latencies)),
-            "p95": float(np.percentile(latencies, 95))
-        }
-
-        by_type = {}
-        for t in types:
-            idx = np.array([i for i, r in enumerate(res) if r.qtype == t])
-            if len(idx) > 0:
-                by_type[t] = {"n": int(len(idx)),
-                              "Hit@1": float(scores[name]["Hit@1"][idx].mean()),
-                              "Hit@5": float(scores[name]["Hit@5"][idx].mean()),
-                              "MRR@10": float(scores[name]["MRR@10"][idx].mean())}
-        entry["by_type"] = by_type
-        summary[name] = entry
-
-    return summary, scores, types
-
-def fmt_ci(m: Dict[str, float]) -> str:
-    return f"{m['mean']:.3f} [{m['ci_low']:.2f}-{m['ci_high']:.2f}]"
-
-# =====================================================================
-# 6. GENERATING REPORTS AND PLOTS
-# =====================================================================
-
-def build_report(summary, types, n_queries, n_files) -> str:
-    names = list(summary.keys())
-    w = max(len(n) for n in names) + 2
-    L = []
-    bar = "=" * 125
-
-    L += ["", bar, f"EWALUACJA MODELI EMBEDDINGOWYCH | {n_queries} zapytań, {n_files} dokumentów | K={K_MAX}", bar]
-    L.append(f"{'Model':<{w}}| {'Hit@1':<7}| {'Hit@3':<7}| {'Hit@5':<7}| {'MRR@10':<8}| {'Mediana ms':<12}| {'Czas Budowy (s)':<15}")
-    L.append("-" * 125)
-    for n in names:
-        s = summary[n]
-        L.append(f"{n:<{w}}| {s['Hit@1']['mean']:<7.3f}| {s['Hit@3']['mean']:<7.3f}| "
-                 f"{s['Hit@5']['mean']:<7.3f}| {s['MRR@10']['mean']:<8.4f}| "
-                 f"{s['latency_ms']['median']:<12.1f}| {s['build_time_s']:<15.2f}")
-
-    L += ["", "95% PRZEDZIAŁY UFNOŚCI (Cluster Bootstrap)", "-" * 125]
-    L.append(f"{'Model':<{w}}| {'Hit@1':<20}| {'Hit@5':<20}| {'MRR@10':<20}")
-    for n in names:
-        s = summary[n]
-        L.append(f"{n:<{w}}| {fmt_ci(s['Hit@1']):<20}| {fmt_ci(s['Hit@5']):<20}| {fmt_ci(s['MRR@10']):<20}")
-
-    L += ["", "ROZBICIE NA TYPY ZAPYTAŃ (Hit@1 / MRR@10)", "-" * 125]
-    header = f"{'Model':<{w}}" + "".join(
-        f"| {t + ' (n=' + str(summary[names[0]]['by_type'][t]['n']) + ')':<24}" for t in types if t in summary[names[0]]["by_type"])
-    L.append(header)
-    for n in names:
-        row = f"{n:<{w}}"
-        for t in types:
-            if t in summary[n]["by_type"]:
-                bt = summary[n]["by_type"][t]
-                row += f"| {bt['Hit@1']:.2f} / {bt['MRR@10']:.3f}".ljust(26)
-        L.append(row)
-
-    L.append(bar)
-    return "\n".join(L)
-
-def plot_metrics(summary, path):
-    names = list(summary.keys())
-    metrics = ["Hit@1", "Hit@3", "MRR@10"]
-    x = np.arange(len(names))
-    width = 0.25
-    fig, ax = plt.subplots(figsize=(10, 6))
-    for j, m in enumerate(metrics):
-        means = np.array([summary[n][m]["mean"] for n in names])
-        lo = np.array([summary[n][m]["ci_low"] for n in names])
-        hi = np.array([summary[n][m]["ci_high"] for n in names])
-        bars = ax.bar(x + (j - 1) * width, means, width, label=m,
-                      yerr=[np.clip(means - lo, 0, None), np.clip(hi - means, 0, None)], capsize=3)
-        ax.bar_label(bars, fmt="%.2f", padding=10, fontsize=9)
-    ax.set_xticks(x)
-    ax.set_xticklabels(names)
-    ax.set_ylim(0, 1.15)
-    ax.set_ylabel("Wartość metryki")
-    ax.set_title("Precyzja Modeli Osadzeń (Vector Search)")
-    ax.legend(loc="lower right")
-    fig.tight_layout()
-    fig.savefig(path, dpi=300)
-    plt.close(fig)
-
-def plot_tradeoffs(summary, path):
-    names = list(summary.keys())
-    latencies = [summary[n]["latency_ms"]["median"] for n in names]
-    build_times = [summary[n]["build_time_s"] for n in names]
-    
-    x = np.arange(len(names))
-    width = 0.35
-
-    fig, ax1 = plt.subplots(figsize=(10, 6))
-    ax2 = ax1.twinx()
-
-    rects1 = ax1.bar(x - width/2, latencies, width, label='Czas zapytania (ms)', color='#d62728')
-    rects2 = ax2.bar(x + width/2, build_times, width, label='Czas indeksowania bazy (s)', color='#9467bd')
-
-    ax1.set_ylabel('Czas pojedynczego zapytania [ms]', color='#d62728')
-    ax2.set_ylabel('Czas wektoryzacji korpusu (s)', color='#9467bd')
-    ax1.set_xticks(x)
-    ax1.set_xticklabels(names)
-    ax1.set_title('Koszty operacyjne i czasowe Modeli Embeddings')
-    
-    ax1.bar_label(rects1, padding=3, fmt='%.1f ms')
-    ax2.bar_label(rects2, padding=3, fmt='%.1f s')
-
-    fig.legend(loc="upper left", bbox_to_anchor=(0.1,0.9))
-    fig.tight_layout()
-    fig.savefig(path, dpi=300)
-    plt.close(fig)
-
-# =====================================================================
-# 7. MAIN EXECUTION BLOCK
-# =====================================================================
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--rebuild", action="store_true", help="Forces fetching vectors via API again.")
-    args = ap.parse_args()
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--models", default="oai-small,oai-large,bge-m3,silver-retriever,spacy-lg")
+    ap.add_argument("--baseline", default="oai-small")
+    ap.add_argument("--questions", type=Path, default=ec.DEFAULT_QUESTIONS)
+    ap.add_argument("--hybrid", action="store_true", help="also RRF(model, BM25 stempel)")
+    ap.add_argument("--es-url", default=ec.bd.settings.ES_URL)
+    ap.add_argument("--subset", type=int, default=0, help="documents of the questions + N others (0 = all)")
+    ap.add_argument("--device", default="auto")
+    ap.add_argument("--exclude-generic", action="store_true")
+    ap.add_argument("--types", default="")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--n-boot", type=int, default=2000)
+    a = ap.parse_args()
 
-    if not os.path.isdir(EVAL_DATA_DIR):
-        sys.exit(f"Data folder missing: {EVAL_DATA_DIR}")
-    os.makedirs(CACHE_DIR, exist_ok=True)
+    keys = [k for k in a.models.split(",") if k]
+    bad = [k for k in keys if k not in MODELS]
+    if bad:
+        sys.exit(f"Unknown model(s) {bad}; available: {', '.join(MODELS)}")
 
-    queries = load_dataset()
-    n_files = len({q.expected_file for q in queries})
+    print("[1/4] Sample and questions")
+    sample = ec.load_sample()
+    qs = ec.load_questions(a.questions, sample, a.exclude_generic,
+                           [t for t in a.types.split(",") if t] or None, a.limit)
+    if a.subset:
+        sample = restrict(sample, qs, a.subset, a.seed)
+        print(f"   subset: {len(sample.files)} docs, {len(sample.chunks)} chunks (same for every model)")
+    print(f"   {len(qs)} questions about {len({q.expected_id for q in qs})} documents")
+    matcher = ec.EvidenceMatcher(sample)
+    rel_chunks = {q.qid: matcher.relevant_chunks(q) for q in qs}
+    chunk_file = {c.id: c.file_id for c in sample.chunks}
+    ids = [c.id for c in sample.chunks]
 
-    print("Starting ChromaDB (Persistent)...")
-    chroma_client = chromadb.PersistentClient(path=os.path.join(CACHE_DIR, "chroma_embeds"))
+    bm25 = {}
+    if a.hybrid:
+        es = ec.es_client(a.es_url)
+        idx = ec.ESIndex(es, "stempel", sample)
+        print("   BM25 (stempel) rankings...")
+        bm25 = {q.qid: idx.search(q.text, ec.CHUNK_POOL) for q in qs}
 
-    results_by_mod, build_times = {}, {}
+    cache = ec.EmbeddingCache()
+    build_times = json.loads(BUILD_TIMES.read_text(encoding="utf-8")) if BUILD_TIMES.exists() else {}
+    device = pick_device(a.device)
+    results: Dict[str, List[ec.QResult]] = {}
+    info: Dict[str, dict] = {}
+    names: Dict[str, str] = {}
 
-    print("\nSTARTING EMBEDDINGS MODELS EVALUATION\n")
-    for key, info in MODELS.items():
-        print(f"-> Loading model: {key} ({info['name']})")
-        collection, b_time = load_or_build_collection(chroma_client, key, info, args.rebuild)
-        build_times[key] = b_time
-        results_by_mod[key] = evaluate_model(key, queries, collection)
+    for n, key in enumerate(keys, 1):
+        s = MODELS[key]
+        print(f"[2/4] ({n}/{len(keys)}) {s.label} - {s.name}")
+        try:
+            emb = make_embedder(s, device)
+        except (ImportError, OSError) as e:
+            print(f"   [!] skipped: {e}")
+            continue
+        docs = [s.doc_tpl.format(text=c.text_emb, title=c.meta.get("tytul", "")) for c in sample.chunks]
+        stats: dict = {}
+        mat = emb.encode(docs, cache, "chunks", stats)
+        bkey = f"{emb.name}|{sample.fingerprint}"
+        if stats.get("new_texts") == len(set(docs)):
+            build_times[bkey] = {"s": stats["encode_s"], "estimated": False}
+        elif stats.get("new_texts"):
+            build_times.setdefault(bkey, {"s": stats["encode_s"] * len(set(docs)) / stats["new_texts"],
+                                          "estimated": True})
+        BUILD_TIMES.write_text(json.dumps(build_times, indent=1), encoding="utf-8")
+        dense = ec.DenseIndex(ids, mat)
 
-    samples = make_bootstrap_samples(queries, N_BOOTSTRAP, SEED)
-    summary, scores, types = summarize(results_by_mod, build_times, queries, samples)
+        qtexts = [s.query_tpl.format(q=q.text) for q in qs]
+        qmat = emb.encode(qtexts, cache, "queries")
+        lat = []
+        for t in qtexts[:N_LATENCY]:                        # live, uncached single-query latency
+            t0 = time.perf_counter()
+            emb._encode([t + " "])
+            lat.append((time.perf_counter() - t0) * 1000)
 
-    report = build_report(summary, types, len(queries), n_files)
-    print(report)
+        rs, rs_h = [], []
+        for q, v in zip(qs, qmat):
+            t0 = time.perf_counter()
+            d = dense.search(v, ec.CHUNK_POOL * 2)
+            ms = (time.perf_counter() - t0) * 1000
+            rs.append(ec.score_ranking(key, q, d, chunk_file, rel_chunks[q.qid], ms))
+            if a.hybrid:
+                fused = ec.rrf([d[:ec.CHUNK_POOL], bm25[q.qid]])
+                rs_h.append(ec.score_ranking(f"{key}+bm25", q, fused, chunk_file, rel_chunks[q.qid], ms))
+        results[key], names[key] = rs, s.label
+        if a.hybrid:
+            results[f"{key}+bm25"], names[f"{key}+bm25"] = rs_h, f"{s.label} + BM25"
+        bt = build_times.get(bkey, {})
+        info[key] = {"model": s.name, "embedder": emb.name, "dim": int(mat.shape[1]),
+                     "build_s": bt.get("s"), "build_estimated": bt.get("estimated"),
+                     "query_ms_median": float(np.median(lat)), "query_ms_p95": float(np.percentile(lat, 95)),
+                     "query_tpl": s.query_tpl, "doc_tpl": s.doc_tpl}
+        print(f"   MRR@10={np.mean([ec.METRICS['MRR@10'](r) for r in rs]):.3f}  "
+              f"CtxHit@5={np.mean([r.ctx_hit for r in rs]):.3f}  dim={mat.shape[1]}  "
+              f"query={info[key]['query_ms_median']:.0f} ms")
+        del mat, dense, emb
 
-    out_dir = os.path.join(OUT_ROOT, time.strftime("run_%Y%m%d_%H%M%S"))
-    os.makedirs(out_dir, exist_ok=True)
+    if not results:
+        sys.exit("No model could be evaluated.")
+    print("[3/4] Statistics")
+    baseline = a.baseline if a.baseline in results else next(iter(results))
+    boot = ec.Bootstrap(qs, a.n_boot)
+    summ = ec.summarize(results, qs, baseline, boot)
 
-    with open(os.path.join(out_dir, "report.txt"), "w", encoding="utf-8") as f:
-        f.write(report)
+    print("[4/4] Report")
+    notes = [f"Sample: {len(sample.files)} docs, {len(sample.chunks)} chunks{' (subset)' if a.subset else ''} | "
+             f"device for local models: {device} | exact cosine search over all chunks"]
+    rep = ec.standard_report("EMBEDDING MODELS EVALUATION (evaluate_embeddings.py)", summ, results, qs, names,
+                             notes)
+    rep += ["", "Cost side:", f"{'Model':<34}{'dim':>7}{'build s':>12}{'query ms (med/p95)':>22}  input format",
+            "-" * 110]
+    for key, e in info.items():
+        b = "-" if e["build_s"] is None else f"{e['build_s']:.0f}{' est.' if e['build_estimated'] else ''}"
+        rep.append(f"{names[key]:<34}{e['dim']:>7}{b:>12}{e['query_ms_median']:>13.0f} / {e['query_ms_p95']:<7.0f} "
+                   f"q='{e['query_tpl']}' d='{e['doc_tpl']}'")
+    rep.append("query ms: OpenAI = network round trip; local = inference on the device above.")
+    ec.write_run(OUT_ROOT, rep, summ, results, qs, {"names": names, "models": info,
+                                                    "params": {k: str(v) for k, v in vars(a).items()}})
 
-    with open(os.path.join(out_dir, "per_query.csv"), "w", encoding="utf-8-sig", newline="") as f:
-        wr = csv.writer(f)
-        wr.writerow(["model", "type", "query", "expected_file", "rank", "latency_ms"])
-        for res_list in results_by_mod.values():
-            for r in res_list:
-                wr.writerow([r.model_name, r.qtype, r.query, r.expected_file, r.rank, f"{r.query_latency_ms:.1f}"])
-
-    plot_metrics(summary, os.path.join(out_dir, "wykres_precyzji.png"))
-    plot_tradeoffs(summary, os.path.join(out_dir, "wykres_kosztow.png"))
-    print(f"\nSaved report and plots in folder: {out_dir}")
 
 if __name__ == "__main__":
     main()

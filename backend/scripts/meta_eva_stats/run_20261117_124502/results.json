@@ -1,0 +1,220 @@
+{
+ "n_questions": 860,
+ "n_docs": 299,
+ "baseline": "hybrid:production",
+ "systems": {
+  "hybrid:production": {
+   "Hit@1": {
+    "mean": 0.7174418604651163,
+    "lo": 0.6827247940843807,
+    "hi": 0.7523112733530251
+   },
+   "Hit@5": {
+    "mean": 0.9011627906976745,
+    "lo": 0.8801410105757932,
+    "hi": 0.9220933895415435
+   },
+   "MRR@10": {
+    "mean": 0.7971216315983758,
+    "lo": 0.7700863800341294,
+    "hi": 0.8223752714385767
+   },
+   "nDCG@10": {
+    "mean": 0.8032537779983168,
+    "lo": 0.7800407376845474,
+    "hi": 0.8266983059779996
+   },
+   "CtxHit@5": {
+    "mean": 0.7476744186046511,
+    "lo": 0.7166276346604216,
+    "hi": 0.778175179088307
+   },
+   "CtxPrec@5": {
+    "mean": 0.4986046511627908,
+    "lo": 0.4692084021206086,
+    "hi": 0.5281786788095341
+   },
+   "retrieval_ms_median": 0.0,
+   "retrieval_ms_p95": 0.0,
+   "llm_ms_mean": 0.0
+  },
+  "hybrid:source_title": {
+   "Hit@1": {
+    "mean": 0.7476744186046511,
+    "lo": 0.713780806983678,
+    "hi": 0.7785659155956091
+   },
+   "Hit@5": {
+    "mean": 0.9127906976744186,
+    "lo": 0.8933920414676048,
+    "hi": 0.9312374325325432
+   },
+   "MRR@10": {
+    "mean": 0.8180126430417128,
+    "lo": 0.7931571842375683,
+    "hi": 0.8404326703775578
+   },
+   "nDCG@10": {
+    "mean": 0.8214111322742013,
+    "lo": 0.7993650869945557,
+    "hi": 0.8432468111283479
+   },
+   "CtxHit@5": {
+    "mean": 0.7604651162790698,
+    "lo": 0.7281029275593264,
+    "hi": 0.7894752141982864
+   },
+   "CtxPrec@5": {
+    "mean": 0.5111627906976745,
+    "lo": 0.4817061017659191,
+    "hi": 0.5397479519321929
+   },
+   "retrieval_ms_median": 0.0,
+   "retrieval_ms_p95": 0.0,
+   "llm_ms_mean": 0.0,
+   "d_MRR@10": {
+    "diff": 0.020891011443337024,
+    "lo": 0.007226127543582851,
+    "hi": 0.03449066563594886,
+    "p": 0.002,
+    "p_holm": 0.006
+   },
+   "d_CtxHit@5": {
+    "diff": 0.012790697674418604,
+    "lo": -0.004673033830682625,
+    "hi": 0.02935286202339892,
+    "p": 0.173,
+    "p_holm": 0.173
+   }
+  },
+  "hybrid:source_title/prod_header": {
+   "Hit@1": {
+    "mean": 0.7453488372093023,
+    "lo": 0.7099767981438515,
+    "hi": 0.7777777777777778
+   },
+   "Hit@5": {
+    "mean": 0.9151162790697674,
+    "lo": 0.8955163766896244,
+    "hi": 0.9334889148191365
+   },
+   "MRR@10": {
+    "mean": 0.816969361387966,
+    "lo": 0.7914309935931909,
+    "hi": 0.8401163299455255
+   },
+   "nDCG@10": {
+    "mean": 0.8210834621058526,
+    "lo": 0.7989271535368285,
+    "hi": 0.8426084384602811
+   },
+   "CtxHit@5": {
+    "mean": 0.7651162790697674,
+    "lo": 0.7313909815482039,
+    "hi": 0.7949120096494616
+   },
+   "CtxPrec@5": {
+    "mean": 0.5158139534883721,
+    "lo": 0.48647674663299667,
+    "hi": 0.5441895824833402
+   },
+   "retrieval_ms_median": 0.0,
+   "retrieval_ms_p95": 0.0,
+   "llm_ms_mean": 0.0,
+   "d_MRR@10": {
+    "diff": 0.019847729789590256,
+    "lo": 0.007228657106249271,
+    "hi": 0.03286556093137901,
+    "p": 0.002,
+    "p_holm": 0.006
+   },
+   "d_CtxHit@5": {
+    "diff": 0.01744186046511628,
+    "lo": 0.0,
+    "hi": 0.03456520870514902,
+    "p": 0.061,
+    "p_holm": 0.122
+   }
+  },
+  "hybrid:prod_header": {
+   "Hit@1": {
+    "mean": 0.7337209302325581,
+    "lo": 0.698710051329548,
+    "hi": 0.7669025899129706
+   },
+   "Hit@5": {
+    "mean": 0.913953488372093,
+    "lo": 0.8939885004391191,
+    "hi": 0.9327943241793563
+   },
+   "MRR@10": {
+    "mean": 0.810718438538206,
+    "lo": 0.7856383816621636,
+    "hi": 0.834873985099214
+   },
+   "nDCG@10": {
+    "mean": 0.8173573598724082,
+    "lo": 0.794497717788256,
+    "hi": 0.8399040529219916
+   },
+   "CtxHit@5": {
+    "mean": 0.7686046511627908,
+    "lo": 0.7361735151049666,
+    "hi": 0.798830747388703
+   },
+   "CtxPrec@5": {
+    "mean": 0.513953488372093,
+    "lo": 0.4839763856006799,
+    "hi": 0.5432533698290554
+   },
+   "retrieval_ms_median": 0.0,
+   "retrieval_ms_p95": 0.0,
+   "llm_ms_mean": 0.0,
+   "d_MRR@10": {
+    "diff": 0.013596806939830194,
+    "lo": 0.0019478580978544396,
+    "hi": 0.02527876789487544,
+    "p": 0.023,
+    "p_holm": 0.023
+   },
+   "d_CtxHit@5": {
+    "diff": 0.020930232558139535,
+    "lo": 0.004640371229698376,
+    "hi": 0.03673938002296211,
+    "p": 0.008,
+    "p_holm": 0.024
+   }
+  }
+ },
+ "names": {
+  "hybrid:production": "production · hybrid",
+  "hybrid:source_title": "source_title · hybrid",
+  "hybrid:source_title/prod_header": "source_title/prod_header · hybrid",
+  "hybrid:prod_header": "prod_header · hybrid"
+ },
+ "title_in_question": 335,
+ "no_tradeoff": true,
+ "header_examples": {
+  "raw": "",
+  "title": "Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków",
+  "section": "Silna reprezentacja AGH w walce o medale",
+  "breadcrumb": "Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale",
+  "prod_header": "[AZS AGH] Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale",
+  "source_title": "[AZS AGH] Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków",
+  "title_last_section": "Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków - Silna reprezentacja AGH w walce o medale",
+  "labelled": "Dokument: Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków\nSekcja: Silna reprezentacja AGH w walce o medale\nŹródło: AZS AGH",
+  "breadcrumb_url": "Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale\nliga akademicka azs",
+  "suffix": "Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale"
+ },
+ "params": {
+  "variants": "production,source_title,source_title/prod_header,prod_header",
+  "retrievers": "hybrid",
+  "baseline": "hybrid:production",
+  "questions": "C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\backend\\scripts\\eval_questions.json",
+  "es_url": "http://localhost:9200",
+  "exclude_generic": "False",
+  "types": "",
+  "limit": "0",
+  "n_boot": "2000"
+ }
+}

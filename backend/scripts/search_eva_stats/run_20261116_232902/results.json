@@ -1,0 +1,180 @@
+{
+ "n_questions": 860,
+ "n_docs": 299,
+ "baseline": "hybrid_stempel",
+ "systems": {
+  "hybrid_stempel": {
+   "Hit@1": {
+    "mean": 0.7162790697674418,
+    "lo": 0.6803748242183738,
+    "hi": 0.7502876869965478
+   },
+   "Hit@5": {
+    "mean": 0.9011627906976745,
+    "lo": 0.8799076212471132,
+    "hi": 0.9222737819025522
+   },
+   "MRR@10": {
+    "mean": 0.7963219822812846,
+    "lo": 0.7689509091466765,
+    "hi": 0.8215480585694193
+   },
+   "nDCG@10": {
+    "mean": 0.8030561072304682,
+    "lo": 0.7796432218999693,
+    "hi": 0.8270906587506471
+   },
+   "CtxHit@5": {
+    "mean": 0.7511627906976744,
+    "lo": 0.7202289464065736,
+    "hi": 0.7818006938241172
+   },
+   "CtxPrec@5": {
+    "mean": 0.49930232558139537,
+    "lo": 0.46988502215934064,
+    "hi": 0.5292601194515537
+   },
+   "retrieval_ms_median": 5.637099995510653,
+   "retrieval_ms_p95": 6.81683998554945,
+   "llm_ms_mean": 0.0
+  },
+  "hybrid_morfologik_stop": {
+   "Hit@1": {
+    "mean": 0.7302325581395349,
+    "lo": 0.6949342272470137,
+    "hi": 0.7637515393777885
+   },
+   "Hit@5": {
+    "mean": 0.9081395348837209,
+    "lo": 0.8875849014056956,
+    "hi": 0.9284897839557863
+   },
+   "MRR@10": {
+    "mean": 0.804139904023625,
+    "lo": 0.7778684219730533,
+    "hi": 0.8283792680489364
+   },
+   "nDCG@10": {
+    "mean": 0.8127372197227353,
+    "lo": 0.7898715731387981,
+    "hi": 0.8355880306581452
+   },
+   "CtxHit@5": {
+    "mean": 0.7581395348837209,
+    "lo": 0.7279043957835253,
+    "hi": 0.7878156871522408
+   },
+   "CtxPrec@5": {
+    "mean": 0.5027906976744186,
+    "lo": 0.4732319225772296,
+    "hi": 0.5319352142110763
+   },
+   "retrieval_ms_median": 8.401799976127222,
+   "retrieval_ms_p95": 12.050629957229829,
+   "llm_ms_mean": 0.0,
+   "d_MRR@10": {
+    "diff": 0.007817921742340347,
+    "lo": -0.0015652998324648239,
+    "hi": 0.017048943341420694,
+    "p": 0.104,
+    "p_holm": 0.104
+   },
+   "d_CtxHit@5": {
+    "diff": 0.0069767441860465115,
+    "lo": -0.006873643125763705,
+    "hi": 0.020787630677890707,
+    "p": 0.346,
+    "p_holm": 0.346
+   }
+  }
+ },
+ "names": {
+  "hybrid_stempel": "Hybrid RRF (stempel)",
+  "hybrid_morfologik_stop": "Hybrid RRF (morfologik_stop)"
+ },
+ "analyzer_demo": {
+  "standard": [
+   "studentki",
+   "składały",
+   "wnioski",
+   "o",
+   "stypendia",
+   "rektora",
+   "w",
+   "dziekanatach",
+   "wydziałów",
+   "terminy",
+   "zaliczeń",
+   "w",
+   "sesji",
+   "letniej"
+  ],
+  "stempel": [
+   "student",
+   "składać",
+   "wnioskeć",
+   "stypendium",
+   "rektor",
+   "dziekanat",
+   "wydział",
+   "terować",
+   "zaliczyć",
+   "sesja",
+   "letni"
+  ],
+  "morfologik": [
+   "studentka",
+   "składać",
+   "wniosek",
+   "o",
+   "ocean",
+   "ojciec",
+   "stypendium",
+   "rektor",
+   "w",
+   "wiek",
+   "dziekanat",
+   "wydział",
+   "termin",
+   "zaliczenie",
+   "w",
+   "wiek",
+   "sesja",
+   "letni"
+  ],
+  "morfologik_stop": [
+   "studentka",
+   "składać",
+   "wniosek",
+   "stypendium",
+   "rektor",
+   "dziekanat",
+   "wydział",
+   "termin",
+   "zaliczenie",
+   "sesja",
+   "letni"
+  ]
+ },
+ "skipped": {},
+ "embedding_stats": {
+  "new_texts": 0,
+  "encode_s": 8.300004992634058e-06
+ },
+ "params": {
+  "questions": "C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\backend\\scripts\\eval_questions.json",
+  "analyzers": "standard,stempel,morfologik,morfologik_stop",
+  "hybrid_analyzers": "stempel,morfologik_stop",
+  "only": "hybrid_stempel,hybrid_morfologik_stop",
+  "baseline": "hybrid_stempel_exp",
+  "rerank": "False",
+  "embed_model": "text-embedding-3-small",
+  "es_url": "http://localhost:9200",
+  "es_url_morfologik": "",
+  "rebuild_es": "False",
+  "exclude_generic": "False",
+  "types": "",
+  "limit": "0",
+  "n_boot": "2000"
+ }
+}

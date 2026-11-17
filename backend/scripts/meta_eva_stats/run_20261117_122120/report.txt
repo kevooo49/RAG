@@ -1,0 +1,132 @@
+==============================================================================================================
+METADATA (CHUNK HEADER) EVALUATION (evaluate_metadata.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: hybrid:production | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs, 27674 production chunks | embeddings: openai:text-embedding-3-small:native | BM25: ES `polish` | no query expansion
+Variant E/B = header E in the embedded text, header B in the BM25 text; production = breadcrumb/prod_header.
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+source_title · hybrid               0.748  0.913     0.818 [0.79-0.84]     0.760 [0.73-0.79]        0       0
+prod_header · hybrid                0.734  0.914     0.811 [0.79-0.83]     0.769 [0.74-0.80]        0       0
+labelled · hybrid                   0.730  0.915     0.811 [0.79-0.83]     0.764 [0.73-0.79]        0       0
+production · hybrid                 0.717  0.901     0.797 [0.77-0.82]     0.748 [0.72-0.78]        0       0
+title · hybrid                      0.716  0.900     0.796 [0.77-0.82]     0.738 [0.71-0.77]        0       0
+breadcrumb/source_title · hybrid    0.713  0.903     0.795 [0.77-0.82]     0.748 [0.72-0.78]        0       0
+title_last_section · hybrid         0.713  0.900     0.792 [0.77-0.82]     0.748 [0.72-0.78]        0       0
+suffix · hybrid                     0.710  0.886     0.786 [0.76-0.81]     0.721 [0.69-0.75]        0       0
+breadcrumb/title · hybrid           0.702  0.901     0.785 [0.76-0.81]     0.745 [0.71-0.78]        0       0
+breadcrumb · hybrid                 0.700  0.898     0.783 [0.76-0.81]     0.743 [0.71-0.77]        0       0
+breadcrumb_url · hybrid             0.697  0.899     0.782 [0.76-0.81]     0.743 [0.71-0.77]        0       0
+section · hybrid                    0.627  0.844     0.719 [0.69-0.75]     0.643 [0.60-0.68]        0       0
+raw · hybrid                        0.628  0.826     0.715 [0.68-0.74]     0.626 [0.59-0.66]        0       0
+
+Differences vs hybrid:production:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+source_title · hybrid                      +0.021 [+0.01,+0.03] p=0.018*         +0.013 [-0.00,+0.03] p=1.000 
+prod_header · hybrid                       +0.014 [+0.00,+0.03] p=0.138          +0.021 [+0.00,+0.04] p=0.072 
+labelled · hybrid                          +0.014 [+0.00,+0.03] p=0.215          +0.016 [+0.00,+0.03] p=0.376 
+production · hybrid                                           (baseline)                            (baseline)
+title · hybrid                             -0.001 [-0.01,+0.01] p=0.915          -0.009 [-0.03,+0.01] p=1.000 
+breadcrumb/source_title · hybrid           -0.003 [-0.01,+0.00] p=0.915          +0.000 [-0.01,+0.01] p=1.000 
+title_last_section · hybrid                -0.005 [-0.01,+0.00] p=0.915          +0.000 [-0.01,+0.01] p=1.000 
+suffix · hybrid                            -0.012 [-0.03,+0.00] p=0.352          -0.027 [-0.05,-0.01] p=0.050 
+breadcrumb/title · hybrid                  -0.012 [-0.02,-0.00] p=0.035*         -0.002 [-0.01,+0.01] p=1.000 
+breadcrumb · hybrid                        -0.014 [-0.02,-0.01] p=0.006*         -0.005 [-0.01,+0.00] p=1.000 
+breadcrumb_url · hybrid                    -0.015 [-0.02,-0.01] p=0.024*         -0.005 [-0.02,+0.01] p=1.000 
+section · hybrid                           -0.078 [-0.10,-0.06] p=0.006*         -0.105 [-0.14,-0.07] p=0.006*
+raw · hybrid                               -0.083 [-0.11,-0.06] p=0.006*         -0.122 [-0.15,-0.09] p=0.006*
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+source_title · hybrid                            0.800               0.878               0.775
+prod_header · hybrid                             0.788               0.870               0.773
+labelled · hybrid                                0.789               0.871               0.771
+production · hybrid                              0.778               0.859               0.753
+title · hybrid                                   0.761               0.864               0.761
+breadcrumb/source_title · hybrid                 0.777               0.856               0.749
+title_last_section · hybrid                      0.758               0.859               0.758
+suffix · hybrid                                  0.748               0.856               0.751
+breadcrumb/title · hybrid                        0.757               0.849               0.749
+breadcrumb · hybrid                              0.755               0.846               0.748
+breadcrumb_url · hybrid                          0.754               0.856               0.736
+section · hybrid                                 0.690               0.779               0.686
+raw · hybrid                                     0.673               0.784               0.685
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+source_title · hybrid                            0.831               0.872               0.729
+prod_header · hybrid                             0.831               0.869               0.710
+labelled · hybrid                                0.837               0.861               0.717
+production · hybrid                              0.837               0.849               0.690
+title · hybrid                                   0.819               0.851               0.698
+breadcrumb/source_title · hybrid                 0.838               0.846               0.686
+title_last_section · hybrid                      0.825               0.840               0.696
+suffix · hybrid                                  0.793               0.853               0.681
+breadcrumb/title · hybrid                        0.815               0.846               0.673
+breadcrumb · hybrid                              0.817               0.842               0.672
+breadcrumb_url · hybrid                          0.813               0.836               0.680
+section · hybrid                                 0.787               0.797               0.551
+raw · hybrid                                     0.784               0.788               0.552
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+source_title · hybrid                            0.779               0.778               0.863
+prod_header · hybrid                             0.775               0.777               0.850
+labelled · hybrid                                0.776               0.776               0.850
+production · hybrid                              0.768               0.754               0.840
+title · hybrid                                   0.756               0.764               0.836
+breadcrumb/source_title · hybrid                 0.766               0.746               0.840
+title_last_section · hybrid                      0.759               0.761               0.828
+suffix · hybrid                                  0.745               0.765               0.819
+breadcrumb/title · hybrid                        0.752               0.740               0.831
+breadcrumb · hybrid                              0.750               0.742               0.826
+breadcrumb_url · hybrid                          0.748               0.738               0.828
+section · hybrid                                 0.660               0.695               0.763
+raw · hybrid                                     0.647               0.693               0.762
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+source_title · hybrid                            0.821               0.818
+prod_header · hybrid                             0.807               0.811
+labelled · hybrid                                0.814               0.810
+production · hybrid                              0.789               0.798
+title · hybrid                                   0.780               0.798
+breadcrumb/source_title · hybrid                 0.794               0.795
+title_last_section · hybrid                      0.793               0.792
+suffix · hybrid                                  0.768               0.788
+breadcrumb/title · hybrid                        0.755               0.789
+breadcrumb · hybrid                              0.760               0.786
+breadcrumb_url · hybrid                          0.770               0.784
+section · hybrid                                 0.641               0.728
+raw · hybrid                                     0.637               0.724
+
+MRR@10 by whether the question contains the document title:
+System                              no title in question (525)     title in question (335)
+source_title · hybrid                                    0.790                       0.862
+prod_header · hybrid                                     0.781                       0.857
+labelled · hybrid                                        0.782                       0.856
+production · hybrid                                      0.772                       0.836
+title · hybrid                                           0.765                       0.843
+breadcrumb/source_title · hybrid                         0.774                       0.826
+title_last_section · hybrid                              0.761                       0.841
+suffix · hybrid                                          0.763                       0.820
+breadcrumb/title · hybrid                                0.761                       0.825
+breadcrumb · hybrid                                      0.757                       0.824
+breadcrumb_url · hybrid                                  0.753                       0.829
+section · hybrid                                         0.730                       0.700
+raw · hybrid                                             0.735                       0.682
+
+Header examples (chunk of liga-akademicka-azs-2025_4c641e67.md):
+   raw                  (none)
+   title                Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków
+   section              Silna reprezentacja AGH w walce o medale
+   breadcrumb           Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale
+   prod_header          [AZS AGH] Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale
+   source_title         [AZS AGH] Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków
+   title_last_section   Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków - Silna reprezentacja AGH w walce o medale
+   labelled             Dokument: Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków | Sekcja: Silna reprezentacja AGH w walce o medale | Źródło: AZS AGH
+   breadcrumb_url       Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale | liga akademicka azs
+   suffix               Final Four Ligi Akademickiej AZS ponownie w Krakowie! - AZS AGH Kraków › Silna reprezentacja AGH w walce o medale

@@ -17,6 +17,7 @@ except ImportError:
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "config"))
 from sites import ConfigError, load_or_exit  # noqa: E402 # type: ignore
+from html_tables import convert_html_tables  # same folder (backend/scripts)
 
 load_dotenv()
 API_KEY = os.getenv("LLAMA_CLOUD_API_KEY")
@@ -151,6 +152,7 @@ def process_directory(raw_folder: str, processed_folder: str, temporary_folder: 
                 print("   ☁️ Sending to LlamaParse...")
                 try:
                     raw_text = run_llamaparse_v2(path_to_analyze, API_KEY)
+                    raw_text = convert_html_tables(raw_text)   # LlamaParse writes complex tables as HTML
                     final_text = add_frontmatter(raw_text, file_name, "llamaparse", current_extension, source_domain)
                     cloud_count += 1
                 except Exception as e:

@@ -41,13 +41,14 @@ System RAG (*Retrieval-Augmented Generation*) odpowiadający na pytania student�
 | Indeks | [`build_database.md`](Docs/build_database.md) | Chunkowanie, embeddingi, indeksowanie przyrostowe, manifest |
 | Frontend | [`frontend.md`](Docs/frontend.md) | Aplikacja TypeScript (Vite), klient SSE, testy |
 | Wdrożenie | [`docker.md`](Docs/docker.md) | Docker Compose, nginx, porty, migracja Chroma |
-| Ewaluacja | [`eva_datasets.md`](Docs/eva_datasets.md) | Zbiory pytań i odpowiedzi wzorcowych |
-| Ewaluacja | [`eva_chunking.md`](Docs/eva_chunking.md) | Strategie chunkowania |
+| Ewaluacja | [`eva_datasets.md`](Docs/eva_datasets.md) | Próbka dokumentów i zbiór pytań (`build_eval_sample.py`, `generate_eval_questions.py`) |
+| Ewaluacja | [`eva_framework.md`](Docs/eva_framework.md) | Wspólny kod ewaluacji: chunkowanie jak w produkcji, metryki, bootstrap + Holm, wykresy (`eval_common.py`, `eval_plots.py`) |
+| Ewaluacja | [`eva_chunking.md`](Docs/eva_chunking.md) | Strategie chunkowania: rozmiar chunka produkcyjnego, stałe okna, akapity, tytuł; budżet tekstu dla LLM |
 | Ewaluacja | [`eva_embeddings.md`](Docs/eva_embeddings.md) | Modele embeddingowe |
-| Ewaluacja | [`eva_metadata.md`](Docs/eva_metadata.md) | Wzbogacanie chunków o metadane |
-| Ewaluacja | [`eva_search.md`](Docs/eva_search.md) | Wektor vs BM25 vs RRF vs rozszerzanie zapytań vs reranking |
-| Ewaluacja | [`eva_production.md`](Docs/eva_production.md) | Test zintegrowanego stosu |
-| Ewaluacja | [`eva_models.md`](Docs/eva_models.md) | Modele generujące (GPT-4o-mini, GPT-4o, Bielik) |
+| Ewaluacja | [`eva_metadata.md`](Docs/eva_metadata.md) | Nagłówki chunków: tytuł, sekcje, źródło, URL — osobno dla embeddingu i BM25 |
+| Ewaluacja | [`eva_search.md`](Docs/eva_search.md) | Wektor vs BM25 (Stempel / Morfologik) vs RRF vs rozszerzanie zapytań |
+| Ewaluacja | [`eva_production.md`](Docs/eva_production.md) | Konfiguracja produkcyjna: obecna vs proponowana, wyszukiwanie i odpowiedzi (2 × 2: nagłówek embeddingu × rozszerzanie zapytań) |
+| Ewaluacja | [`eva_models.md`](Docs/eva_models.md) | Modele generujące (GPT-4o-mini, GPT-4o, Bielik) z promptem produkcji i kontekstem z wyszukiwarki; sędzia GPT-4.1 |
 
 ## 3. Kolejność uruchamiania (od zera)
 
@@ -110,7 +111,7 @@ Uwaga do kroku 5: domyślne `CHROMA_PORT` w `app/core/config.py` to `8000` (popr
 | `config/sites.py`, `build_database.py` | `PyYAML`; opcjonalnie `tiktoken` (dokładne liczenie tokenów) |
 | `scrapers/*` | `requests`, `beautifulsoup4`, `lxml`, `markdownify`, `playwright` (+ `playwright install chromium`; wymagany przy `scrape_html.py` — import jest bezwarunkowy) |
 | `document_parser.py` | `requests`, `PyMuPDF` (`fitz`), `python-dotenv`; opcjonalnie `docx2pdf` |
-| `evaluate_*.py` | `numpy`, `matplotlib`, `openai`, `python-dotenv`; `evaluate_search.py` i `evaluate_embeddings.py` także `sentence-transformers` |
+| `evaluate_*.py` | `numpy`, `matplotlib`, `openai`, `python-dotenv`, `elasticsearch`; `evaluate_search.py` i `evaluate_embeddings.py` wymagają próbki i pytań ([`eva_datasets.md`](Docs/eva_datasets.md)); `sentence-transformers` dla modeli lokalnych i rerankera, `spacy` + `pl_core_news_lg` dla bazowego modelu spaCy |
 | testy backendu | `pytest`, `httpx` (wymagany przez `fastapi.testclient`) |
 
 ## 6. Dane wynikowe i pliki, których nie ma w repozytorium
@@ -125,9 +126,11 @@ Pola w indeksach mają **polskie nazwy** (`tekst`, `tytul`, `sekcja`, `zrodlo`, 
 
 | Pytanie badawcze | Wynik | Dokument |
 |---|---|---|
-| Wektor vs BM25 vs hybryda (MRR@10) | 0.696 / 0.596 / 0.705; hybryda ≈ wektor, wyraźnie lepsza tylko od BM25 | `eva_search.md` |
-| Czy rozszerzanie zapytań pomaga? | tak: hybryda 0.705 → 0.779 (ΔMRR +0.075, CI nie obejmuje 0) | `eva_search.md` |
-| Czy reranker cross-encoder pomaga? | porównywalnie (0.769), ale mediana opóźnienia 2.9 s zamiast 0.24 s | `eva_search.md` |
-| Który model embeddingów? | `3-large` 0.820 > BGE-m3 0.757 > PL-Retriever 0.748 > `3-small` 0.662; produkcja używa `3-small` | `eva_embeddings.md` |
-| Czy wzbogacanie metadanymi pomaga? | zysk +0.02…+0.04 MRR, **brak istotności po korekcie Holma** | `eva_metadata.md` |
-| Który model odpowiada? | GPT-4o-mini ≈ GPT-4o; Bielik 11B wyraźnie gorszy i ~97 s/odpowiedź | `eva_models.md` |
+| Wektor vs BM25 vs hybryda (MRR@10, 860 pytań) | 0.711 / 0.755 / **0.796**; hybryda istotnie lepsza od obu ścieżek | `eva_search.md` |
+| Czy rozszerzanie zapytań pomaga? | **nie**: bez rozszerzania MRR +0.019 (p=0.03), CtxHit@5 bez zmian, rozszerzanie kosztuje ~1.4 s | `eva_search.md` |
+| Stempel czy Morfologik? | remis: hybryda 0.796 vs 0.804 (+0.008, p=0.10); Morfologik bez stopwords gorszy (fałszywe lematy przyimków) | `eva_search.md` |
+| Który model embeddingów? | sam wektor: BGE-m3 0.792 ≈ `3-large` 0.785 > Silver 0.729 ≈ `3-small` 0.711 ≫ spaCy 0.224; w hybrydzie `3-large` +0.037 MRR / +0.062 CtxHit nad `3-small`; produkcja zostaje przy `3-small` (koszt) | `eva_embeddings.md` |
+| Jaki rozmiar chunka? | 300–650 tokenów bez różnicy w MRR i przy stałym budżecie tekstu (CtxHit@B); 200 tokenów istotnie gorsze; produkcja zostaje przy 450. Tytuł w chunku daje ok. +0.05 MRR względem stałych okien bez tytułu | `eva_chunking.md` |
+| Jaki nagłówek chunka? | tytuł niezbędny (bez niego −0.08 MRR); najlepszy tekst do embeddingu: `[Źródło] Tytuł` bez sekcji — +0.020 MRR (istotne), sylabusy +0.04; tekst BM25/LLM bez zmian | `eva_metadata.md` |
+| Który model odpowiada? | correctness (300 pytań, kontekst z wyszukiwarki): GPT-4o-mini 0.850 ≈ GPT-4o 0.847; Bielik 11B 0.630 (−0.22, istotne) — głównie fałszywe odmowy (23%), halucynacje 1–2% we wszystkich modelach; Bielik ~105 s/odpowiedź; produkcja zostaje przy GPT-4o-mini | `eva_models.md` |
+| Czy zmiany działają razem? | tak: `[Źródło] Tytuł` w embeddingu i brak rozszerzania dają po ok. +0.015 MRR, razem +0.034 (istotne); odpowiedzi gpt-4o-mini: correctness 0.817 → 0.850, w pełni poprawne 0.733 → 0.787 (300 pytań, nieistotne po korekcie), bez pogorszenia żadnej metryki; ok. 1.1 s szybciej | `eva_production.md` |

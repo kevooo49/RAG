@@ -1,0 +1,48 @@
+================================================================================================================
+ANSWER GENERATION EVALUATION (evaluate_models.py)
+================================================================================================================
+Questions: 300 (stratified by type, seed 42) | target documents: 205 | retrieval: planned | judge: gpt-4.1 | baseline: gpt-4o-mini
+Production prompt, context blocks and model clients from app/services/llm_service.py; scores 0-2 shown as 0-1.
+Evidence chunk in the context: 79.7% of questions | judge: context sufficient yes 255 / partial 29 / no 16 (judged on gpt-4o-mini's rows; the context is the same for every model)
+
+Model                  Correctness  Fully correct        Faithfulness           Citations            Language
+----------------------------------------------------------------------------------------------------------------
+gpt-4o-mini      0.850 [0.81-0.88]          0.787   0.958 [0.94-0.98]   0.966 [0.95-0.98]   1.000 [1.00-1.00]
+gpt-4o           0.847 [0.81-0.88]          0.803   0.972 [0.96-0.99]   0.983 [0.97-0.99]   1.000 [1.00-1.00]
+bielik           0.630 [0.58-0.68]          0.570   0.940 [0.92-0.96]   0.879 [0.84-0.92]   1.000 [1.00-1.00]
+
+Differences vs gpt-4o-mini (paired bootstrap, Holm over models, * p < 0.05):
+Model                      correctness            faithfulness               citations                language
+----------------------------------------------------------------------------------------------------------------
+gpt-4o-mini                 (baseline)              (baseline)              (baseline)              (baseline)
+gpt-4o                 -0.003 p=0.828          +0.013 p=0.324          +0.008 p=0.262          +0.000 p=1.000 
+bielik                 -0.220 p=0.001*         -0.018 p=0.324          -0.097 p=0.001*         +0.000 p=1.000 
+
+Refusals, hallucinations, speed:
+Model           refusals   right refusal   false refusal  hallucination   TTFT med  total med
+----------------------------------------------------------------------------------------------------------------
+gpt-4o-mini         0.08     0.88 (n=16)    0.01 (n=255)          0.017       0.7s       2.4s
+gpt-4o              0.11     0.95 (n=20)    0.02 (n=257)          0.010       0.7s       1.3s
+bielik              0.31     0.91 (n=22)    0.23 (n=257)          0.010      29.2s     104.7s
+right refusal = share of refusals among questions whose context had nothing (judge: no);
+false refusal = share of refusals among questions whose context was sufficient (judge: yes).
+
+Correctness by question type:
+Model               colloquial (100)         lexical (100)        semantic (100)
+gpt-4o-mini                    0.795                 0.915                 0.840
+gpt-4o                         0.815                 0.880                 0.845
+bielik                         0.555                 0.695                 0.640
+
+Correctness by document type:
+Model                  dokument (69)          strona (138)          sylabus (93)
+gpt-4o-mini                    0.790                 0.888                 0.839
+gpt-4o                         0.790                 0.902                 0.806
+bielik                         0.486                 0.707                 0.624
+
+Correctness by evidence chunk in context:
+Model               in context (239)   not in context (61)
+gpt-4o-mini                    0.941                 0.492
+gpt-4o                         0.952                 0.434
+bielik                         0.699                 0.361
+
+Judge tokens this run (uncached calls): in 2080960, out 92500 (~$4.90); estimated generation cost for 300 questions: gpt-4o-mini $0.14, gpt-4o $2.38

@@ -1,0 +1,65 @@
+==============================================================================================================
+EMBEDDING MODELS EVALUATION v2 (evaluate_embeddings.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: oai-small | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs, 27674 chunks | device for local models: cuda | exact cosine search over all chunks
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+BGE-m3                              0.715  0.887     0.792 [0.76-0.82]     0.728 [0.69-0.76]        2       0
+OpenAI 3-large                      0.699  0.901     0.785 [0.76-0.81]     0.773 [0.74-0.80]        7       0
+Silver Retriever v1.1               0.638  0.852     0.729 [0.70-0.76]     0.672 [0.64-0.71]        2       0
+OpenAI 3-small (prod)               0.616  0.835     0.711 [0.68-0.74]     0.681 [0.65-0.72]        4       0
+spaCy pl_core_news_lg (avg)         0.166  0.293     0.224 [0.19-0.25]     0.160 [0.13-0.19]        1       0
+
+Differences vs oai-small:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+BGE-m3                                     +0.081 [+0.06,+0.11] p=0.002*         +0.047 [+0.01,+0.08] p=0.010*
+OpenAI 3-large                             +0.075 [+0.05,+0.10] p=0.002*         +0.092 [+0.06,+0.12] p=0.002*
+Silver Retriever v1.1                      +0.019 [-0.01,+0.05] p=0.180          -0.009 [-0.04,+0.02] p=0.621 
+OpenAI 3-small (prod)                                         (baseline)                            (baseline)
+spaCy pl_core_news_lg (avg)                -0.486 [-0.52,-0.45] p=0.002*         -0.521 [-0.56,-0.48] p=0.002*
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+BGE-m3                                           0.761               0.858               0.755
+OpenAI 3-large                                   0.760               0.810               0.786
+Silver Retriever v1.1                            0.687               0.784               0.716
+OpenAI 3-small (prod)                            0.682               0.763               0.686
+spaCy pl_core_news_lg (avg)                      0.186               0.282               0.203
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+BGE-m3                                           0.847               0.818               0.710
+OpenAI 3-large                                   0.839               0.822               0.689
+Silver Retriever v1.1                            0.754               0.765               0.659
+OpenAI 3-small (prod)                            0.762               0.744               0.621
+spaCy pl_core_news_lg (avg)                      0.237               0.320               0.075
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+BGE-m3                                           0.746               0.733               0.852
+OpenAI 3-large                                   0.735               0.744               0.837
+Silver Retriever v1.1                            0.668               0.685               0.789
+OpenAI 3-small (prod)                            0.669               0.657               0.765
+spaCy pl_core_news_lg (avg)                      0.202               0.215               0.241
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+BGE-m3                                           0.793               0.791
+OpenAI 3-large                                   0.753               0.789
+Silver Retriever v1.1                            0.773               0.724
+OpenAI 3-small (prod)                            0.689               0.713
+spaCy pl_core_news_lg (avg)                      0.154               0.233
+
+Cost side:
+Model                                 dim     build s    query ms (med/p95)  input format
+--------------------------------------------------------------------------------------------------------------
+OpenAI 3-small (prod)                1536           -          158 / 427     q='{q}' d='{text}'
+OpenAI 3-large                       3072         245          210 / 253     q='{q}' d='{text}'
+BGE-m3                               1024       14983           83 / 304     q='{q}' d='{text}'
+Silver Retriever v1.1                 768        5829          204 / 349     q='Pytanie: {q}' d='{title}</s>{text}'
+spaCy pl_core_news_lg (avg)           300          29            0 / 0       q='{q}' d='{text}'
+query ms: OpenAI = network round trip; local = inference on the device above.

@@ -68,6 +68,7 @@ JUNK_CAUTIOUS = [
     "[class*=breadcrumb]", "[class*=cookie]", "[id*=cookie]",
     "[class*=share]", "[class*=social]", "[class*=pagination]",
     "[class*=skip]", "[class*=carousel-control]",
+    "[data-elementor-type=popup]",   # Elementor pop-ups (full-screen menus, banners): in the HTML, hidden until clicked
 ]
 
 JUNK_STRUCTURE = ["header", "footer", "aside"]
@@ -139,12 +140,11 @@ def normalize_url(url):
     return urlunsplit((scheme, netloc, path, urlencode(pairs), ""))
 
 
-def belongs_to_domain(url, main_domain):
-    """Exact host comparison PLUS exceptions for WIMiR CDN and COK."""
+def belongs_to_domain(url, main_domain, extra_domains=()):
+    """Exact host comparison (www. ignored) plus the site's own `extra_domains` from sites.yaml
+    (e.g. a CDN that serves the site's pages). Other AGH sites are never followed - they have their own crawl."""
     netloc = netloc_without_www(url)
-    if netloc in ["cdn.imir.agh.edu.pl", "cok.agh.edu.pl", "www.cok.agh.edu.pl"]:
-        return True
-    return netloc == netloc_without_www(main_domain)
+    return netloc == netloc_without_www(main_domain) or netloc in {d.lower().removeprefix("www.") for d in extra_domains}
 
 
 def skip_foreign_language(url, cfg):
@@ -171,7 +171,7 @@ def evaluate_url(url, cfg):
     p = urlsplit(url)
     if p.scheme not in ("http", "https"):
         return "scheme"
-    if not belongs_to_domain(url, cfg["start_url"]):
+    if not belongs_to_domain(url, cfg["start_url"], cfg.get("extra_domains", ())):
         return "foreign_domain"
     if skip_foreign_language(url, cfg):
         return "language"
@@ -243,8 +243,49 @@ def clean_text(t):
     return re.sub(r"\n{3,}", "\n\n", t).strip()
 
 
+_MD_HEADING = re.compile(r"^(#{1,6})\s+\S")
+
+
+def drop_empty_headings(text):
+    """Removes headings with no content under them (next heading of the same or higher level, or end of page).
+    They are left behind when the block below was junk: TYPO3's visually-hidden "## Stopka" before the removed
+    footer, "## Partnerzy" over a removed logo slider, a form title over a removed form."""
+    lines = text.split("\n")
+    keep = [True] * len(lines)
+    for i, line in enumerate(lines):
+        m = _MD_HEADING.match(line)
+        if not m:
+            continue
+        level = len(m.group(1))
+        nxt = next((ln for ln in lines[i + 1:] if ln.strip()), None)
+        nm = _MD_HEADING.match(nxt) if nxt is not None else None
+        if nxt is None or (nm and len(nm.group(1)) <= level):
+            keep[i] = False
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(ln for ln, k in zip(lines, keep) if k)).strip()
+
+
 def html_to_markdown(root):
-    return clean_text(md(str(root), heading_style="ATX", strip=["img"], bullets="-"))
+    return drop_empty_headings(clean_text(md(str(root), heading_style="ATX", strip=["img"], bullets="-")))
+
+
+# Buttons that open an accordion panel or switch a tab carry the title of that panel ("KATEDRA FIZYKOCHEMII...").
+# "button" is junk (JUNK_CAUTIOUS), so without this the panels survive but lose their titles.
+TOGGLE_SELECTORS = (".accordion-button, [data-bs-toggle=collapse], [data-toggle=collapse], "
+                    "[data-bs-toggle=tab], [data-toggle=tab], [data-bs-toggle=pill], [role=tab]")
+_NAV_PARENTS = {"nav", "header", "footer"}
+
+
+def keep_toggle_labels(root, soup):
+    """Turns accordion / tab toggle buttons inside the content into <h3> headings (menu toggles are skipped)."""
+    for el in root.select(TOGGLE_SELECTORS):
+        if el.name not in ("button", "a", "span", "div", "li") or getattr(el, "decomposed", False):
+            continue
+        label = el.get_text(" ", strip=True)
+        if len(label) < 2 or el.find_parent(lambda t: t.name in _NAV_PARENTS or t.get("role") == "navigation"):
+            continue
+        h = soup.new_tag("h3")
+        h.string = label
+        el.replace_with(h)
 
 
 def extract_links(soup, base_url):
@@ -281,7 +322,14 @@ def process_page(soup, cfg, url):
     remove_elements(root, JUNK_UNCONDITIONAL, cautious=False)
     if fallback:
         remove_elements(root, JUNK_STRUCTURE, cautious=False)
-    remove_elements(root, JUNK_CAUTIOUS + cfg["additional_junk_selectors"], cautious=True)
+    # Site-specific selectors that name ONE element by id (#mainMenuNav, #unitMenu, #pageFooter) are removed
+    # regardless of size: TYPO3 mega-menus exceed MAX_JUNK_CHARS and used to survive the cautious pass, so the
+    # whole menu ended up in every page. Generic selectors (nav, header, form...) keep the size guard.
+    # The footer is saved once as _stopka.md before this function runs, so it is dropped from page bodies too.
+    site_junk = cfg["additional_junk_selectors"] + cfg.get("footer_selectors", [])
+    remove_elements(root, [sel for sel in site_junk if sel.startswith("#")], cautious=False)
+    keep_toggle_labels(root, soup)
+    remove_elements(root, JUNK_CAUTIOUS + [sel for sel in site_junk if not sel.startswith("#")], cautious=True)
     fix_links(root, url)
 
     h1 = root.find("h1")
@@ -691,6 +739,9 @@ if __name__ == "__main__":
     ap.add_argument("--config", help="alternative sites.yaml (default: config/sites.yaml or $RAG_SITES_FILE)")
     ap.add_argument("--reset", action="store_true", help="ignore saved state and start from scratch")
     ap.add_argument("--max-pages", dest="max_pages", type=int, default=None, help="page limit for this session (for testing)")
+    ap.add_argument("--archive-old", action="store_true",
+                    help="with --reset: move the existing pages folder to <folder>_old_<date> first, so pages that "
+                         "are no longer produced (removed, now too short, duplicates) do not stay behind")
     a = ap.parse_args()
 
     sites = get_sites(a.config)
@@ -701,4 +752,12 @@ if __name__ == "__main__":
         raise SystemExit(0 if a.list else "\nGive a site key, e.g.:  python scrape_html.py <site>")
     if a.profile not in sites.crawl_sites():
         raise SystemExit(f"Unknown site {a.profile!r}. Available: {', '.join(sites.crawl_sites())}")
-    crawl(sites.crawl_profile(a.profile), reset=a.reset, max_pages=a.max_pages)
+    profile = sites.crawl_profile(a.profile)
+    if a.archive_old:
+        if not a.reset:
+            raise SystemExit("--archive-old only makes sense together with --reset")
+        if os.path.isdir(profile["folder"]) and os.listdir(profile["folder"]):
+            target = f"{profile['folder']}_old_{datetime.now().strftime('%Y%m%d_%H%M')}"
+            os.rename(profile["folder"], target)
+            print(f"Old pages moved to {target} (delete it once the new crawl looks right)")
+    crawl(profile, reset=a.reset, max_pages=a.max_pages)

@@ -7,6 +7,9 @@ backend/.pytest_cache/
 backend/scripts/.eval_cache/
 backend/scripts/.eval_cache_full/
 backend/scripts/meta_eva_cache.sqlite
+backend/scripts/previous_databases/
+backend/scripts/previous_evaluations/
 previous/
 helpers/
 frontend/test-results/
+.pytest_cache/

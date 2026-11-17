@@ -1,0 +1,86 @@
+==============================================================================================================
+PRODUCTION CONFIGURATION EVALUATION (evaluate_production.py) - PART 1: RETRIEVAL
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: current | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Systems: embedded header (breadcrumb = Tytuł › Sekcja, source_title = [Źródło] Tytuł) x query expansion (yes/no). BM25 text, chunks, model, RRF and top 5 = production.
+LLM ms = mean latency of the expansion call (first, uncached call); 0 = no expansion.
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+planned ([Źródło] Tytuł, no exp.)   0.742  0.914     0.815 [0.79-0.84]     0.766 [0.73-0.80]       13       0
+breadcrumb, no expansion            0.717  0.900     0.797 [0.77-0.82]     0.748 [0.72-0.78]       16       0
+[Źródło] Tytuł + expansion          0.717  0.905     0.796 [0.77-0.82]     0.749 [0.72-0.78]       12    1142
+current (breadcrumb + expansion)    0.699  0.886     0.781 [0.75-0.81]     0.757 [0.73-0.79]       11    1142
+
+Differences vs current:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+planned ([Źródło] Tytuł, no exp.)          +0.034 [+0.02,+0.05] p=0.002*         +0.009 [-0.01,+0.03] p=0.987 
+breadcrumb, no expansion                   +0.016 [+0.00,+0.03] p=0.034*         -0.009 [-0.03,+0.01] p=0.987 
+[Źródło] Tytuł + expansion                 +0.015 [+0.00,+0.03] p=0.028*         -0.008 [-0.02,+0.01] p=0.987 
+current (breadcrumb + expansion)                              (baseline)                            (baseline)
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+planned ([Źródło] Tytuł, no exp.)                0.793               0.873               0.778
+breadcrumb, no expansion                         0.777               0.859               0.753
+[Źródło] Tytuł + expansion                       0.762               0.858               0.767
+current (breadcrumb + expansion)                 0.750               0.839               0.752
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+planned ([Źródło] Tytuł, no exp.)                0.826               0.870               0.726
+breadcrumb, no expansion                         0.837               0.849               0.690
+[Źródło] Tytuł + expansion                       0.813               0.856               0.696
+current (breadcrumb + expansion)                 0.814               0.849               0.656
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+planned ([Źródło] Tytuł, no exp.)                0.786               0.774               0.856
+breadcrumb, no expansion                         0.768               0.753               0.840
+[Źródło] Tytuł + expansion                       0.754               0.776               0.830
+current (breadcrumb + expansion)                 0.725               0.759               0.823
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+planned ([Źródło] Tytuł, no exp.)                0.824               0.814
+breadcrumb, no expansion                         0.789               0.798
+[Źródło] Tytuł + expansion                       0.804               0.795
+current (breadcrumb + expansion)                 0.770               0.782
+
+==============================================================================================================
+PART 2 - ANSWERS (300 questions, model gpt-4o-mini, judge gpt-4.1)
+==============================================================================================================
+System                              CtxHit@5         Correctness Fully corr.        Faithfulness   Citations
+--------------------------------------------------------------------------------------------------------------
+current (breadcrumb + expansion)       0.770   0.817 [0.78-0.85]       0.733   0.948 [0.93-0.97]       0.950
+planned ([Źródło] Tytuł, no exp.)      0.797   0.850 [0.81-0.88]       0.787   0.958 [0.94-0.98]       0.966
+
+planned - current (paired cluster bootstrap, Holm over the metrics below, * p < 0.05):
+   ctx_hit       +0.027 [-0.013, +0.071]  p=0.753
+   correctness   +0.033 [-0.002, +0.068]  p=0.256
+   correct       +0.053 [+0.010, +0.097]  p=0.066
+   faithfulness  +0.010 [-0.010, +0.030]  p=0.753
+   citations     +0.019 [+0.002, +0.036]  p=0.125
+   hallucination +0.000 [-0.016, +0.016]  p=1.000
+
+Per question (correctness 0-2): planned better 30, same 252, current better 18
+
+System                              refusals   right refusal   false refusal  hallucination  answer s med
+--------------------------------------------------------------------------------------------------------------
+current (breadcrumb + expansion)        0.10     0.95 (n=19)    0.01 (n=245)          0.017          1.5s
+planned ([Źródło] Tytuł, no exp.)       0.08     0.88 (n=16)    0.01 (n=255)          0.017          2.4s
+
+Correctness by question type:
+System                                  colloquial         lexical        semantic
+current (breadcrumb + expansion)             0.765           0.860           0.825
+planned ([Źródło] Tytuł, no exp.)            0.795           0.915           0.840
+
+Correctness by document type:
+System                                    dokument          strona         sylabus
+current (breadcrumb + expansion)             0.775           0.855           0.790
+planned ([Źródło] Tytuł, no exp.)            0.790           0.888           0.839
+
+Query expansion (current only): one extra gpt-4o-mini call before every search, mean 1142 ms / median 1096 ms (first, uncached calls). The planned setup skips it for standalone questions.
+Judge tokens this run (uncached calls): in 712553, out 31674 (~$1.68)

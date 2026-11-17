@@ -1,0 +1,69 @@
+==============================================================================================================
+EMBEDDING MODELS EVALUATION v2 (evaluate_embeddings.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: oai-small | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs, 27674 chunks | device for local models: cuda | exact cosine search over all chunks
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+OpenAI 3-large + BM25               0.758  0.935     0.833 [0.81-0.85]     0.809 [0.78-0.84]        6       0
+BGE-m3 + BM25                       0.743  0.933     0.824 [0.80-0.85]     0.779 [0.75-0.81]        3       0
+OpenAI 3-small (prod) + BM25        0.714  0.901     0.795 [0.77-0.82]     0.748 [0.72-0.78]        3       0
+BGE-m3                              0.715  0.887     0.792 [0.76-0.82]     0.728 [0.69-0.76]        3       0
+OpenAI 3-large                      0.699  0.901     0.785 [0.76-0.81]     0.773 [0.74-0.80]        6       0
+OpenAI 3-small (prod)               0.616  0.835     0.711 [0.68-0.74]     0.681 [0.65-0.72]        3       0
+
+Differences vs oai-small:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+OpenAI 3-large + BM25                      +0.122 [+0.10,+0.15] p=0.003*         +0.128 [+0.09,+0.16] p=0.003*
+BGE-m3 + BM25                              +0.113 [+0.09,+0.14] p=0.003*         +0.098 [+0.06,+0.13] p=0.003*
+OpenAI 3-small (prod) + BM25               +0.085 [+0.06,+0.11] p=0.003*         +0.066 [+0.04,+0.09] p=0.003*
+BGE-m3                                     +0.081 [+0.06,+0.11] p=0.003*         +0.047 [+0.01,+0.08] p=0.005*
+OpenAI 3-large                             +0.075 [+0.05,+0.10] p=0.003*         +0.092 [+0.06,+0.12] p=0.003*
+OpenAI 3-small (prod)                                         (baseline)                            (baseline)
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+OpenAI 3-large + BM25                            0.811               0.880               0.806
+BGE-m3 + BM25                                    0.793               0.893               0.783
+OpenAI 3-small (prod) + BM25                     0.776               0.859               0.750
+BGE-m3                                           0.761               0.858               0.755
+OpenAI 3-large                                   0.760               0.810               0.786
+OpenAI 3-small (prod)                            0.682               0.763               0.686
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+OpenAI 3-large + BM25                            0.860               0.901               0.711
+BGE-m3 + BM25                                    0.857               0.866               0.735
+OpenAI 3-small (prod) + BM25                     0.837               0.850               0.682
+BGE-m3                                           0.847               0.818               0.710
+OpenAI 3-large                                   0.839               0.822               0.689
+OpenAI 3-small (prod)                            0.762               0.744               0.621
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+OpenAI 3-large + BM25                            0.792               0.790               0.880
+BGE-m3 + BM25                                    0.776               0.782               0.874
+OpenAI 3-small (prod) + BM25                     0.765               0.750               0.839
+BGE-m3                                           0.746               0.733               0.852
+OpenAI 3-large                                   0.735               0.744               0.837
+OpenAI 3-small (prod)                            0.669               0.657               0.765
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+OpenAI 3-large + BM25                            0.819               0.834
+BGE-m3 + BM25                                    0.836               0.822
+OpenAI 3-small (prod) + BM25                     0.785               0.797
+BGE-m3                                           0.793               0.791
+OpenAI 3-large                                   0.753               0.789
+OpenAI 3-small (prod)                            0.689               0.713
+
+Cost side:
+Model                                 dim     build s    query ms (med/p95)  input format
+--------------------------------------------------------------------------------------------------------------
+OpenAI 3-small (prod)                1536           -          148 / 563     q='{q}' d='{text}'
+OpenAI 3-large                       3072         245          193 / 284     q='{q}' d='{text}'
+BGE-m3                               1024       14983           21 / 32      q='{q}' d='{text}'
+query ms: OpenAI = network round trip; local = inference on the device above.

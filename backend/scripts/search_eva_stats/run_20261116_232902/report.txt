@@ -1,0 +1,97 @@
+==============================================================================================================
+SEARCH EVALUATION v2 (evaluate_search.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: hybrid_stempel | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs, 27674 chunks | embeddings: openai:text-embedding-3-small:native | expansion: gpt-4o-mini (production prompt) | ES: http://localhost:9200
+Latency: dense = numpy exact search (not Chroma HNSW); hybrid = max of the two legs (they run in parallel in production); LLM ms = expansion, first uncached call.
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+Hybrid RRF (morfologik_stop)        0.730  0.908     0.804 [0.78-0.83]     0.758 [0.73-0.79]        8       0
+Hybrid RRF (stempel)                0.716  0.901     0.796 [0.77-0.82]     0.751 [0.72-0.78]        6       0
+
+Differences vs hybrid_stempel:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+Hybrid RRF (morfologik_stop)               +0.008 [-0.00,+0.02] p=0.104          +0.007 [-0.01,+0.02] p=0.346 
+Hybrid RRF (stempel)                                          (baseline)                            (baseline)
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+Hybrid RRF (morfologik_stop)                     0.784               0.858               0.770
+Hybrid RRF (stempel)                             0.777               0.858               0.752
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+Hybrid RRF (morfologik_stop)                     0.841               0.863               0.689
+Hybrid RRF (stempel)                             0.837               0.850               0.686
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+Hybrid RRF (morfologik_stop)                     0.775               0.755               0.850
+Hybrid RRF (stempel)                             0.765               0.750               0.842
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+Hybrid RRF (morfologik_stop)                     0.799               0.805
+Hybrid RRF (stempel)                             0.785               0.798
+
+Analyzer demo - tokens produced for:
+   "Studentki składały wnioski o stypendia rektora w dziekanatach wydziałów; terminy zaliczeń w sesji letniej."
+   standard         studentki składały wnioski o stypendia rektora w dziekanatach wydziałów terminy zaliczeń w sesji letniej
+   stempel          student składać wnioskeć stypendium rektor dziekanat wydział terować zaliczyć sesja letni
+   morfologik       studentka składać wniosek o ocean ojciec stypendium rektor w wiek dziekanat wydział termin zaliczenie w wiek sesja letni
+   morfologik_stop  studentka składać wniosek stypendium rektor dziekanat wydział termin zaliczenie sesja letni
+
+Questions where the best system (Hybrid RRF (morfologik_stop)) misses the top 5 (79), first 25:
+ - [lexical] Jaki jest minimalny termin złożenia wniosku o Honorowy Patronat Rektora AGH do Centrum Komunikacji i Marketingu AGH?
+     expected: Terms_and_Conditions_f1dae9cd.md (+0 copies) | got: Komunikat_terminy_skladania_wnioskow_s.rektora_2023-2024.md, Regulamin__Rozkrec_kolo_z_AMP_edycja_2025.md, uchwala_2027_2028_warunki_rekrutacji.md
+ - [semantic] Jakie obowiązki musi spełnić organizator wydarzenia, jeśli uzyska Honorowy Patronat Rektora AGH?
+     expected: Terms_and_Conditions_f1dae9cd.md (+0 copies) | got: wiki__Profesor_Honorowy_AGH_09ea4cb5.md, FAGH_sprawozdanie_roczne_2015_413be12f.md, wydzial__rada-spoleczna_9c604fbc.md
+ - [colloquial] Czy muszę mieć maila AGH, żeby zaliczać i zdawać egzaminy online?
+     expected: dydaktycy__zdalne-ksztalcenie__warunki_14fad42c.md (+0 copies) | got: Programowanie w środowisku Matlab.md, matematyka_AGH_Krak_35b9831a.md, systemy-i-serwisy-w-agh_6a31d804.md
+ - [colloquial] Czego się nauczę na tych zajęciach o dronach?
+     expected: ubpo__blok-innowacyjny__rejestracja-innowacyjne_7eabb642.md (+0 copies) | got: Psychologiczne aspekty reklamy.md, Nowoczesne rozwiązania w inspekcji bezpieczeństwa.md, Psychologiczne aspekty reklamy.md
+ - [colloquial] Masz może namiary do Cyfronetu AGH?
+     expected: Plan_Postępowan_2024_m5_101a1355.md (+6 copies) | got: pl__projects__national-projects__prace-lab-2_2d97cf7c.md, pl__projects__national-projects__prace-lab_9c28d3f1.md, pl__projects__national-projects__pionier_5de0079d.md
+ - [colloquial] Kto prowadzi sesję 2 na konferencji w Cyfronecie AGH?
+     expected: Program_KUKDM25_ae4e7e6d.md (+0 copies) | got: pl__events__our-conferences__kukdm-2025_1fde4cbc.md, pracownik__konferencje__konferencja-wo-2014_3b8cf75b.md, pl__events__our-conferences__kukdm-2024_58f1cdc8.md
+ - [semantic] Jakie podejście wykorzystuje się przy rozwijaniu i testowaniu rozwiązań w projekcie, w szczególności dotyczących oceny jakości danych i ich reprodukowalności?
+     expected: pl__projects__international-projects__eosc-data-commons_1124ea93.md (+0 copies) | got: Rozwiązywanie problemów badawczych z wykorzystaniem nowoczesnych_inteligentnych metod obliczeniowych.md, Data Science.md, nauka-i-wspolpraca__projekty__miedzynarodowe-eit-kic-raw_a8f3ddf9.md
+ - [lexical] Kto jest promotorem doktoratu Wojciecha Gomułki na AGH?
+     expected: pracownicy__lista-pracownikow-i-doktorantow_e4de0d4a.md (+0 copies) | got: Poswin_0874e79e.md, wiki__Profesor_Honorowy_AGH_09ea4cb5.md, kandydaci_49e8893a.md
+ - [semantic] Gdzie można znaleźć szczegółowe informacje o zasadach przyjęcia na studia drugiego stopnia prowadzone przez Wydział Inżynierii Mechanicznej i Robotyki?
+     expected: pl__studia__rekrutacja_7bf91161.md (+0 copies) | got: Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Inżynierii Mechanicznej i Robotyki.md, uchwala_2027_2028_warunki_rekrutacji.md, Podstawy mechatroniki.md
+ - [colloquial] Kto jest dziekanem na wydziale informatyki AGH?
+     expected: przewodniczący_ukw_-_powołanie_okw_wi_ff45ad2e.md (+0 copies) | got: Decyzja-Dziekana-1_2025_3a2e2241.md, Decyzja_nr_18_2020_cb2f00ca.md, wydzial_152c50f1.md
+ - [colloquial] Kto ogarnia dyplomy na informatyce na AGH?
+     expected: pl__studenci__jakosc-ksztalcenia1_123ddf98.md (+0 copies) | got: oferta-studiow-podyplomowych__chmury-obliczeniowe-i-sieci-komputerowe_7357fff6.md, strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md, kierunki-studiow__edukacja-techniczno-informatyczna_fc5eac9e.md
+ - [colloquial] Kto ogarnia kase na WIMiP i jak się z nimi skontaktować?
+     expected: page__biuro-dziekana_8c7aee8c.md (+0 copies) | got: GR2021_wyniki_podstawowe.md, kontakt_8ffe560b.md, kontakt_59765ca8.md
+ - [lexical] Jaki wydział prowadzi kierunek Zarządzanie i Inżynieria Produkcji na AGH?
+     expected: g2-technik__technik-mechatronik-17_9c739d35.md (+2 copies) | got: Kwalitologiczne podstawy inżynierii produkcji.md, Podstawy inżynierii systemów.md, Badania operacyjne.md
+ - [semantic] Które wydziały są odpowiedzialne za prowadzenie kierunku dotyczącego ekoprojektowania i cyfryzacji technologii materiałowych na AGH?
+     expected: g2-technik__technik-mechatronik-17_9c739d35.md (+1 copies) | got: Odlewnictwo artystyczne.md, jakksz_a881b7a3.md, Chemia.md
+ - [lexical] Który wydział AGH prowadzi kierunek Geofizyka?
+     expected: g2-technik__technik-wiertnik-17_ce47577c.md (+3 copies) | got: Pola potencjalne.md, Analiza danych geologiczno inżynierskich.md, Geofizyka.md
+ - [colloquial] Na jakim wydziale jest prowadzony kierunek Geoinżynieria i Górnictwo Otworowe na AGH?
+     expected: g2-technik__technik-wiertnik-17_ce47577c.md (+2 copies) | got: BHP i ergonomia I w górnictwie otworowym.md, BHP i ergonomia I w górnictwie otworowym.md, BHP i ergonomia I w górnictwie otworowym.md
+ - [lexical] Jakie tytuły uzyskuje się po ukończeniu studiów na kierunku Digital Production for Sustainable Manufacturing na Wydziale Zarządzania AGH?
+     expected: kierunki-studiow__digital-production-for-sustainable-manufacturing_62b784d0.md (+0 copies) | got: index_3fcc8ce7.md, kandydaci__studia-1-stopnia_bd38d79d.md, studies__jakosc-ksztalcenia_f3ceb00b.md
+ - [semantic] Jak absolwent kierunku Zarządzanie i Inżynieria Produkcji może skorzystać ze swojego wyniku egzaminu dyplomowego podczas rekrutacji na studia?
+     expected: kierunki-studiow__digital-production-for-sustainable-manufacturing_62b784d0.md (+0 copies) | got: kierunki-studiow__inzynieria-procesow-odlewniczych_36a905d1.md, kandydaci__studia-i-stopnia__inzynieria-materialowa_0c5ed1a8.md, kandydaci__rekrutacja_1493e490.md
+ - [semantic] Jakie praktyczne umiejętności i kompetencje można zdobyć kończąc program magisterski związany z energetyką odnawialną i transformacją energetyczną?
+     expected: kierunki-studiow__sustainable-energy-systems_4ca068c2.md (+0 copies) | got: Podstawy polityki energetycznej i ekologicznej.md, Dekarbonizacja w energetyce i przemyśle.md, Podstawy polityki energetycznej i ekologicznej.md
+ - [colloquial] To kiedy wchodzą w życie te nowe zasady dotyczące kasy na stypendia dla doktorantów na AGH?
+     expected: ZARZADZENIE_58_2026_ws_Regulaminu_wyplacania_stypendium_2026_09_14_3035076b.md (+3 copies) | got: REGULAMIN_PRZYZNAWANIA_PRZEZ_FUNDACJE_MASPEX_23.03.2026_cc78e3fa.md, nawa-ster__konkurs-na-stypednia_29c30b50.md, nawa-ster__konkurs-na-stypendia-doktoranckie-x-xii-2026_86de5a15.md
+ - [colloquial] Co trzeba zrobić na ustnym z angielskiego B2 na AGH i na co patrzą przy ocenie?
+     expected: zarzadzenie-rektora-agh-35-2017_zalacznik_nr_1_30477acc.md (+0 copies) | got: Specjalistyczny język angielski B2+.md, Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Wiertnictw....md, Język angielski B2+ STUDIA NIESTACJONARNE - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla student....md
+ - [semantic] Gdzie powinien zgłosić się student Wydziału Fizyki i Informatyki Stosowanej, jeśli potrzebuje kontaktu z osobą odpowiedzialną za sprawy kształcenia?
+     expected: osoba__agnieszka-oblakowska-mucha-5246.html_66f1cb82.md (+0 copies) | got: matematyka_AGH_Krak_35b9831a.md, osoba__grzegorz-golaszewski-8945.html_7f32de4f.md, regulamin_f06f2a90.md
+ - [semantic] Jak można się skontaktować z osobą pełniącą funkcję zastępcy przewodniczącego związku zawodowego na AGH?
+     expected: osoba__anna-mlynarczykowska-5949.html_de398d1a.md (+0 copies) | got: o-nas__sklad-urss_f125209b.md, Komunikat_wyskosc_stypendiow_rok_akademicki_2024_2025.md, ordynacja-wyborcza-samorzadu-studentow-agh-2026_b98a2c8f.md
+ - [semantic] Gdzie należy się udać, jeśli ktoś chce spotkać się z osobą odpowiedzialną za sprawy kształcenia na wydziale informatyki AGH?
+     expected: osoba__jacek-kolodziej-5864.html_6f8ae046.md (+0 copies) | got: oferta-studiow-podyplomowych__chmury-obliczeniowe-i-sieci-komputerowe_7357fff6.md, pl__studia__jakosc-ksztalcenia_951134b6.md, regulamin_f06f2a90.md
+ - [colloquial] Gdzie znajdę prodziekana ds. kształcenia z WEiTI AGH?
+     expected: osoba__jacek-kolodziej-5864.html_6f8ae046.md (+0 copies) | got: ProdziekanDs.Ksztalcenia_d27a39da.md, pl__wydzial__wladze_wydzialu__prodziekani_9b6cf38e.md, strefa-studenta__jakosc-ksztalcenia_d64a60aa.md

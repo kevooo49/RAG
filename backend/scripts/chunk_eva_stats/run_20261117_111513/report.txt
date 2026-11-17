@@ -1,0 +1,169 @@
+==============================================================================================================
+CHUNKING EVALUATION (evaluate_chunking.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: hybrid:production | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs | embeddings: openai:text-embedding-3-small:native | BM25: ES `polish` | no query expansion | CtxHit@B budget: 4385 chars (= 5 x mean production chunk)
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+Fixed matched + title · hybrid      0.734  0.909     0.809 [0.78-0.83]     0.719 [0.69-0.75]        9       0
+Production (300 tok) · hybrid       0.727  0.907     0.800 [0.77-0.83]     0.686 [0.65-0.72]       12       0
+Paragraphs matched + title · hybr   0.715  0.913     0.799 [0.77-0.82]     0.716 [0.68-0.75]       16       0
+Production (450 tok) · hybrid       0.717  0.901     0.797 [0.77-0.82]     0.748 [0.72-0.78]       11       0
+Production (200 tok) · hybrid       0.710  0.917     0.794 [0.77-0.82]     0.590 [0.55-0.63]       20       0
+Production (650 tok) · hybrid       0.700  0.916     0.791 [0.77-0.82]     0.778 [0.75-0.81]        8       0
+Fixed 2000 chars · hybrid           0.676  0.879     0.761 [0.73-0.79]     0.750 [0.72-0.78]       10       0
+Fixed 1000 chars · hybrid           0.673  0.872     0.759 [0.73-0.79]     0.698 [0.66-0.73]        8       0
+Fixed matched + title · dense       0.662  0.862     0.746 [0.72-0.77]     0.673 [0.64-0.71]        4       0
+Paragraphs matched + title · dens   0.634  0.852     0.727 [0.70-0.76]     0.644 [0.61-0.68]        7       0
+Fixed 500 chars · hybrid            0.642  0.853     0.726 [0.70-0.76]     0.541 [0.50-0.58]       11       0
+Production (300 tok) · dense        0.641  0.836     0.726 [0.69-0.76]     0.630 [0.59-0.67]        5       0
+Production (200 tok) · dense        0.635  0.850     0.725 [0.70-0.75]     0.549 [0.51-0.59]       10       0
+Production (650 tok) · dense        0.619  0.841     0.713 [0.68-0.74]     0.683 [0.65-0.72]        3       0
+Production (450 tok) · dense        0.617  0.835     0.711 [0.68-0.74]     0.681 [0.65-0.72]        3       0
+Fixed 2000 chars · dense            0.578  0.779     0.664 [0.63-0.70]     0.630 [0.59-0.67]        3       0
+Fixed 1000 chars · dense            0.576  0.777     0.662 [0.63-0.70]     0.599 [0.56-0.64]        3       0
+Fixed 500 chars · dense             0.566  0.770     0.652 [0.62-0.69]     0.510 [0.47-0.55]        5       0
+
+Differences vs hybrid:production:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+Fixed matched + title · hybrid             +0.012 [-0.00,+0.03] p=0.950          -0.029 [-0.06,-0.00] p=0.087 
+Production (300 tok) · hybrid              +0.003 [-0.01,+0.02] p=1.000          -0.062 [-0.09,-0.03] p=0.009*
+Paragraphs matched + title · hybr          +0.002 [-0.01,+0.02] p=1.000          -0.031 [-0.06,-0.00] p=0.087 
+Production (450 tok) · hybrid                                 (baseline)                            (baseline)
+Production (200 tok) · hybrid              -0.003 [-0.02,+0.01] p=1.000          -0.158 [-0.19,-0.13] p=0.009*
+Production (650 tok) · hybrid              -0.006 [-0.02,+0.01] p=1.000          +0.030 [+0.01,+0.05] p=0.032*
+Fixed 2000 chars · hybrid                  -0.036 [-0.06,-0.01] p=0.009*         +0.002 [-0.03,+0.03] p=0.913 
+Fixed 1000 chars · hybrid                  -0.039 [-0.06,-0.02] p=0.009*         -0.050 [-0.08,-0.02] p=0.009*
+Fixed matched + title · dense              -0.051 [-0.07,-0.03] p=0.009*         -0.074 [-0.10,-0.04] p=0.009*
+Paragraphs matched + title · dens          -0.070 [-0.09,-0.05] p=0.009*         -0.103 [-0.13,-0.07] p=0.009*
+Fixed 500 chars · hybrid                   -0.071 [-0.09,-0.05] p=0.009*         -0.207 [-0.24,-0.17] p=0.009*
+Production (300 tok) · dense               -0.072 [-0.09,-0.05] p=0.009*         -0.117 [-0.15,-0.09] p=0.009*
+Production (200 tok) · dense               -0.072 [-0.10,-0.05] p=0.009*         -0.199 [-0.23,-0.17] p=0.009*
+Production (650 tok) · dense               -0.085 [-0.11,-0.06] p=0.009*         -0.065 [-0.10,-0.04] p=0.009*
+Production (450 tok) · dense               -0.086 [-0.11,-0.07] p=0.009*         -0.066 [-0.09,-0.04] p=0.009*
+Fixed 2000 chars · dense                   -0.133 [-0.16,-0.10] p=0.009*         -0.117 [-0.15,-0.08] p=0.009*
+Fixed 1000 chars · dense                   -0.135 [-0.16,-0.11] p=0.009*         -0.149 [-0.19,-0.11] p=0.009*
+Fixed 500 chars · dense                    -0.145 [-0.17,-0.12] p=0.009*         -0.237 [-0.27,-0.20] p=0.009*
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+Fixed matched + title · hybrid                   0.778               0.880               0.767
+Production (300 tok) · hybrid                    0.780               0.845               0.774
+Paragraphs matched + title · hybr                0.768               0.870               0.759
+Production (450 tok) · hybrid                    0.778               0.859               0.753
+Production (200 tok) · hybrid                    0.764               0.866               0.752
+Production (650 tok) · hybrid                    0.782               0.836               0.754
+Fixed 2000 chars · hybrid                        0.762               0.802               0.718
+Fixed 1000 chars · hybrid                        0.722               0.820               0.733
+Fixed matched + title · dense                    0.725               0.798               0.714
+Paragraphs matched + title · dens                0.710               0.784               0.687
+Fixed 500 chars · hybrid                         0.682               0.775               0.722
+Production (300 tok) · dense                     0.714               0.769               0.693
+Production (200 tok) · dense                     0.708               0.783               0.683
+Production (650 tok) · dense                     0.693               0.770               0.673
+Production (450 tok) · dense                     0.684               0.763               0.686
+Fixed 2000 chars · dense                         0.654               0.693               0.643
+Fixed 1000 chars · dense                         0.613               0.717               0.655
+Fixed 500 chars · dense                          0.605               0.701               0.651
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+Fixed matched + title · hybrid                   0.813               0.844               0.753
+Production (300 tok) · hybrid                    0.811               0.858               0.707
+Paragraphs matched + title · hybr                0.816               0.852               0.710
+Production (450 tok) · hybrid                    0.837               0.849               0.690
+Production (200 tok) · hybrid                    0.807               0.858               0.691
+Production (650 tok) · hybrid                    0.834               0.844               0.680
+Fixed 2000 chars · hybrid                        0.775               0.841               0.634
+Fixed 1000 chars · hybrid                        0.764               0.858               0.609
+Fixed matched + title · dense                    0.783               0.763               0.691
+Paragraphs matched + title · dens                0.776               0.759               0.642
+Fixed 500 chars · hybrid                         0.759               0.824               0.559
+Production (300 tok) · dense                     0.756               0.777               0.627
+Production (200 tok) · dense                     0.763               0.773               0.625
+Production (650 tok) · dense                     0.743               0.753               0.630
+Production (450 tok) · dense                     0.762               0.744               0.622
+Fixed 2000 chars · dense                         0.687               0.763               0.501
+Fixed 1000 chars · dense                         0.710               0.770               0.466
+Fixed 500 chars · dense                          0.737               0.756               0.434
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+Fixed matched + title · hybrid                   0.762               0.783               0.848
+Production (300 tok) · hybrid                    0.759               0.770               0.839
+Paragraphs matched + title · hybr                0.761               0.757               0.846
+Production (450 tok) · hybrid                    0.768               0.754               0.840
+Production (200 tok) · hybrid                    0.758               0.765               0.831
+Production (650 tok) · hybrid                    0.759               0.745               0.837
+Fixed 2000 chars · hybrid                        0.698               0.762               0.792
+Fixed 1000 chars · hybrid                        0.688               0.743               0.804
+Fixed matched + title · dense                    0.707               0.714               0.786
+Paragraphs matched + title · dens                0.683               0.681               0.779
+Fixed 500 chars · hybrid                         0.693               0.697               0.762
+Production (300 tok) · dense                     0.675               0.691               0.773
+Production (200 tok) · dense                     0.681               0.684               0.773
+Production (650 tok) · dense                     0.666               0.675               0.760
+Production (450 tok) · dense                     0.671               0.656               0.767
+Fixed 2000 chars · dense                         0.597               0.635               0.716
+Fixed 1000 chars · dense                         0.564               0.650               0.718
+Fixed 500 chars · dense                          0.594               0.642               0.687
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+Fixed matched + title · hybrid                   0.829               0.806
+Production (300 tok) · hybrid                    0.799               0.800
+Paragraphs matched + title · hybr                0.819               0.797
+Production (450 tok) · hybrid                    0.789               0.798
+Production (200 tok) · hybrid                    0.789               0.795
+Production (650 tok) · hybrid                    0.792               0.791
+Fixed 2000 chars · hybrid                        0.758               0.762
+Fixed 1000 chars · hybrid                        0.716               0.764
+Fixed matched + title · dense                    0.757               0.744
+Paragraphs matched + title · dens                0.753               0.724
+Fixed 500 chars · hybrid                         0.629               0.739
+Production (300 tok) · dense                     0.738               0.724
+Production (200 tok) · dense                     0.727               0.725
+Production (650 tok) · dense                     0.724               0.711
+Production (450 tok) · dense                     0.688               0.714
+Fixed 2000 chars · dense                         0.636               0.667
+Fixed 1000 chars · dense                         0.583               0.671
+Fixed 500 chars · dense                          0.510               0.670
+
+Fixed text budget (CtxHit@B) and LLM context size, differences vs hybrid:production:
+System                                           CtxHit@B [95% CI]                             dCtxHit@B  ctx chars
+-------------------------------------------------------------------------------------------------------------------
+Paragraphs matched + title · hybrid              0.740 [0.71-0.77]         +0.003 [-0.02,+0.03] p=0.848        3605
+Production (450 tok) · hybrid                    0.736 [0.70-0.77]                            (baseline)       4274
+Production (650 tok) · hybrid                    0.723 [0.69-0.75]         -0.013 [-0.03,+0.01] p=0.688        5780
+Production (300 tok) · hybrid                    0.717 [0.68-0.75]         -0.019 [-0.05,+0.01] p=0.688        2852
+Fixed matched + title · hybrid                   0.717 [0.69-0.75]         -0.019 [-0.05,+0.01] p=0.688        4237
+Production (200 tok) · hybrid                    0.683 [0.65-0.72]         -0.053 [-0.08,-0.02] p=0.009*       1846
+Fixed 1000 chars · hybrid                        0.672 [0.63-0.71]         -0.064 [-0.10,-0.03] p=0.009*       4998
+Fixed matched + title · dense                    0.671 [0.64-0.70]         -0.065 [-0.10,-0.04] p=0.009*       4228
+Production (450 tok) · dense                     0.669 [0.63-0.70]         -0.067 [-0.09,-0.04] p=0.009*       4219
+Production (300 tok) · dense                     0.669 [0.63-0.70]         -0.067 [-0.10,-0.04] p=0.009*       2820
+Paragraphs matched + title · dense               0.663 [0.63-0.70]         -0.073 [-0.10,-0.05] p=0.009*       3552
+Production (200 tok) · dense                     0.642 [0.61-0.68]         -0.094 [-0.12,-0.06] p=0.009*       1837
+Production (650 tok) · dense                     0.633 [0.60-0.67]         -0.103 [-0.13,-0.07] p=0.009*       5624
+Fixed 2000 chars · hybrid                        0.631 [0.59-0.67]         -0.105 [-0.14,-0.07] p=0.009*       9848
+Fixed 500 chars · hybrid                         0.598 [0.56-0.64]         -0.138 [-0.17,-0.11] p=0.009*       2498
+Fixed 1000 chars · dense                         0.578 [0.54-0.62]         -0.158 [-0.19,-0.12] p=0.009*       4998
+Fixed 500 chars · dense                          0.563 [0.52-0.60]         -0.173 [-0.21,-0.14] p=0.009*       2498
+Fixed 2000 chars · dense                         0.517 [0.48-0.56]         -0.219 [-0.26,-0.18] p=0.009*       9676
+
+Strategy statistics:
+Strategy                        chunks  per doc  mean ch  median     p95   ~emb tok  no-evid q
+----------------------------------------------------------------------------------------------
+Production (450 tok)             27674     13.8      878     862    1274       7.6M         14
+Production (200 tok)             83966     42.0      425     382     566      10.8M         62
+Production (300 tok)             45013     22.5      610     578     885       8.5M         20
+Production (650 tok)             19870      9.9     1147    1050    1794       7.1M         12
+Fixed 500 chars                  45115     22.6      487     500     500       7.0M         13
+Fixed 1000 chars                 22954     11.5      957    1000    1000       6.9M          1
+Fixed 2000 chars                 11875      5.9     1843    2000    2000       6.9M          0
+Fixed matched + title            27824     13.9      827     851     893       7.3M          1
+Paragraphs matched + title       32918     16.5      667     777     884       6.9M          3
+no-evid q: questions for which no chunk of that strategy contains the evidence quote (the quote is cut by chunk borders).

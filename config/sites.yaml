@@ -418,10 +418,15 @@ sites:
     documents:
       legal_headers: true
     crawl:
-      content_selectors: []
+      content_selectors:
+      - main#main
+      - main
       footer_selectors:
       - footer.footer
       additional_junk_selectors:
+      - .wp-block-pomoc
+      - .wp-block-partnerzy
+      - .wp-block-form
       - nav
       - header.header
       - '#cookieconsent'
@@ -510,6 +515,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -566,6 +572,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -592,6 +599,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -646,6 +654,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -761,6 +770,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -846,6 +856,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -874,6 +885,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -932,6 +944,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -991,6 +1004,7 @@ sites:
       footer_selectors:
       - '#pageFooter'
       additional_junk_selectors:
+      - '#unitMenu'
       - nav
       - '#mainMenuNav'
       - '#cookieconsent'
@@ -1056,6 +1070,8 @@ sites:
     documents:
       legal_headers: true
     crawl:
+      extra_domains:
+      - cdn.imir.agh.edu.pl
       requires_js: true
       content_selectors:
       - '#page-detail-content'

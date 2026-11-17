@@ -1,0 +1,139 @@
+==============================================================================================================
+SEARCH EVALUATION v2 (evaluate_search.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: hybrid_stempel_exp | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs, 27674 chunks | embeddings: openai:text-embedding-3-small:native | expansion: gpt-4o-mini (production prompt) | ES: http://localhost:9200
+Latency: dense = numpy exact search (not Chroma HNSW); hybrid = max of the two legs (they run in parallel in production); LLM ms = expansion, first uncached call.
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+Hybrid RRF (stempel)                0.716  0.901     0.796 [0.77-0.82]     0.751 [0.72-0.78]        6       0
+Hybrid RRF (morfologik)             0.722  0.894     0.793 [0.77-0.82]     0.752 [0.72-0.78]        8       0
+Hybrid (morfologik) + Expansion     0.699  0.878     0.779 [0.75-0.80]     0.752 [0.72-0.78]        8    1413
+Hybrid (stempel) + Expansion        0.698  0.874     0.778 [0.75-0.80]     0.751 [0.72-0.78]        6    1413
+BM25 (morfologik_stop)              0.687  0.859     0.762 [0.73-0.79]     0.676 [0.64-0.71]        6       0
+BM25 (stempel)                      0.685  0.848     0.755 [0.73-0.78]     0.665 [0.63-0.70]        6       0
+BM25 (morfologik)                   0.655  0.842     0.734 [0.70-0.76]     0.657 [0.62-0.69]        8       0
+Vector (dense)                      0.616  0.835     0.711 [0.68-0.74]     0.681 [0.65-0.72]        4       0
+BM25 (standard)                     0.556  0.752     0.640 [0.61-0.67]     0.535 [0.50-0.57]       13       0
+
+Differences vs hybrid_stempel_exp:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+Hybrid RRF (stempel)                       +0.019 [+0.00,+0.03] p=0.030*         +0.000 [-0.02,+0.02] p=1.000 
+Hybrid RRF (morfologik)                    +0.016 [+0.00,+0.03] p=0.180          +0.001 [-0.02,+0.02] p=1.000 
+Hybrid (morfologik) + Expansion            +0.001 [-0.01,+0.01] p=0.843          +0.001 [-0.01,+0.02] p=1.000 
+Hybrid (stempel) + Expansion                                  (baseline)                            (baseline)
+BM25 (morfologik_stop)                     -0.016 [-0.04,+0.01] p=0.476          -0.076 [-0.10,-0.05] p=0.004*
+BM25 (stempel)                             -0.022 [-0.05,+0.00] p=0.219          -0.086 [-0.11,-0.06] p=0.004*
+BM25 (morfologik)                          -0.043 [-0.07,-0.02] p=0.004*         -0.094 [-0.12,-0.06] p=0.004*
+Vector (dense)                             -0.067 [-0.09,-0.05] p=0.004*         -0.070 [-0.10,-0.04] p=0.004*
+BM25 (standard)                            -0.138 [-0.17,-0.11] p=0.004*         -0.216 [-0.25,-0.18] p=0.004*
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+Hybrid RRF (stempel)                             0.777               0.858               0.752
+Hybrid RRF (morfologik)                          0.762               0.866               0.750
+Hybrid (morfologik) + Expansion                  0.750               0.832               0.754
+Hybrid (stempel) + Expansion                     0.753               0.833               0.746
+BM25 (morfologik_stop)                           0.698               0.861               0.725
+BM25 (stempel)                                   0.702               0.852               0.711
+BM25 (morfologik)                                0.638               0.857               0.707
+Vector (dense)                                   0.682               0.763               0.686
+BM25 (standard)                                  0.535               0.807               0.575
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+Hybrid RRF (stempel)                             0.837               0.850               0.686
+Hybrid RRF (morfologik)                          0.828               0.845               0.690
+Hybrid (morfologik) + Expansion                  0.812               0.845               0.655
+Hybrid (stempel) + Expansion                     0.811               0.843               0.656
+BM25 (morfologik_stop)                           0.764               0.827               0.665
+BM25 (stempel)                                   0.768               0.823               0.647
+BM25 (morfologik)                                0.739               0.809               0.622
+Vector (dense)                                   0.762               0.744               0.621
+BM25 (standard)                                  0.669               0.723               0.495
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+Hybrid RRF (stempel)                             0.765               0.750               0.842
+Hybrid RRF (morfologik)                          0.757               0.757               0.834
+Hybrid (morfologik) + Expansion                  0.732               0.755               0.817
+Hybrid (stempel) + Expansion                     0.723               0.761               0.815
+BM25 (morfologik_stop)                           0.678               0.745               0.815
+BM25 (stempel)                                   0.680               0.739               0.804
+BM25 (morfologik)                                0.658               0.726               0.778
+Vector (dense)                                   0.669               0.657               0.765
+BM25 (standard)                                  0.570               0.633               0.679
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+Hybrid RRF (stempel)                             0.785               0.798
+Hybrid RRF (morfologik)                          0.796               0.793
+Hybrid (morfologik) + Expansion                  0.778               0.779
+Hybrid (stempel) + Expansion                     0.762               0.780
+BM25 (morfologik_stop)                           0.744               0.764
+BM25 (stempel)                                   0.732               0.758
+BM25 (morfologik)                                0.681               0.741
+Vector (dense)                                   0.689               0.713
+BM25 (standard)                                  0.554               0.650
+
+Analyzer demo - tokens produced for:
+   "Studentki składały wnioski o stypendia rektora w dziekanatach wydziałów; terminy zaliczeń w sesji letniej."
+   standard         studentki składały wnioski o stypendia rektora w dziekanatach wydziałów terminy zaliczeń w sesji letniej
+   stempel          student składać wnioskeć stypendium rektor dziekanat wydział terować zaliczyć sesja letni
+   morfologik       studentka składać wniosek o ocean ojciec stypendium rektor w wiek dziekanat wydział termin zaliczenie w wiek sesja letni
+   morfologik_stop  studentka składać wniosek stypendium rektor dziekanat wydział termin zaliczenie sesja letni
+
+Questions where the best system (Hybrid RRF (stempel)) misses the top 5 (85), first 25:
+ - [semantic] Jakie obowiązki musi spełnić organizator wydarzenia, jeśli uzyska Honorowy Patronat Rektora AGH?
+     expected: Terms_and_Conditions_f1dae9cd.md (+0 copies) | got: wiki__Profesor_Honorowy_AGH_09ea4cb5.md, FAGH_sprawozdanie_roczne_2015_413be12f.md, wydzial__rada-spoleczna_9c604fbc.md
+ - [colloquial] Czy muszę mieć maila AGH, żeby zaliczać i zdawać egzaminy online?
+     expected: dydaktycy__zdalne-ksztalcenie__warunki_14fad42c.md (+0 copies) | got: Programowanie w środowisku Matlab.md, matematyka_AGH_Krak_35b9831a.md, systemy-i-serwisy-w-agh_6a31d804.md
+ - [colloquial] Czego się nauczę na tych zajęciach o dronach?
+     expected: ubpo__blok-innowacyjny__rejestracja-innowacyjne_7eabb642.md (+0 copies) | got: Nowoczesne rozwiązania w inspekcji bezpieczeństwa.md, Fotogrametria.md, Marketing Internetowy.md
+ - [colloquial] Czy mogę kupić sprzęt za więcej niż 10 tys. zł z kasy projektu z "Rozkręć koło z AMP"?
+     expected: Regulamin__Rozkrec_kolo_z_AMP_edycja_2025.md (+0 copies) | got: GR2021_wyniki_podstawowe.md, FAGH_sprawozdanie_roczne_2011_5238511d.md, category__faq-questions__page__4_aeaebd6a.md
+ - [colloquial] Kto prowadzi sesję 2 na konferencji w Cyfronecie AGH?
+     expected: Program_KUKDM25_ae4e7e6d.md (+0 copies) | got: pl__events__our-conferences__kukdm-2025_1fde4cbc.md, pracownik__konferencje__konferencja-wo-2014_3b8cf75b.md, pl__events__our-conferences__kukdm-2024_58f1cdc8.md
+ - [semantic] Jakie podejście wykorzystuje się przy rozwijaniu i testowaniu rozwiązań w projekcie, w szczególności dotyczących oceny jakości danych i ich reprodukowalności?
+     expected: pl__projects__international-projects__eosc-data-commons_1124ea93.md (+0 copies) | got: Rozwiązywanie problemów badawczych z wykorzystaniem nowoczesnych_inteligentnych metod obliczeniowych.md, Data Science.md, Metody badań.md
+ - [lexical] Kto jest promotorem doktoratu Wojciecha Gomułki na AGH?
+     expected: pracownicy__lista-pracownikow-i-doktorantow_e4de0d4a.md (+0 copies) | got: uchwaly_RD_z_dnia_25_listopada_nr__33-36_2024_r_87c552f0.md, Poswin_0874e79e.md, wiki__Profesor_Honorowy_AGH_09ea4cb5.md
+ - [semantic] Jakie warunki musi spełnić student, aby przystąpić do zdalnego egzaminu dyplomowego na AGH?
+     expected: Z_1_oswiadczenie_obrona_online_2021_2304a252.md (+3 copies) | got: Chemia fizyczna II.md, dydaktycy__zdalne-ksztalcenie__warunki_14fad42c.md, Elektroenergetyczne sieci rozdzielcze.md
+ - [semantic] Gdzie można znaleźć szczegółowe informacje o zasadach przyjęcia na studia drugiego stopnia prowadzone przez Wydział Inżynierii Mechanicznej i Robotyki?
+     expected: pl__studia__rekrutacja_7bf91161.md (+0 copies) | got: Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Inżynierii Mechanicznej i Robotyki.md, uchwala_2027_2028_warunki_rekrutacji.md, Podstawy mechatroniki.md
+ - [colloquial] Kto ogarnia dyplomy na informatyce na AGH?
+     expected: pl__studenci__jakosc-ksztalcenia1_123ddf98.md (+0 copies) | got: strefa-studenta-prod__legitymacje__dyplomy_026fa19e.md, cyberbezpieczenstwo-liderem-pierwszego-cyklu-rekrutacji-na-agh_15548407.md, Poswin_0874e79e.md
+ - [colloquial] Jak się liczy srednia ocen na AGH, w sensie jaki wzór i co się bierze pod uwagę?
+     expected: ocena_srednia_b93c7fd7.md (+0 copies) | got: Biologia i ekologia.md, Biologia i ekologia.md, Biologia i ekologia.md
+ - [semantic] Jakie zgody są wymagane do wprowadzenia nowego tytułu pracy dyplomowej po zmianie tematu?
+     expected: zmiana_tematu-2_0c80bd1f.md (+0 copies) | got: page__procedura-zmiany-tematu_26c2d610.md, b21_443e52c2.md, studenci__projekty-i-prace-dyplomowe_3bf43a7e.md
+ - [colloquial] Kto ogarnia kase na WIMiP i jak się z nimi skontaktować?
+     expected: page__biuro-dziekana_8c7aee8c.md (+0 copies) | got: GR2021_wyniki_podstawowe.md, kontakt_8ffe560b.md, kontakt_59765ca8.md
+ - [semantic] Jaką informację należy podać na świadectwie podyplomówek dla nauczycieli, jeśli studia obejmowały praktyki zawodowe?
+     expected: Zalacznik_10_6bb54829.md (+0 copies) | got: Poswin_0874e79e.md, Praktyka zawodowa.md, Praktyka zawodowa.md
+ - [semantic] Jakie ogólne wymagania dotyczące wykształcenia i umiejętności musi spełnić kandydat, aby móc rozpocząć te studia podyplomowe?
+     expected: oferta-studiow-podyplomowych__chmury-obliczeniowe-i-sieci-komputerowe_7357fff6.md (+0 copies) | got: pl__studia_96494bc4.md, Poswin_0874e79e.md, kandydaci__rekrutacja_1493e490.md
+ - [lexical] Jaki wydział prowadzi kierunek Zarządzanie i Inżynieria Produkcji na AGH?
+     expected: g2-technik__technik-mechatronik-17_9c739d35.md (+2 copies) | got: Kwalitologiczne podstawy inżynierii produkcji.md, Podstawy inżynierii systemów.md, kontakt_59765ca8.md
+ - [semantic] Które wydziały są odpowiedzialne za prowadzenie kierunku dotyczącego ekoprojektowania i cyfryzacji technologii materiałowych na AGH?
+     expected: g2-technik__technik-mechatronik-17_9c739d35.md (+1 copies) | got: jakksz_a881b7a3.md, Odlewnictwo artystyczne.md, Chemia.md
+ - [lexical] Który wydział AGH prowadzi kierunek Geofizyka?
+     expected: g2-technik__technik-wiertnik-17_ce47577c.md (+3 copies) | got: Analiza danych geologiczno inżynierskich.md, Geofizyka.md, Pola potencjalne.md
+ - [colloquial] Na jakim wydziale jest prowadzony kierunek Geoinżynieria i Górnictwo Otworowe na AGH?
+     expected: g2-technik__technik-wiertnik-17_ce47577c.md (+2 copies) | got: BHP i ergonomia I w górnictwie otworowym.md, BHP i ergonomia I w górnictwie otworowym.md, BHP i ergonomia I w górnictwie otworowym.md
+ - [lexical] Jakie tytuły uzyskuje się po ukończeniu studiów na kierunku Digital Production for Sustainable Manufacturing na Wydziale Zarządzania AGH?
+     expected: kierunki-studiow__digital-production-for-sustainable-manufacturing_62b784d0.md (+0 copies) | got: index_3fcc8ce7.md, studies__jakosc-ksztalcenia_f3ceb00b.md, kandydaci__studia-1-stopnia_bd38d79d.md
+ - [semantic] Jak absolwent kierunku Zarządzanie i Inżynieria Produkcji może skorzystać ze swojego wyniku egzaminu dyplomowego podczas rekrutacji na studia?
+     expected: kierunki-studiow__digital-production-for-sustainable-manufacturing_62b784d0.md (+0 copies) | got: kierunki-studiow__inzynieria-procesow-odlewniczych_36a905d1.md, kandydaci__rekrutacja_1493e490.md, studies__jakosc-ksztalcenia_f3ceb00b.md
+ - [semantic] Jakie praktyczne umiejętności i kompetencje można zdobyć kończąc program magisterski związany z energetyką odnawialną i transformacją energetyczną?
+     expected: kierunki-studiow__sustainable-energy-systems_4ca068c2.md (+0 copies) | got: Podstawy polityki energetycznej i ekologicznej.md, Podstawy polityki energetycznej i ekologicznej.md, Podstawy polityki energetycznej i ekologicznej.md
+ - [colloquial] Co trzeba zrobić na ustnym z angielskiego B2 na AGH i na co patrzą przy ocenie?
+     expected: zarzadzenie-rektora-agh-35-2017_zalacznik_nr_1_30477acc.md (+0 copies) | got: Specjalistyczny język angielski B2+.md, Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Wiertnictw....md, Język angielski B2+ STUDIA NIESTACJONARNE - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla student....md
+ - [semantic] Gdzie powinien zgłosić się student Wydziału Fizyki i Informatyki Stosowanej, jeśli potrzebuje kontaktu z osobą odpowiedzialną za sprawy kształcenia?
+     expected: osoba__agnieszka-oblakowska-mucha-5246.html_66f1cb82.md (+0 copies) | got: matematyka_AGH_Krak_35b9831a.md, osoba__grzegorz-golaszewski-8945.html_7f32de4f.md, majatek_b2d93854.md
+ - [semantic] Jak można się skontaktować z osobą pełniącą funkcję zastępcy przewodniczącego związku zawodowego na AGH?
+     expected: osoba__anna-mlynarczykowska-5949.html_de398d1a.md (+0 copies) | got: Komunikat_wyskosc_stypendiow_rok_akademicki_2024_2025.md, o-nas__sklad-urss_f125209b.md, ordynacja-wyborcza-samorzadu-studentow-agh-2026_b98a2c8f.md

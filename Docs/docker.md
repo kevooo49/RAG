@@ -10,7 +10,7 @@ Infrastruktura bazodanowa opiera się na dwóch niezależnych silnikach, z któr
 
 ### Elasticsearch (Wyszukiwarka Leksykalna)
 
-Standardowy obraz Elasticsearch nie posiada wbudowanej obsługi zaawansowanej fleksji języka polskiego. Z tego powodu zaimplementowano dedykowany plik `Dockerfile_ES`, który rozszerza bazowy obraz w wersji `8.15.2` o instalację oficjalnego modułu `analysis-stempel`.
+Standardowy obraz Elasticsearch nie posiada wbudowanej obsługi zaawansowanej fleksji języka polskiego. Z tego powodu zaimplementowano dedykowany plik `Dockerfile_ES`, który rozszerza bazowy obraz w wersji `8.15.2` o instalację oficjalnego modułu `analysis-stempel` (analizator `polish` używany w produkcji) oraz wtyczki `elasticsearch-analysis-morfologik` firmy Allegro (filtr `morfologik_stem`, porównywany w [`eva_search.md`](eva_search.md)). Wersja wtyczki Morfologik musi być równa wersji Elasticsearch. Indeks produkcyjny nadal używa analizatora `polish`; dodanie wtyczki nie wymaga jego przebudowy.
 
 * **Zarządzanie Zapasami (JVM)**: Aby zapobiec niestabilności i nadmiernemu zużyciu pamięci hosta, kontenerowi narzucono sztywny limit sterty maszyny wirtualnej Javy (`ES_JAVA_OPTS=-Xms2g -Xmx2g`), rezerwując dokładnie 2 GB pamięci RAM.
 * **Bezpieczeństwo i Architektura**: Usługa działa w trybie jednowęzłowym (`single-node`) z wyłączonym wbudowanym systemem autoryzacji `xpack.security.enabled=false`. Aby zrekompensować brak autoryzacji bazodanowej, port 9200 został przypisany ściśle do interfejsu pętli zwrotnej serwera (`127.0.0.1:9200`), blokując jakikolwiek dostęp z zewnątrz sieci hosta.
