@@ -7,14 +7,15 @@ The two changes proposed by the component evaluations are tested together and on
     current_noexp   Tytuł › Sekcja › Podsekcja               no
     planned_exp     [Źródło] Tytuł                           yes
     planned         [Źródło] Tytuł                           no                 <- proposed production setup
+    planned_dedup   = planned + near-duplicate chunks removed from the context (see dedup_ranking)
 
 Everything else is production: chunks (build_database.chunk_file), BM25 text "[Źródło] Tytuł › Sekcja" in
 Elasticsearch (analyzer "polish" / stempel), text-embedding-3-small, RRF (k=60) over top 40 + top 40, top 5 chunks.
 With expansion, the expanded query goes to BOTH search legs, as in rag_service.search_by_query.
 
 Part 1 - retrieval, all questions, four systems (metrics from eval_common: Hit@k, MRR@10, CtxHit@5, ...).
-Part 2 - answers, a stratified subset (default 300, the same as evaluate_models.py), systems `current` and
-          `planned`: production prompt and context blocks (llm_service), answer model (default gpt-4o-mini, the
+Part 2 - answers, a stratified subset (default 300, the same as evaluate_models.py), systems `current`,
+          `planned` and `planned_dedup`: production prompt and context blocks (llm_service), answer model (default gpt-4o-mini, the
           production default), the same judge as evaluate_models.py (gpt-4.1). Generations and judgments are cached
           in the same SQLite file, so the planned answers of gpt-4o-mini from evaluate_models.py are reused for free.
 
@@ -30,11 +31,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import re
 import sys
 import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -49,19 +51,23 @@ SYSTEMS = {  # name: (embedded header, query expansion)
     "planned_exp": ("source_title", True),
     "planned": ("source_title", False),
 }
+DEDUP = {"planned_dedup": "planned"}   # deduplicated system: system whose ranking it filters
 NAMES = {
     "current": "current (breadcrumb + expansion)",
     "current_noexp": "breadcrumb, no expansion",
     "planned_exp": "[Źródło] Tytuł + expansion",
     "planned": "planned ([Źródło] Tytuł, no exp.)",
+    "planned_dedup": "planned + near-duplicates removed",
 }
-ANSWER_SYSTEMS = ("current", "planned")
+ANSWER_SYSTEMS = ("current", "planned", "planned_dedup")
+DEDUP_POOL = 25        # candidates the filter looks at = production's top_k * 5 (rag_service.search_by_query)
+DIFF_PAIRS = (("planned", "current"), ("planned_dedup", "planned"))   # (system, compared against)
 
 
 # ==========================================
 # 1. RETRIEVAL (all four systems)
 # ==========================================
-def retrieve(sample: ec.Sample, qs: List[ec.Question], es_url: str):
+def retrieve(sample: ec.Sample, qs: List[ec.Question], es_url: str, threshold: float):
     """Returns parts, {system: {qid: chunk ranking}}, {system: {qid: retrieval ms}}, {qid: expansion ms}."""
     parts = em.split_parts(sample)
     ids = [p.chunk.id for p in parts]
@@ -83,7 +89,84 @@ def retrieve(sample: ec.Sample, qs: List[ec.Question], es_url: str):
             t0 = time.perf_counter()
             rankings[s][q.qid] = ec.rrf([dense[h].search(v, ec.CHUNK_POOL), bm25.search(t, ec.CHUNK_POOL)])
             times[s][q.qid] = (time.perf_counter() - t0) * 1000
-    return parts, rankings, times, exp_ms
+    by_id = {p.chunk.id: p for p in parts}
+    dups: Dict[str, Dict[str, int]] = {}
+    for s, base in DEDUP.items():
+        rankings[s], times[s], dups[s] = {}, {}, {}
+        for q in qs:
+            t0 = time.perf_counter()
+            rankings[s][q.qid], dups[s][q.qid] = dedup_ranking(rankings[base][q.qid], by_id, threshold,
+                                                              DEDUP_POOL, ec.CONTEXT_K)
+            times[s][q.qid] = times[base][q.qid] + (time.perf_counter() - t0) * 1000
+    return parts, rankings, times, exp_ms, dups
+
+
+_WORD = re.compile(r"\w+")
+_YEAR = re.compile(r"(20\d\d)[_/-](20\d\d)")
+
+
+def _words(text: str) -> frozenset:
+    return frozenset(w for w in _WORD.findall(text.casefold()) if len(w) > 1)
+
+
+def _year(path: str) -> int:
+    """Academic year in a path ("Sylabusy_Markdown/2025_2026/...") -> 2025; 0 if none."""
+    ys = [int(m.group(1)) for m in _YEAR.finditer(path)]
+    return max(ys) if ys else 0
+
+
+def dedup_ranking(ranking: List[str], by_id, threshold: float, pool: int, k: int) -> Tuple[List[str], int]:
+    """Near-duplicate filter for the context. Goes through the first `pool` candidates in RRF order and keeps a
+    chunk only if its content (without the header) shares < `threshold` of its words (Jaccard) with every chunk
+    already kept. Of two near-duplicates the one from the newer academic year is kept, in the better rank's place.
+    Skipped chunks go to the end of the ranking (file-level metrics still see them, the context does not).
+    Returns (new ranking, number of near-duplicates skipped before the context was full)."""
+    kept: List[str] = []
+    words: List[frozenset] = []
+    skipped: List[str] = []
+    n_skip = 0
+    for cid in ranking[:pool]:
+        w = _words(by_id[cid].content_raw)
+        dup = next((i for i, kw in enumerate(words)
+                    if w and kw and len(w & kw) / len(w | kw) >= threshold), None)
+        if dup is None:
+            kept.append(cid)
+            words.append(w)
+            continue
+        if len(kept) < k:
+            n_skip += 1
+        if _year(by_id[cid].chunk.file_id) > _year(by_id[kept[dup]].chunk.file_id):
+            skipped.append(kept[dup])
+            kept[dup], words[dup] = cid, w
+        else:
+            skipped.append(cid)
+    return kept + ranking[pool:] + skipped, n_skip
+
+
+def dedup_report(results, dups, qs, boot) -> List[str]:
+    W = 110
+    L = ["", "-" * W, "Near-duplicate filter (planned_dedup vs planned, paired cluster bootstrap, Holm, * p < 0.05):"]
+    for s, base in DEDUP.items():
+        n = np.array([dups[s][q.qid] for q in qs], dtype=float)
+        L.append(f"   questions with near-duplicates in planned's top {ec.CONTEXT_K}: {np.mean(n > 0):.1%} "
+                 f"({int((n > 0).sum())}/{len(qs)}), mean {n[n > 0].mean() if (n > 0).any() else 0:.2f} "
+                 f"skipped per such question")
+        raw = {}
+        for m in ("MRR@10", "CtxHit@5", "CtxPrec@5"):
+            va = np.array([ec.METRICS[m](r) for r in results[s]])
+            vb = np.array([ec.METRICS[m](r) for r in results[base]])
+            raw[m] = (boot.paired(va, vb), va.mean(), vb.mean())
+        adj = ec.holm({m: d[0]["p"] for m, d in raw.items()})
+        for m, (d, va, vb) in raw.items():
+            L.append(f"   {m:<10} {vb:.3f} -> {va:.3f}  {d['diff']:+.3f} [{d['lo']:+.3f}, {d['hi']:+.3f}]  "
+                     f"p={adj[m]:.3f}{'*' if adj[m] < 0.05 else ''}")
+        dq = [q for q in qs if dups[s][q.qid]]
+        if dq:
+            idx = {q.qid: i for i, q in enumerate(qs)}
+            ca = np.mean([ec.METRICS["CtxHit@5"](results[s][idx[q.qid]]) for q in dq])
+            cb = np.mean([ec.METRICS["CtxHit@5"](results[base][idx[q.qid]]) for q in dq])
+            L.append(f"   CtxHit@5 on the {len(dq)} questions with near-duplicates: {cb:.3f} -> {ca:.3f}")
+    return L
 
 
 def contexts_from(sample: ec.Sample, parts, ranking: Dict[str, List[str]], qs: List[ec.Question]):
@@ -130,7 +213,7 @@ def answer_part(a, sample, parts, rankings, rel, sub: List[ec.Question]):
     store = emod.Store()
     cached = sum(store.get_gen(emod.Store.key("gen", a.model, sysmsg.split("Dzisiejsza data")[0] + prompts[s][q.qid][1]))
                  is not None for s in ANSWER_SYSTEMS for q in sub)
-    todo = 2 * len(sub) - cached
+    todo = len(ANSWER_SYSTEMS) * len(sub) - cached
     in_tok = np.mean([(len(sysmsg) + len(p[1])) / 3.0 for s in ANSWER_SYSTEMS for p in prompts[s].values()])
     gp = emod.PRICES.get(a.model)
     jp = emod.PRICES.get(a.judge, (2, 8))
@@ -186,14 +269,17 @@ def answer_stats(a, res, n_boot: int) -> dict:
         e["total_s_median"] = float(np.median(per[s]["total_s"]))
         e["context_sufficient"] = dict(Counter(rows[s][q.qid]["context_sufficient"] for q in ok))
         out["systems"][s] = e
-    raw = {k: emod.paired_nan(boot, per["planned"][k], per["current"][k])
-           for k in ("ctx_hit", "correctness", "correct", "faithfulness", "citations", "hallucination")}
-    adj = ec.holm({k: d["p"] for k, d in raw.items() if d})
-    out["diff"] = {k: {**d, "p_holm": adj[k]} for k, d in raw.items() if d}
-    c = {s: [rows[s][q.qid]["correctness"] for q in ok] for s in ANSWER_SYSTEMS}
-    out["per_question"] = {"planned_better": int(sum(p > q for p, q in zip(c["planned"], c["current"]))),
-                           "same": int(sum(p == q for p, q in zip(c["planned"], c["current"]))),
-                           "current_better": int(sum(p < q for p, q in zip(c["planned"], c["current"])))}
+    out["diff"], out["per_question"] = {}, {}
+    for sys_a, sys_b in DIFF_PAIRS:
+        raw = {k: emod.paired_nan(boot, per[sys_a][k], per[sys_b][k])
+               for k in ("ctx_hit", "correctness", "correct", "faithfulness", "citations", "hallucination")}
+        adj = ec.holm({k: d["p"] for k, d in raw.items() if d})
+        out["diff"][f"{sys_a}-{sys_b}"] = {k: {**d, "p_holm": adj[k]} for k, d in raw.items() if d}
+        ca = [rows[sys_a][q.qid]["correctness"] for q in ok]
+        cb = [rows[sys_b][q.qid]["correctness"] for q in ok]
+        out["per_question"][f"{sys_a}-{sys_b}"] = {"better": int(sum(x > y for x, y in zip(ca, cb))),
+                                                   "same": int(sum(x == y for x, y in zip(ca, cb))),
+                                                   "worse": int(sum(x < y for x, y in zip(ca, cb)))}
     out["by_type"] = {s: {t: float(np.mean([rows[s][q.qid]["correctness"] / 2 for q in ok if q.qtype == t]))
                           for t in sorted({q.qtype for q in ok})} for s in ANSWER_SYSTEMS}
     out["by_doc_type"] = {s: {t: float(np.mean([rows[s][q.qid]["correctness"] / 2 for q in ok if q.doc_type == t]))
@@ -212,13 +298,16 @@ def answer_report(st: dict, exp_ms: Dict[str, float], judge) -> List[str]:
         f = lambda k: f"{e[k]['mean']:.3f} [{e[k]['lo']:.2f}-{e[k]['hi']:.2f}]"
         L.append(f"{NAMES[s][:33]:<34}{e['ctx_hit']['mean']:>10.3f}{f('correctness'):>20}{e['correct']['mean']:>12.3f}"
                  f"{f('faithfulness'):>20}{e['citations']['mean']:>12.3f}")
-    L += ["", "planned - current (paired cluster bootstrap, Holm over the metrics below, * p < 0.05):"]
-    for k, d in st["diff"].items():
-        L.append(f"   {k:<14}{d['diff']:+.3f} [{d['lo']:+.3f}, {d['hi']:+.3f}]  p={d['p_holm']:.3f}"
-                 f"{'*' if d['p_holm'] < 0.05 else ''}")
-    pq = st["per_question"]
-    L += ["", f"Per question (correctness 0-2): planned better {pq['planned_better']}, same {pq['same']}, "
-              f"current better {pq['current_better']}", "",
+    for pair, diff in st["diff"].items():
+        a_, b_ = pair.split("-")
+        L += ["", f"{a_} - {b_} (paired cluster bootstrap, Holm over these metrics, * p < 0.05):"]
+        for k, d in diff.items():
+            L.append(f"   {k:<14}{d['diff']:+.3f} [{d['lo']:+.3f}, {d['hi']:+.3f}]  p={d['p_holm']:.3f}"
+                     f"{'*' if d['p_holm'] < 0.05 else ''}")
+        pq = st["per_question"][pair]
+        L.append(f"   per question (correctness 0-2): {a_} better {pq['better']}, same {pq['same']}, "
+                 f"worse {pq['worse']}")
+    L += ["",
           f"{'System':<34}{'refusals':>10}{'right refusal':>16}{'false refusal':>16}{'hallucination':>15}"
           f"{'answer s med':>14}", "-" * W]
     for s in ANSWER_SYSTEMS:
@@ -248,10 +337,10 @@ def plot_answers(run, st: dict):
     import eval_plots as ep
     metrics = [("ctx_hit", "Evidence in context"), ("correctness", "Correctness"), ("correct", "Fully correct"),
                ("faithfulness", "Faithfulness"), ("citations", "Citations")]
-    fig, ax = plt.subplots(figsize=(9, 3.6))
+    fig, ax = plt.subplots(figsize=(9, 4.2))
     y = np.arange(len(metrics))[::-1]
     for si, s in enumerate(ANSWER_SYSTEMS):
-        off = (si - 0.5) * 0.28
+        off = (si - (len(ANSWER_SYSTEMS) - 1) / 2) * 0.22
         for yi, (k, _) in zip(y, metrics):
             e = st["systems"][s][k]
             ax.plot([e["lo"], e["hi"]], [yi + off] * 2, color=ep.SERIES[si], lw=2, alpha=0.6)
@@ -264,7 +353,7 @@ def plot_answers(run, st: dict):
     ax.set_xlim(max(0.0, np.floor((lo - 0.05) * 10) / 10), 1.06)
     ax.set_xlabel("share / score (0-1), mean with 95% CI")
     ax.grid(axis="y", visible=False)
-    ax.set_title(f"Answers: current vs planned ({st['n_questions']} questions, {st['model']})")
+    ax.set_title(f"Answers by configuration ({st['n_questions']} questions, {st['model']})")
     ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), fontsize=8.5)
     fig.savefig(run / "answers.png")
     plt.close(fig)
@@ -284,6 +373,8 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--skip-answers", action="store_true")
+    ap.add_argument("--dedup-threshold", type=float, default=0.85,
+                    help="word overlap (Jaccard) from which two chunks count as near-duplicates")
     ap.add_argument("--dry-run", action="store_true", help="retrieval + cost estimate, no generation/judge calls")
     ap.add_argument("--yes", action="store_true")
     a = ap.parse_args()
@@ -296,24 +387,29 @@ def main():
     qs = ec.load_questions(Path(a.questions), sample)
     print(f"   {len(qs)} questions about {len({q.expected_id for q in qs})} documents")
 
-    print("[2/4] Retrieval: 4 systems")
-    parts, rankings, times, exp_ms = retrieve(sample, qs, a.es_url)
+    print(f"[2/4] Retrieval: {len(SYSTEMS) + len(DEDUP)} systems")
+    parts, rankings, times, exp_ms, dups = retrieve(sample, qs, a.es_url, a.dedup_threshold)
     chunk_file = {p.chunk.id: p.chunk.file_id for p in parts}
     matcher = ec.EvidenceMatcher(sample)
     rel = {q.qid: matcher.relevant_chunks(q) for q in qs}
     results = {s: [ec.score_ranking(s, q, rankings[s][q.qid], chunk_file, rel[q.qid], times[s][q.qid],
-                                    exp_ms[q.qid] if SYSTEMS[s][1] else 0.0) for q in qs] for s in SYSTEMS}
+                                    exp_ms[q.qid] if SYSTEMS.get(s, SYSTEMS.get(DEDUP.get(s, ""), ("", False)))[1]
+                                    else 0.0) for q in qs] for s in rankings}
     boot = ec.Bootstrap(qs, a.n_boot)
     summ = ec.summarize(results, qs, "current", boot)
     report = ec.standard_report(
         "PRODUCTION CONFIGURATION EVALUATION (evaluate_production.py) - PART 1: RETRIEVAL", summ, results, qs, NAMES,
         notes=["Systems: embedded header (breadcrumb = Tytuł › Sekcja, source_title = [Źródło] Tytuł) x query "
                "expansion (yes/no). BM25 text, chunks, model, RRF and top 5 = production.",
-               "LLM ms = mean latency of the expansion call (first, uncached call); 0 = no expansion."])
+               "LLM ms = mean latency of the expansion call (first, uncached call); 0 = no expansion.",
+               f"planned_dedup: planned, then chunks whose content shares >= {a.dedup_threshold:.0%} of words "
+               f"with a better-ranked chunk are dropped from the context (first {DEDUP_POOL} candidates, newer "
+               f"academic year kept)."])
+    report += dedup_report(results, dups, qs, boot)
 
     answers = None
     if not a.skip_answers:
-        print("[3/4] Answers: current vs planned")
+        print("[3/4] Answers: " + ", ".join(ANSWER_SYSTEMS))
         sub = emod.pick_subset(qs, a.n, a.seed)
         res = answer_part(a, sample, parts, rankings, rel, sub)
         if res:

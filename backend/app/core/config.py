@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     BIELIK_MODEL: str = "SpeakLeash/bielik-11b-v3.0-instruct:Q4_K_M"
     BIELIK_NUM_CTX: int = 8192
     EXPANSION_MODEL: str = "gpt-4o-mini"
+    QUERY_EXPANSION: bool = False
     
     EMBED_MODEL: str = "text-embedding-3-small"
     EMBED_DIMENSIONS: Optional[int] = None

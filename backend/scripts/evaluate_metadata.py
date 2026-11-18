@@ -88,7 +88,11 @@ def split_parts(sample: ec.Sample) -> List[Parts]:
         title, section = c.meta.get("tytul", ""), c.meta.get("sekcja", "")
         bc = " › ".join(x for x in (title, section) if x)
         emb = c.text_emb
-        content_emb = emb[len(bc) + 2:] if bc and emb.startswith(bc + "\n\n") else emb
+        content_emb = emb
+        for h in (ec.bd.build_context(c.meta.get("zrodlo", ""), title, ()), bc):   # production header, older format
+            if h and emb.startswith(h + "\n\n"):
+                content_emb = emb[len(h) + 2:]
+                break
         head, _, body = c.text.partition("\n\n")
         out.append(Parts(c, title, section, c.meta.get("zrodlo", ""), url_words(urls.get(c.file_id, "")),
                          content_emb, body if body else c.text, head if body else ""))
@@ -131,8 +135,6 @@ def compose(name: str, h: str, content: str) -> str:
 
 
 def emb_text(name: str, p: Parts) -> str:
-    if name == "breadcrumb":
-        return p.chunk.text_emb                     # exactly what production embeds
     return compose(name, ec.bd.remove_urls(header(name, p)) if name == "breadcrumb_url" else header(name, p),
                    p.content_emb)
 

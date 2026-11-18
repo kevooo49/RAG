@@ -46,3 +46,11 @@ gpt-4o                         0.952                 0.434
 bielik                         0.699                 0.361
 
 Judge tokens this run (uncached calls): in 2080960, out 92500 (~$4.90); estimated generation cost for 300 questions: gpt-4o-mini $0.14, gpt-4o $2.38
+
+
+(.venv) PS C:\Users\micro\Desktop\Bachelors\RAG\backend\scripts> python evaluate_models.py --agreement models_eva_stats/run_20261117_234121/judge_review.csv
+models_eva_stats\run_20261117_234121\judge_review.csv: 60 rows
+   correctness   n= 60  exact agreement=0.87  within 1=0.93  weighted kappa=0.72  (judge mean 1.43, yours 1.63)
+   faithfulness  n= 60  exact agreement=0.85  within 1=0.92  weighted kappa=0.30  (judge mean 1.90, yours 1.70)
+   citations     n= 49  exact agreement=0.96  within 1=1.00  weighted kappa=0.65  (judge mean 1.92, yours 1.96)
+   language      n= 60  exact agreement=1.00  within 1=1.00  weighted kappa=nan  (judge mean 2.00, yours 2.00)

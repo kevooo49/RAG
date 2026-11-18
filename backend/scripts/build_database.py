@@ -5,7 +5,8 @@ Build the RAG vector database from Markdown files (AGH) - incremental version.
     python build_database.py                    # index (only new/modified files)
     python build_database.py --dry-run          # stats + cost estimate, NO API usage
     python build_database.py --preview file.md  # show how a file will be chunked (NO API)
-    python build_database.py --search "query" -k 5 [--source "Biblioteka Główna AGH"]
+    python build_database.py --search "query" -k 5      # production hybrid search (dense + BM25 + RRF)
+    python build_database.py --search "query" --dense-only [--source "Biblioteka Główna AGH"]
     python build_database.py --rebuild          # clear Chroma and Elasticsearch and build from scratch
     python build_database.py --rebuild-es       # restore ES index from files (no OpenAI API, free)
 
@@ -16,9 +17,9 @@ What's different from a simple RecursiveCharacterTextSplitter:
   * We split by Markdown STRUCTURE (headers -> blocks: paragraph / list / table / code),
     not by characters; sentences are split considering Polish abbreviations (ul., godz., r., ust.).
   * TABLES are atomic; oversized ones are split by rows, repeating the header row in each part.
-  * Each chunk gets a contextual header: [Source] Title › Section › Subsection
-    (without this, "Deadline: October 5" is meaningless).
-  * Text sent for embedding has URLs removed, but the DB keeps the full text (with links for citations).
+  * Each chunk gets a contextual header (without this, "Deadline: October 5" is meaningless):
+    stored/BM25/LLM text: [Source] Title › Section › Subsection + content with links (for citations),
+    embedded text:        [Source] Title + content without URLs.
   * Indexing is incremental and idempotent: changing one file = re-embedding only
     modified chunks; running twice doesn't duplicate data.
   * API key from env (OPENAI_API_KEY), retry, token batching, model check in the collection.
@@ -50,7 +51,7 @@ ES_URL = settings.ES_URL
 MODEL = settings.EMBED_MODEL
 DIMENSIONS = settings.EMBED_DIMENSIONS
 
-FORMAT_VERSION = "asym-v2"
+FORMAT_VERSION = "emb-source-title"
 MAX_DELETED_PERCENT = 20
 
 PRICE_PER_1M_TOKENS_USD = 0.02
@@ -526,9 +527,9 @@ def assemble_chunks(blocks, title, source):
         context_txt = build_context(source, title, prefix)
         text = f"{context_txt}\n\n{content}"
         
-        bc_parts = [x for x in (title, " › ".join(prefix)) if x]
-        breadcrumb = " › ".join(bc_parts)
-        text_vector = f"{breadcrumb}\n\n{remove_urls(content)}" if breadcrumb else remove_urls(content)
+        # Embedded text: "[Source] Title" + content without URLs. The section path stays only in `text` (Elasticsearch,
+        # LLM context): in embeddings it made chunks of similar documents (syllabi) too alike (Docs/eva_metadata.md).
+        text_vector = f"{build_context(source, title, ())}\n\n{remove_urls(content)}"
         
         chunks.append(TextChunk(text=text, text_emb=text_vector,
                                 section=" › ".join(prefix), tokens=get_tokens(text), has_table=g["table"], tokens_emb=get_tokens(text_vector)))
@@ -950,7 +951,22 @@ def preview_chunking(file_path):
         print()
 
 
-def search_test(query, k=5, source=None):
+def search_test(query, k=5, source=None, dense_only=False):
+    """Default: the production search (rag_service.search_by_query: dense + BM25 + RRF, as the app sees it,
+    without query expansion). --dense-only: the vector leg alone (Chroma), optionally filtered by --source."""
+    if not dense_only and not source:
+        import asyncio
+        from app.services import rag_service
+        hits = asyncio.run(rag_service.search_by_query(query, top_k=k))
+        for i, (doc, info) in enumerate(hits, 1):
+            md = info["meta"]
+            sim = f" | dense sim {info['dense_sim']:.3f}" if "dense_sim" in info else " | BM25 only"
+            print("━" * 70)
+            print(f"#{i}  RRF {info['score']:.4f}{sim} | {md.get('source')} | {md.get('title')}"
+                  f"{' › ' + md['section'] if md.get('section') else ''}")
+            print(f"    {md.get('url') or md.get('file') or ''}")
+            print("    " + doc.replace("\n", "\n    ")[:700] + ("…" if len(doc) > 700 else ""))
+        return
     client = create_openai_client()
     col = open_collection()
     vector = perform_embedding(client, [query])[0]
@@ -975,14 +991,15 @@ if __name__ == "__main__":
     ap.add_argument("--preview", metavar="FILE.md", help="show how a file will be chunked")
     ap.add_argument("--search", metavar="QUERY", help="test database search")
     ap.add_argument("-k", type=int, default=5, help="number of --search results")
-    ap.add_argument("--source", help="source filter for --search, e.g., 'Biblioteka Główna AGH'")
+    ap.add_argument("--source", help="source filter for --search (vector leg only), e.g., 'Biblioteka Główna AGH'")
+    ap.add_argument("--dense-only", action="store_true", help="--search with the vector leg only (Chroma)")
     a = ap.parse_args()
     if a.config:
         init_config(a.config)
     if a.preview:
         preview_chunking(a.preview)
     elif a.search:
-        search_test(a.search, a.k, a.source)
+        search_test(a.search, a.k, a.source, a.dense_only)
     elif a.rebuild_es:
         rebuild_es(allow_missing_dirs=a.allow_missing_dirs)
     else:

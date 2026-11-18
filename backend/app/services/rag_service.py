@@ -245,7 +245,7 @@ async def prepare_search_queries(query: str, history: Sequence[Tuple[str, str]] 
     """Returns a standalone display query and an expanded query optimized for the search engine."""
     query = query.strip()[:MAX_INPUT_QUERY_CHARS]
     if not history:
-        return query, await _expand_query(query)
+        return query, (await _expand_query(query) if settings.QUERY_EXPANSION else query)
         
     hist_hash = hashlib.sha1(json.dumps(list(history), ensure_ascii=False).encode("utf-8")).hexdigest()
     cache_key = f"h|{_generate_key(query)}|{hist_hash}"
@@ -258,7 +258,7 @@ async def prepare_search_queries(query: str, history: Sequence[Tuple[str, str]] 
         result = _parse_reformulation(query, _extract_text(response))
     except Exception as e:
         log.warning("rag: Query Reformulation failed (falling back to original query): %s", e)
-        return query, await _expand_query(query)
+        return query, (await _expand_query(query) if settings.QUERY_EXPANSION else query)
         
     _expansion_cache.put(cache_key, result)
     return result

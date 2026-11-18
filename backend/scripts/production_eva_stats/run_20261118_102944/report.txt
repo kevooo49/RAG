@@ -1,0 +1,113 @@
+==============================================================================================================
+PRODUCTION CONFIGURATION EVALUATION (evaluate_production.py) - PART 1: RETRIEVAL
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: current | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Systems: embedded header (breadcrumb = Tytuł › Sekcja, source_title = [Źródło] Tytuł) x query expansion (yes/no). BM25 text, chunks, model, RRF and top 5 = production.
+LLM ms = mean latency of the expansion call (first, uncached call); 0 = no expansion.
+planned_dedup: planned, then chunks whose content shares >= 85% of words with a better-ranked chunk are dropped from the context (first 25 candidates, newer academic year kept).
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+planned ([Źródło] Tytuł, no exp.)   0.740  0.915     0.814 [0.79-0.84]     0.766 [0.73-0.80]       12       0
+planned + near-duplicates removed   0.730  0.903     0.805 [0.78-0.83]     0.770 [0.74-0.80]       15       0
+[Źródło] Tytuł + expansion          0.720  0.905     0.797 [0.77-0.82]     0.750 [0.72-0.78]       13    1142
+breadcrumb, no expansion            0.709  0.900     0.793 [0.77-0.82]     0.749 [0.72-0.78]       13       0
+current (breadcrumb + expansion)    0.702  0.884     0.782 [0.75-0.81]     0.756 [0.72-0.79]       15    1142
+
+Differences vs current:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+planned ([Źródło] Tytuł, no exp.)          +0.032 [+0.01,+0.05] p=0.008*         +0.010 [-0.01,+0.03] p=0.960 
+planned + near-duplicates removed          +0.024 [+0.00,+0.04] p=0.057          +0.014 [-0.01,+0.04] p=0.960 
+[Źródło] Tytuł + expansion                 +0.015 [+0.00,+0.03] p=0.057          -0.006 [-0.02,+0.01] p=0.960 
+breadcrumb, no expansion                   +0.011 [-0.00,+0.03] p=0.157          -0.007 [-0.02,+0.01] p=0.960 
+current (breadcrumb + expansion)                              (baseline)                            (baseline)
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+planned ([Źródło] Tytuł, no exp.)                0.793               0.868               0.778
+planned + near-duplicates removed                0.790               0.853               0.772
+[Źródło] Tytuł + expansion                       0.765               0.860               0.765
+breadcrumb, no expansion                         0.776               0.855               0.747
+current (breadcrumb + expansion)                 0.749               0.843               0.752
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+planned ([Źródło] Tytuł, no exp.)                0.823               0.868               0.726
+planned + near-duplicates removed                0.826               0.871               0.694
+[Źródło] Tytuł + expansion                       0.814               0.857               0.697
+breadcrumb, no expansion                         0.833               0.848               0.680
+current (breadcrumb + expansion)                 0.814               0.848               0.659
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+planned ([Źródło] Tytuł, no exp.)                0.784               0.766               0.859
+planned + near-duplicates removed                0.780               0.776               0.837
+[Źródło] Tytuł + expansion                       0.753               0.774               0.834
+breadcrumb, no expansion                         0.763               0.747               0.837
+current (breadcrumb + expansion)                 0.729               0.751               0.828
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+planned ([Źródło] Tytuł, no exp.)                0.831               0.811
+planned + near-duplicates removed                0.835               0.802
+[Źródło] Tytuł + expansion                       0.798               0.797
+breadcrumb, no expansion                         0.790               0.793
+current (breadcrumb + expansion)                 0.774               0.783
+
+--------------------------------------------------------------------------------------------------------------
+Near-duplicate filter (planned_dedup vs planned, paired cluster bootstrap, Holm, * p < 0.05):
+   questions with near-duplicates in planned's top 5: 34.9% (300/860), mean 4.74 skipped per such question
+   MRR@10     0.814 -> 0.805  -0.008 [-0.018, +0.000]  p=0.120
+   CtxHit@5   0.766 -> 0.770  +0.003 [-0.013, +0.020]  p=0.700
+   CtxPrec@5  0.514 -> 0.474  -0.040 [-0.052, -0.030]  p=0.002*
+   CtxHit@5 on the 300 questions with near-duplicates: 0.700 -> 0.713
+
+==============================================================================================================
+PART 2 - ANSWERS (300 questions, model gpt-4o-mini, judge gpt-4.1)
+==============================================================================================================
+System                              CtxHit@5         Correctness Fully corr.        Faithfulness   Citations
+--------------------------------------------------------------------------------------------------------------
+current (breadcrumb + expansion)       0.770   0.817 [0.78-0.85]       0.737   0.948 [0.93-0.97]       0.948
+planned ([Źródło] Tytuł, no exp.)      0.797   0.850 [0.81-0.88]       0.787   0.963 [0.94-0.98]       0.968
+planned + near-duplicates removed      0.800   0.843 [0.81-0.88]       0.773   0.950 [0.93-0.97]       0.955
+
+planned - current (paired cluster bootstrap, Holm over these metrics, * p < 0.05):
+   ctx_hit       +0.027 [-0.013, +0.068]  p=0.434
+   correctness   +0.033 [+0.002, +0.066]  p=0.152
+   correct       +0.050 [+0.014, +0.089]  p=0.012*
+   faithfulness  +0.015 [-0.003, +0.034]  p=0.405
+   citations     +0.023 [+0.007, +0.039]  p=0.020*
+   hallucination +0.000 [-0.014, +0.013]  p=1.000
+   per question (correctness 0-2): planned better 29, same 256, worse 15
+
+planned_dedup - planned (paired cluster bootstrap, Holm over these metrics, * p < 0.05):
+   ctx_hit       +0.003 [-0.022, +0.028]  p=1.000
+   correctness   -0.007 [-0.026, +0.012]  p=1.000
+   correct       -0.013 [-0.037, +0.010]  p=1.000
+   faithfulness  -0.013 [-0.025, -0.005]  p=0.018*
+   citations     -0.011 [-0.020, -0.004]  p=0.030*
+   hallucination +0.003 [+0.000, +0.010]  p=1.000
+   per question (correctness 0-2): planned_dedup better 9, same 279, worse 12
+
+System                              refusals   right refusal   false refusal  hallucination  answer s med
+--------------------------------------------------------------------------------------------------------------
+current (breadcrumb + expansion)        0.10     0.94 (n=18)    0.02 (n=248)          0.013          1.5s
+planned ([Źródło] Tytuł, no exp.)       0.08     0.92 (n=13)    0.02 (n=258)          0.013          2.1s
+planned + near-duplicates removed       0.08     0.85 (n=13)    0.02 (n=259)          0.017          1.8s
+
+Correctness by question type:
+System                                  colloquial         lexical        semantic
+current (breadcrumb + expansion)             0.755           0.875           0.820
+planned ([Źródło] Tytuł, no exp.)            0.805           0.905           0.840
+planned + near-duplicates removed            0.815           0.870           0.845
+
+Correctness by document type:
+System                                    dokument          strona         sylabus
+current (breadcrumb + expansion)             0.768           0.866           0.780
+planned ([Źródło] Tytuł, no exp.)            0.804           0.884           0.833
+planned + near-duplicates removed            0.812           0.888           0.801
+
+Query expansion (current only): one extra gpt-4o-mini call before every search, mean 1142 ms / median 1096 ms (first, uncached calls). The planned setup skips it for standalone questions.
+Judge tokens this run (uncached calls): in 567719, out 26109 (~$1.34)

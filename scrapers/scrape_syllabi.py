@@ -1,3 +1,17 @@
+"""Syllabus crawler: sylabusy.agh.edu.pl -> Sylabusy_Markdown/<year>/<faculty>/<field>/<mode>/<subject>.md
+
+    python scrape_syllabi.py              # download syllabi that are not saved yet
+    python scrape_syllabi.py --add-urls   # only walk the listings and add the `url:` frontmatter to saved files
+                                          # (no syllabus downloads; safe to rerun)
+
+Every file starts with a frontmatter block holding the public syllabus address:
+    ---
+    url: "https://sylabusy.agh.edu.pl/pl/document/<id>.html"
+    ---
+build_database.py stores it in the chunk metadata, and the UI uses it for the "Otwórz stronę" button. The address
+is not part of the embedded or indexed text, so adding it to existing files changes only metadata (no re-embedding).
+"""
+import argparse
 import os
 import sys
 import time
@@ -23,6 +37,7 @@ MAX_SYLLABUSES = 5
 
 BASE_FOLDER = str(_cfg.data_root)
 DOMAIN = "https://sylabusy.agh.edu.pl"
+DOC_URL = DOMAIN + "/pl/document/{id}.html"     # public syllabus page (the crawler downloads its modal version)
 START_URL = "https://sylabusy.agh.edu.pl/pl/1/2/22/0/0"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"}
 
@@ -53,6 +68,12 @@ stat_downloaded = 0
 stat_skipped = 0
 stat_errors = 0
 stat_size_bytes = 0
+stat_urls_added = 0
+
+ap = argparse.ArgumentParser(description="AGH syllabus crawler")
+ap.add_argument("--add-urls", action="store_true",
+                help="only add the url frontmatter to already saved syllabi (no downloads)")
+ARGS = ap.parse_args()
 
 # ==========================================
 # HELPER FUNCTIONS
@@ -71,6 +92,27 @@ def clean_name(text):
         name += "_file"
         
     return name if name else "unknown_name"
+
+def with_url(markdown, url):
+    return f'---\nurl: "{url}"\n---\n\n{markdown}'
+
+
+def add_url(file_path, url):
+    """Prepends the url frontmatter to a saved syllabus (or updates the one added before). True if changed."""
+    text = Path(file_path).read_text(encoding="utf-8")
+    m = re.match(r'---\nurl: "([^"]*)"\n---\n\n', text)
+    if m:                                   # added earlier: update it if DOC_URL changed, otherwise leave it
+        if m.group(1) == url:
+            return False
+        text = text[m.end():]
+    elif text.startswith("---"):            # some other frontmatter: don't touch
+        return False
+    tmp = file_path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(with_url(text, url))
+    os.replace(tmp, file_path)
+    return True
+
 
 def fetch_soup(url):
     """Fetches a page and returns a BeautifulSoup object, handling exceptions."""
@@ -165,7 +207,11 @@ for year, year_url in academic_years.items():
                     file_path = os.path.join(save_path, f"{subj_name}.md")
                     
                     if os.path.exists(file_path):
+                        if ARGS.add_urls and add_url(file_path, DOC_URL.format(id=syl_id)):
+                            stat_urls_added += 1
                         stat_skipped += 1
+                        continue
+                    if ARGS.add_urls:
                         continue
                         
                     api_url = urljoin(DOMAIN, f"/pl/document/{syl_id}.html?partialType=modal&forceEpd=false")
@@ -177,7 +223,7 @@ for year, year_url in academic_years.items():
                         clean_markdown = re.sub(r'\n{3,}', '\n\n', clean_markdown)
                         
                         with open(file_path, "w", encoding="utf-8") as f:
-                            f.write(clean_markdown.strip())
+                            f.write(with_url(clean_markdown.strip(), DOC_URL.format(id=syl_id)))
                         
                         stat_downloaded += 1
                         stat_size_bytes += len(clean_markdown.encode('utf-8'))
@@ -210,6 +256,7 @@ Total execution time: {duration} (HH:MM:SS)
 Total processed files: {total_processed}
   - Downloaded and saved: {stat_downloaded}
   - Skipped (already existed): {stat_skipped}
+  - url frontmatter added:      {stat_urls_added}
   - Network/download errors: {stat_errors}
 
 Downloaded data size (text only): {size_mb:.2f} MB

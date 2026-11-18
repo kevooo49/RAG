@@ -68,6 +68,17 @@ python evaluate_models.py --agreement models_eva_stats/run_20261117_234121/judge
 
 liczy zgodność z sędzią: zgodność dokładną, zgodność z dokładnością do 1 punktu i ważoną kwadratowo kappę Cohena.
 
+Wynik (60 odpowiedzi ocenionych ręcznie przez autora; cytowania tylko tam, gdzie model nie odmówił):
+
+| Kryterium | n | Zgodność dokładna | Różnica ≤ 1 pkt | Kappa ważona | Średnia sędziego | Średnia człowieka |
+|---|---|---|---|---|---|---|
+| correctness | 60 | 0.87 | 0.93 | 0.72 | 1.43 | 1.63 |
+| faithfulness | 60 | 0.85 | 0.92 | 0.30 | 1.90 | 1.70 |
+| citations | 49 | 0.96 | 1.00 | 0.65 | 1.92 | 1.96 |
+| language | 60 | 1.00 | 1.00 | — | 2.00 | 2.00 |
+
+Kappa ważona kwadratowo uwzględnia zgodność przypadkową i to, jak daleko leżą rozbieżne oceny; dla języka jest nieokreślona, bo obaj oceniający dali wszystkim odpowiedziom 2 (brak zmienności).
+
 ### Pamięć podręczna i koszt
 
 Odpowiedzi i oceny są zapisywane w `.eval_cache/model_eval.sqlite` — przerwany przebieg kontynuuje od miejsca przerwania, a ponowne uruchomienie z tymi samymi danymi nic nie kosztuje. Koszt pełnego przebiegu: generowanie ok. 0,14 USD (`gpt-4o-mini`) i 2,38 USD (`gpt-4o`), sędzia ok. 4,90 USD; Bielik działa lokalnie (ok. 10 godzin na 300 pytań).
@@ -129,7 +140,7 @@ Liczba pytań z kontekstem `no`/`yes` różni się nieco między modelami, bo s�
 1. **`gpt-4o` nie jest lepszy od `gpt-4o-mini`.** Żadna różnica nie jest istotna (correctness −0.003). `gpt-4o` nieco częściej trafnie odmawia (0.95 vs 0.88, ale na 16–20 pytaniach) i ma odrobinę lepsze cytowania, przy ok. 17 razy wyższym koszcie generowania.
 2. **Bielik przegrywa głównie przez fałszywe odmowy.** Odmawia w 23% pytań, na które odpowiedź **była** w kontekście (GPT: 1–2%). Odmowa liczy się jako correctness = 0, więc to ona w dużej mierze tłumaczy spadek o 0.22. Kiedy Bielik odpowiada, rzadko zmyśla: faithfulness i odsetek halucynacji są na poziomie GPT (różnica nieistotna). Słabsze są też cytowania (−0.097): częściej brakuje znaczników `[n]` lub wskazują zły fragment.
 3. **Bielik jest za wolny na obecnym sprzęcie.** Mediana 29 s do pierwszego tokenu i 105 s na odpowiedź — dla użytkownika czatu to za dużo, niezależnie od jakości. Pomiar na laptopie z kartą NVIDIA GeForce RTX 3050 Ti Laptop GPU, 4 GB VRAM; procesor Intel Core i7-12700H, 16 GB RAM. Model w kwantyzacji Q4_K_M zajmuje ok. 7 GB, więc nie mieści się w 4 GB pamięci karty i Ollama wykonuje większą część obliczeń na procesorze. Na karcie z co najmniej 8–12 GB pamięci czas odpowiedzi byłby wielokrotnie krótszy (nie mierzono), ale nie zmieniłoby to jakości odpowiedzi ani odsetka fałszywych odmów.
-4. **Halucynacje są rzadkie we wszystkich modelach** (1–2% odpowiedzi z faithfulness = 0). Prompt produkcji skutecznie ogranicza model do źródeł.
+4. **Halucynacje są rzadkie we wszystkich modelach** (1–2% odpowiedzi z faithfulness = 0 według sędziego). Prompt produkcji skutecznie ogranicza model do źródeł. Ocena ręczna (§1, „Ocena człowieka”) pokazuje jednak, że sędzia jest w tym kryterium zbyt łagodny, więc rzeczywisty odsetek odpowiedzi z niepopartymi twierdzeniami jest prawdopodobnie wyższy.
 5. **Jakość odpowiedzi zależy przede wszystkim od wyszukiwania.** Gdy chunk z dowodem jest w kontekście, `gpt-4o-mini` odpowiada poprawnie w 94%; gdy go nie ma — w 49%. Te 49% to przypadki, w których odpowiedź była w innym chunku (np. w kopii dokumentu lub w sąsiednim fragmencie), więc CtxHit@5 z testów wyszukiwania nieco zaniża rzeczywistą użyteczność kontekstu.
 6. **Ocena języka nie różnicuje modeli** — wszystkie dostały 1.000. Sędzia nie znalazł błędów polszczyzny ani wtrąceń w żadnej odpowiedzi.
 7. **Najtrudniejsze są pytania potoczne i dokumenty** (PDF-y: regulaminy, zarządzenia) — dla wszystkich modeli. Możliwe wyjaśnienie (hipoteza): pytania potoczne używają innych słów niż dokument, a dokumenty mają długie, gęste fragmenty, z których trzeba wybrać właściwą wartość.
@@ -139,7 +150,11 @@ Liczba pytań z kontekstem `no`/`yes` różni się nieco między modelami, bo s�
 **Produkcja zostaje przy `gpt-4o-mini` jako modelu domyślnym.** Odpowiada tak samo dobrze jak `gpt-4o`, przy ułamku kosztu. `gpt-4o` pozostaje na liście `ALLOWED_MODELS` jako opcja bez zmierzonej przewagi. Bielik pozostaje opcją lokalną (bez wysyłania danych do zewnętrznego API), ale nie nadaje się na model domyślny: częściej odmawia, gdy odpowiedź jest w kontekście, a na obecnym sprzęcie (4 GB pamięci karty) odpowiada ok. 1,5–2 minuty.
 
 Granice:
-* **Sędzia to model językowy** (`gpt-4.1`) z tej samej rodziny co dwa z trzech ocenianych modeli; możliwe jest, że lepiej ocenia styl odpowiedzi GPT. Zgodność sędziego z oceną człowieka (`judge_review.csv`, 60 odpowiedzi) — **[uzupełnić]**.
+* **Sędzia to model językowy** (`gpt-4.1`) z tej samej rodziny co dwa z trzech ocenianych modeli; możliwe jest, że lepiej ocenia styl odpowiedzi GPT. Na 60 odpowiedziach ocenionych ręcznie:
+  * **correctness** — zgodność dobra (kappa 0.72, 87% ocen identycznych). Sędzia jest surowszy od człowieka (średnio 1.43 wobec 1.63), więc bezwzględne wartości correctness są raczej zaniżone; porównania modeli, oparte na tej samej skali, pozostają wiarygodne. W 7% odpowiedzi (4 z 60) oceny różniły się o 2 punkty (poprawna wobec błędnej).
+  * **faithfulness** — zgodność słaba (kappa 0.30), mimo 85% identycznych ocen: prawie wszystkie oceny to 2, więc kappa jest bardzo czuła na nieliczne rozbieżności. Człowiek częściej niż sędzia zauważał twierdzenia niepoparte kontekstem (średnio 1.70 wobec 1.90). Odsetek halucynacji i wartości faithfulness należy więc traktować jako dolną granicę problemu, a różnice między modelami w tym kryterium — ostrożnie.
+  * **citations** — zgodność dobra (kappa 0.65, 96% identycznych ocen); **language** — pełna zgodność (wszystkie oceny 2).
+* Próbka kontrolna (60 odpowiedzi, jeden oceniający) jest mała; przedziały ufności dla kappy byłyby szerokie.
 * Odpowiedzi wzorcowe pochodzą z generatora pytań ([`eva_datasets.md`](eva_datasets.md)), a pytania są jednoturowe — test nie obejmuje przeformułowania pytań w rozmowie.
 * Prompt systemowy jest jeden dla wszystkich modeli; mógłby nie być optymalny dla Bielika (np. jego skłonność do odmowy może zależeć od sformułowania instrukcji). Test mierzy modele z obecnym promptem produkcji.
 * Kontekst pochodzi z próbki 2000 dokumentów i konfiguracji `planned`; na pełnej bazie (107 tys. plików) kontekst bywa trudniejszy. Całość zostanie sprawdzona w walidacji końcowej z pytaniami pisanymi ręcznie.

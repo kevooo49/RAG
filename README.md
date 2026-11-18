@@ -47,7 +47,7 @@ System RAG (*Retrieval-Augmented Generation*) odpowiadający na pytania student�
 | Ewaluacja | [`eva_embeddings.md`](Docs/eva_embeddings.md) | Modele embeddingowe |
 | Ewaluacja | [`eva_metadata.md`](Docs/eva_metadata.md) | Nagłówki chunków: tytuł, sekcje, źródło, URL — osobno dla embeddingu i BM25 |
 | Ewaluacja | [`eva_search.md`](Docs/eva_search.md) | Wektor vs BM25 (Stempel / Morfologik) vs RRF vs rozszerzanie zapytań |
-| Ewaluacja | [`eva_production.md`](Docs/eva_production.md) | Konfiguracja produkcyjna: obecna vs proponowana, wyszukiwanie i odpowiedzi (2 × 2: nagłówek embeddingu × rozszerzanie zapytań) |
+| Ewaluacja | [`eva_production.md`](Docs/eva_production.md) | Konfiguracja produkcyjna: obecna vs proponowana, wyszukiwanie i odpowiedzi (2 × 2: nagłówek embeddingu × rozszerzanie zapytań, plus filtr bliskich duplikatów w kontekście) |
 | Ewaluacja | [`eva_models.md`](Docs/eva_models.md) | Modele generujące (GPT-4o-mini, GPT-4o, Bielik) z promptem produkcji i kontekstem z wyszukiwarki; sędzia GPT-4.1 |
 
 ## 3. Kolejność uruchamiania (od zera)
@@ -93,7 +93,8 @@ Uwaga do kroku 5: domyślne `CHROMA_PORT` w `app/core/config.py` to `8000` (popr
 | `ES_URL` / `ES_INDEX` | `http://localhost:9200` / `agh_wiedza_asym` | Elasticsearch |
 | `CHROMA_HOST` / `CHROMA_PORT` / `CHROMA_COLLECTION` | `localhost` / `8000` / `agh_wiedza_asym` | ChromaDB |
 | `EMBED_MODEL` / `EMBED_DIMENSIONS` | `text-embedding-3-small` / *brak* | model embeddingów |
-| `EXPANSION_MODEL` | `gpt-4o-mini` | model przepisujący zapytania |
+| `EXPANSION_MODEL` | `gpt-4o-mini` | model przepisujący zapytania (przeformułowanie pytań z historią; rozszerzanie pierwszego pytania tylko przy `QUERY_EXPANSION`) |
+| `QUERY_EXPANSION` | `False` | rozszerzanie pierwszego pytania przez LLM (wyłączone: obniżało MRR@10, `eva_production.md`) |
 | `ALLOWED_MODELS` | `{gpt-4o-mini, bielik, gpt-4o}` | lista dozwolonych modeli odpowiedzi |
 | `OLLAMA_BASE_URL` / `BIELIK_MODEL` / `BIELIK_NUM_CTX` | `http://127.0.0.1:11434` / `SpeakLeash/bielik-11b-v3.0-instruct:Q4_K_M` / `8192` | lokalny model |
 | `RRF_K` | `60` | stała fuzji RRF |
@@ -133,4 +134,4 @@ Pola w indeksach mają **polskie nazwy** (`tekst`, `tytul`, `sekcja`, `zrodlo`, 
 | Jaki rozmiar chunka? | 300–650 tokenów bez różnicy w MRR i przy stałym budżecie tekstu (CtxHit@B); 200 tokenów istotnie gorsze; produkcja zostaje przy 450. Tytuł w chunku daje ok. +0.05 MRR względem stałych okien bez tytułu | `eva_chunking.md` |
 | Jaki nagłówek chunka? | tytuł niezbędny (bez niego −0.08 MRR); najlepszy tekst do embeddingu: `[Źródło] Tytuł` bez sekcji — +0.020 MRR (istotne), sylabusy +0.04; tekst BM25/LLM bez zmian | `eva_metadata.md` |
 | Który model odpowiada? | correctness (300 pytań, kontekst z wyszukiwarki): GPT-4o-mini 0.850 ≈ GPT-4o 0.847; Bielik 11B 0.630 (−0.22, istotne) — głównie fałszywe odmowy (23%), halucynacje 1–2% we wszystkich modelach; Bielik ~105 s/odpowiedź; produkcja zostaje przy GPT-4o-mini | `eva_models.md` |
-| Czy zmiany działają razem? | tak: `[Źródło] Tytuł` w embeddingu i brak rozszerzania dają po ok. +0.015 MRR, razem +0.034 (istotne); odpowiedzi gpt-4o-mini: correctness 0.817 → 0.850, w pełni poprawne 0.733 → 0.787 (300 pytań, nieistotne po korekcie), bez pogorszenia żadnej metryki; ok. 1.1 s szybciej | `eva_production.md` |
+| Czy zmiany działają razem? | tak: `[Źródło] Tytuł` w embeddingu + brak rozszerzania = +0.032 MRR@10 (istotne); odpowiedzi gpt-4o-mini: w pełni poprawne 73,7% → 78,7% i lepsze cytowania (istotne), bez pogorszenia żadnej metryki; ok. 1.1 s szybciej. Filtr bliskich duplikatów w kontekście: bez zysku, odrzucony | `eva_production.md` |
