@@ -118,7 +118,7 @@ Strumień zawsze kończy się ramką `data: [DONE]`, również po błędzie. Nag
 
 ### 6.3. Prompt systemowy i kontekst
 
-* Prompt (po polsku) nakazuje odpowiadać **wyłącznie** na podstawie fragmentów w znacznikach `<source>`, bez zgadywania terminów, kwot, godzin i adresów; dopuszcza proste obliczenia na danych ze źródeł; podaje dzisiejszą datę (strefa `Europe/Warsaw`); wymaga odpowiedzi tylko na *najnowsze* pytanie (historia jest tłem); przy częściowej odpowiedzi ma wskazać, czego baza nie precyzuje; całkowita odmowa — tylko gdy fragmenty nie dotyczą pytania; wymaga cytowania `[1]`, `[2][3]` po zdaniach opartych na źródle.
+* Prompt (po polsku) nakazuje odpowiadać **wyłącznie** na podstawie fragmentów w znacznikach `<source>`, bez zgadywania terminów, kwot, godzin i adresów; dopuszcza proste obliczenia na danych ze źródeł; podaje dzisiejszą datę (strefa `Europe/Warsaw`); wymaga odpowiedzi tylko na *najnowsze* pytanie (historia jest tłem); przy częściowej odpowiedzi ma wskazać, czego baza nie precyzuje; całkowita odmowa — tylko gdy fragmenty nie dotyczą pytania; wymaga cytowania `[1]`, `[2][3]` po zdaniach opartych na źródle. Odpowiedź jest w języku pytania (po angielsku na pytanie po angielsku), z nazwami własnymi w oryginale.
 * Fragmenty są wstrzykiwane jako `<source id="1" title="…" url="…">…</source>`; atrybuty są escapowane (`html.escape`), a ciąg `<source` / `</source` wewnątrz treści jest neutralizowany, więc dokument nie może „wyjść” poza swój znacznik. Prompt wprost deklaruje, że zawartość `<source>` to dane, nie polecenia.
 * Jeśli zapytanie samodzielne różni się od oryginału, jest dopisywane na końcu wiadomości użytkownika.
 

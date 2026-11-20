@@ -49,6 +49,7 @@ System RAG (*Retrieval-Augmented Generation*) odpowiadający na pytania student�
 | Ewaluacja | [`eva_search.md`](Docs/eva_search.md) | Wektor vs BM25 (Stempel / Morfologik) vs RRF vs rozszerzanie zapytań |
 | Ewaluacja | [`eva_production.md`](Docs/eva_production.md) | Konfiguracja produkcyjna: obecna vs proponowana, wyszukiwanie i odpowiedzi (2 × 2: nagłówek embeddingu × rozszerzanie zapytań, plus filtr bliskich duplikatów w kontekście) |
 | Ewaluacja | [`eva_models.md`](Docs/eva_models.md) | Modele generujące (GPT-4o-mini, GPT-4o, Bielik) z promptem produkcji i kontekstem z wyszukiwarki; sędzia GPT-4.1 |
+| Ewaluacja | [`validation.md`](Docs/validation.md) | Walidacja końcowa: pytania pisane ręcznie, produkcja na pełnej bazie, ocena ręczna (`validate_final.py`) |
 
 ## 3. Kolejność uruchamiania (od zera)
 

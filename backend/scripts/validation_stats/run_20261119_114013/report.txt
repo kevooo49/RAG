@@ -1,0 +1,44 @@
+========================================================================================================
+FINAL VALIDATION (validate_final.py) - hand-written questions, full database, production API
+========================================================================================================
+Run: run_20261119_114013 | model gpt-4o-mini | 129 rated questions
+Ratings by the author: answer 0-2, sources 0-2 (shown as 0-1); 95% CI: bootstrap over questions.
+
+Answerable questions (119, all categories except 'brak'):
+   answer score          0.80 [0.72-0.86]
+   fully correct         0.77 [0.69-0.84]
+   sources score         0.86 [0.79-0.91]
+   answer fully in sources 0.82 [0.74-0.88]
+   hallucination         0.03 [0.01-0.07]
+   refusals              0.17
+
+Questions without an answer in the database ('brak', 10): handled correctly 1.00 [1.00-1.00], refused 10/10
+
+Category       n              answer   fully correct             sources  halluc.  refused
+--------------------------------------------------------------------------------------------------------
+fakt          30    0.87 [0.75-0.97]            0.83    0.92 [0.83-0.98]     0.07     0.10
+regulamin     18    0.89 [0.72-1.00]            0.89    0.94 [0.83-1.00]     0.00     0.11
+tabela         7    1.00 [1.00-1.00]            1.00    1.00 [1.00-1.00]     0.00     0.00
+sylabus       12    0.54 [0.25-0.79]            0.50    0.58 [0.33-0.83]     0.08     0.33
+jednostka     10    0.60 [0.30-0.90]            0.60    0.80 [0.55-0.95]     0.10     0.30
+osoba         11    0.73 [0.45-1.00]            0.73    0.73 [0.45-1.00]     0.00     0.36
+potoczne      13    0.81 [0.58-1.00]            0.77    0.85 [0.69-1.00]     0.00     0.15
+wiele          8    0.75 [0.50-1.00]            0.62    0.81 [0.56-1.00]     0.00     0.12
+rozmowa        5    1.00 [1.00-1.00]            1.00    1.00 [1.00-1.00]     0.00     0.00
+angielski      5    0.80 [0.40-1.00]            0.80    1.00 [1.00-1.00]     0.00     0.20
+brak          10    1.00 [1.00-1.00]            1.00                   -     0.00     1.00
+
+Answer score by sources score (answerable questions) - where the misses come from:
+   sources 0 (none of the answer)  n= 12  answer 0.00
+   sources 1 (part of the answer)  n= 10  answer 0.40
+   sources 2 (all of the answer)  n= 97  answer 0.94
+
+Misses (answer < 2): 27
+    12  wyszukiwanie (żadne źródło nie zawiera odpowiedzi)
+     8  fałszywa odmowa (odpowiedź była w źródłach)
+     5  wyszukiwanie częściowe (źródła zawierają tylko część odpowiedzi)
+     2  generowanie (odpowiedź była w źródłach, model ją pominął lub przekręcił)
+
+Latency (end to end, through the API): first token median 1.4 s, whole answer median 2.8 s, max 6.3 s
+
+Most frequent sources in the contexts: Sylabusy AGH 123, COK AGH 45, Centrum Spraw Studenckich AGH 44, Samorzad AGH 39, Zarz AGH 38, Rekrutacja AGH 35, Skos AGH 31, Centrum Spraw Międzynarodowych AGH 24
