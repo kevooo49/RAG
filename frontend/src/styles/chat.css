@@ -37,6 +37,16 @@
   margin-bottom: 0.5rem;
 }
 
+.message-content a {
+  color: var(--agh-red);
+  text-decoration: underline;
+  overflow-wrap: anywhere;   /* long addresses must not stretch the message bubble */
+}
+
+.message-content a:hover {
+  text-decoration: none;
+}
+
 .message-content p:last-child {
   margin-bottom: 0;
 }

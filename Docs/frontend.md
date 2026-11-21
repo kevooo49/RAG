@@ -57,14 +57,15 @@ Skrypty `package.json`: `dev` (Vite), `build` (`tsc && vite build`), `preview`, 
 
 ## 5. Formatowanie tekstu (`formatters.ts`)
 
-`formatText` najpierw wykonuje `escapeHTML` (`& < > ' "`), dopiero potem dokłada znaczniki:
+`formatText` najpierw wyjmuje z surowego tekstu linki, potem wykonuje `escapeHTML` (`& < > ' "`) i dopiero wtedy dokłada znaczniki:
 
+* **linki** — `[etykieta](https://…)` oraz gołe adresy `http(s)://…` → `<a href="…" target="_blank" rel="noopener noreferrer nofollow">`. Adres jest sprawdzany przez `new URL()` i musi mieć protokół `http:` lub `https:`; inne (`javascript:`, `data:`, `vbscript:`, `//host`, adresy niepoprawne) zostają zwykłym tekstem. `URL()` koduje cudzysłowy i spacje (`%22`, `%20`), a `href` i etykieta przechodzą przez `escapeHTML`, więc z atrybutu nie da się „wyjść”. Linki są zastępowane znacznikami-zaślepkami przed pozostałymi regułami, więc `**` czy `[1]` wewnątrz adresu nie są formatowane; końcowa interpunkcja gołego adresu („…/studenci.”) nie wchodzi do linku. Niedomknięty link w trakcie strumieniowania jest wyświetlany jako tekst, aż pojawi się `)`;
 * linie zaczynające się od `-` lub `*` i białego znaku → `<li>`; **każda grupa kolejnych punktów dostaje własny `<ul>`**, a tekst pomiędzy dwiema listami zostaje poza listami;
 * `**tekst**` → `<strong>` (niedomknięte `**` w trakcie strumieniowania pozostaje dosłowne, a pogrubienie nie obejmuje łamania linii);
 * `[n]` (same cyfry) → `<span class="citation" data-id="n">`; styl jest w CSS, ale **interakcji (hover, przewijanie do źródła) w kodzie nie ma**;
 * pozostałe znaki nowej linii → `<br/>`; całość owinięta w jeden `<p>`.
 
-Nieobsługiwane (zostają jako zwykły tekst): listy numerowane, nagłówki, linki Markdown, kursywa, kod. Wynik zawiera wyłącznie elementy `P`, `UL`, `LI`, `STRONG`, `SPAN`, `BR` z atrybutami `class` i `data-id` (sprawdzają to testy, również dla każdego prefiksu strumieniowanej odpowiedzi).
+Nieobsługiwane (zostają jako zwykły tekst): listy numerowane, nagłówki, kursywa, kod. Wynik zawiera wyłącznie elementy `P`, `UL`, `LI`, `STRONG`, `SPAN`, `BR` i `A` — z atrybutami `class`, `data-id` oraz, tylko na `A`, `href`, `target`, `rel` (sprawdzają to testy, również dla każdego prefiksu strumieniowanej odpowiedzi).
 
 ## 6. Panel źródeł (`sources.ts`)
 
@@ -92,7 +93,7 @@ E2E_LIVE=1 npm run test:e2e       # dodatkowo test z prawdziwym backendem
 | Plik | Zakres |
 |---|---|
 | `client.test.ts` | żądanie i limity historii (6 wiadomości, 3000 znaków, brak mutacji), parsowanie SSE (m.in. przecięcie strumienia w **każdym** miejscu, także wewnątrz znaku UTF-8, oraz dostarczanie bajt po bajcie), wszystkie ścieżki błędów, gwarancja braku odrzucenia obietnicy |
-| `formatters.test.ts` | `escapeHTML` (w tym test własności na losowych napisach), struktura `formatText`, cytowania, lista dozwolonych elementów/atrybutów przy próbach XSS, odporność na strumieniowanie, wydajność na patologicznych danych |
+| `formatters.test.ts` | `escapeHTML` (w tym test własności na losowych napisach), struktura `formatText`, cytowania, linki (dozwolone tylko `http(s)`, próby wstrzyknięcia przez adres i etykietę), lista dozwolonych elementów/atrybutów przy próbach XSS, odporność na strumieniowanie, wydajność na patologicznych danych |
 | `sources.test.ts` | renderowanie kart, reguły linków (w tym `javascript:`, `data:`, `//host`), XSS, przełącznik |
 | `main.test.ts` | cała aplikacja zamontowana z `index.html?raw` z atrapą `fetch`: pierwszy render, cykl pytanie–odpowiedź, treść żądania, trwałość w `sessionStorage`, błędy, niezaufana treść |
 | `helpers/sse.ts` | atrapy odpowiedzi `fetch` (`sseResponse`, `controlledStream`, `errorResponse`, `cutAt`, `recorder`) |

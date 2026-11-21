@@ -131,13 +131,13 @@ Poniższe przykłady pochodzą z opisanego przebiegu. Odpowiedzi są skrócone; 
 | czy na magisterce tez trzeba chodzic na wf | potoczne | WF jest obowiązkowy na studiach stacjonarnych I stopnia; baza nie precyzuje, czy na studiach magisterskich. | Zasady zaliczania WF (SWFiS) — tylko część odpowiedzi | 1 / 1 | wyszukiwanie częściowe |
 | Czym różni się Indywidualna Organizacja Studiów od Indywidualnego Programu Studiów? | wiele | Model stwierdził, że oba pojęcia mogą być używane zamiennie — co jest błędne. | FAQ COK i zasady IOS/IPS — źródła rozróżniają oba tryby | 1 / 2 | generowanie |
 
-Przykłady pomyłek ilustrują trzy typowe przyczyny opisane w §4: wyszukiwanie dopasowuje pojedyncze słowa zamiast sensu pytania (Kodeks pracy przy „urlopie”, sylabus „E-mail marketing” przy „e-mailu”), sylabusy innych przedmiotów wypierają właściwy, a model odmawia mimo obecności odpowiedzi w kontekście.
+Przykłady pomyłek ilustrują trzy typowe przyczyny opisane w §3: wyszukiwanie dopasowuje pojedyncze słowa zamiast sensu pytania (Kodeks pracy przy „urlopie”, sylabus „E-mail marketing” przy „e-mailu”), sylabusy innych przedmiotów wypierają właściwy, a model odmawia mimo obecności odpowiedzi w kontekście.
 
 ## 3. Wnioski
 
 1. **Gdy wyszukiwanie znajdzie odpowiedź, model niemal zawsze odpowiada dobrze** (średnia 0.94 przy pełnej odpowiedzi w źródłach). Jakość systemu zależy przede wszystkim od wyszukiwania i od skłonności modelu do odmowy.
 2. **Najsłabsze są sylabusy, jednostki i osoby.** Sylabusów jest w bazie bardzo dużo i są do siebie podobne (te same przedmioty w kolejnych latach, wspólne szablony), więc łatwo trafić na niewłaściwy; odpowiedzi o jednostkach i osobach są rozproszone po wielu stronach.
-3. **Fałszywe odmowy są główną wadą generowania.** Na pytaniach pisanych ręcznie model odmawiał przy odpowiedzi obecnej w źródłach w 8–22 przypadkach (zależnie od zestawu i trybu), podczas gdy na pytaniach wygenerowanych — w 1–2% ([`eva_models.md`](eva_models.md)). Reguła odmowy w prompcie jest dla prawdziwych pytań zbyt surowa; to najbardziej obiecujący kierunek poprawy.
+3. **Fałszywe odmowy są główną wadą generowania.** Na pytaniach pisanych ręcznie model odmawiał przy odpowiedzi obecnej w źródłach w 8 przypadkach, podczas gdy na pytaniach wygenerowanych — w 1–2% ([`eva_models.md`](eva_models.md)). Reguła odmowy w prompcie jest dla prawdziwych pytań zbyt surowa; to najbardziej obiecujący kierunek poprawy.
 
 ### Obserwacje z przebiegu walidacji
 
@@ -145,7 +145,7 @@ Przykłady pomyłek ilustrują trzy typowe przyczyny opisane w §4: wyszukiwanie
 * Jeśli jedna ze ścieżek wyszukiwania zawiedzie, backend kontynuuje z drugą i tylko zapisuje ostrzeżenie w logu. Skrypt walidacji wykrywa takie odpowiedzi (wyniki RRF z jednej listy) i zadaje pytanie ponownie.
 * Pełna baza (ok. 1,5 mln wektorów o 1536 wymiarach) zajmuje w Chroma ok. 9,5 GB pamięci, co na laptopie z 16 GB RAM jest na granicy możliwości.
 
-## 5. Granice
+## 4. Granice
 
 * **Jeden oceniający, który jest też autorem pytań i systemu.** Oceny nie były zaślepione ani sprawdzone przez drugą osobę.
 * **Małe kategorie** (5–13 pytań): przedziały ufności dla kategorii są szerokie, więc różnice między kategoriami są orientacyjne.

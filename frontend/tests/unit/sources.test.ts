@@ -1,6 +1,4 @@
-/**
- * @vitest-environment happy-dom
- */
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { createSourcesComponent } from '../../src/components/sources';
 import type { SourceDocument } from '../../src/types';

@@ -1,11 +1,8 @@
-/**
- * @vitest-environment happy-dom
- * (a DOM is needed to check what the browser would actually build from the generated HTML)
- */
+// @vitest-environment happy-dom
+
 import { describe, it, expect } from 'vitest';
 import { escapeHTML, formatText } from '../../src/utils/formatters';
 
-/** Parse generated HTML the way the browser will, so assertions are about real elements, not strings. */
 function render(text: string): HTMLElement {
   const box = document.createElement('div');
   box.innerHTML = formatText(text);
@@ -32,8 +29,8 @@ describe('escapeHTML', () => {
   });
 
   it('escapes the ampersand first, so nothing is escaped twice within one pass', () => {
-    expect(escapeHTML('<')).toBe('&lt;');                       // not "&amp;lt;"
-    expect(escapeHTML('&lt;')).toBe('&amp;lt;');                // already-escaped input is escaped once more (text is literal)
+    expect(escapeHTML('<')).toBe('&lt;');
+    expect(escapeHTML('&lt;')).toBe('&amp;lt;');
   });
 
   it('turns missing values (undefined / null) into an empty string instead of throwing', () => {
@@ -146,10 +143,82 @@ describe('formatText: citations', () => {
     expect(box.textContent).toBe(`tekst ${s} koniec`);
   });
 
-  it('does not turn ordinary markdown links into anything clickable', () => {
-    const box = render('[regulamin](https://example.com)');
+});
+
+// =====================================================================
+// formatText: links (the model writes [label](https://...) and bare addresses)
+// =====================================================================
+describe('formatText: links', () => {
+
+  const linkAttrs = (a: Element) => Array.from(a.attributes).map((x) => x.name).sort();
+
+  it('renders a markdown link as a safe anchor that opens in a new tab', () => {
+    const box = render('Więcej na stronie [Niepełnoletni](https://rekrutacja.agh.edu.pl/wpis-niestandardowy/#niepelnoletni).');
+    const a = box.querySelector('a') as HTMLAnchorElement;
+    expect(a.textContent).toBe('Niepełnoletni');
+    expect(a.getAttribute('href')).toBe('https://rekrutacja.agh.edu.pl/wpis-niestandardowy/#niepelnoletni');
+    expect(a.getAttribute('target')).toBe('_blank');
+    expect(a.getAttribute('rel')).toBe('noopener noreferrer nofollow');
+    expect(linkAttrs(a)).toEqual(['href', 'rel', 'target']);
+    expect(box.textContent).toBe('Więcej na stronie Niepełnoletni.');
+  });
+
+  it('links bare http(s) addresses without the trailing punctuation', () => {
+    const box = render('Zobacz https://www.agh.edu.pl/studenci. Albo http://example.com?a=1&b=2, dalej.');
+    const hrefs = Array.from(box.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['https://www.agh.edu.pl/studenci', 'http://example.com/?a=1&b=2']);
+    expect(box.textContent).toBe('Zobacz https://www.agh.edu.pl/studenci. Albo http://example.com?a=1&b=2, dalej.');
+  });
+
+  it.each([
+    '[klik](javascript:alert(1))',
+    '[klik](data:text/html,<script>alert(1)</script>)',
+    '[klik](vbscript:msgbox(1))',
+    '[klik](//evil.example.com)',
+    'javascript:alert(1)',
+  ])('does not make %s clickable', (payload) => {
+    const box = render(payload);
     expect(box.querySelectorAll('a').length).toBe(0);
-    expect(box.textContent).toBe('[regulamin](https://example.com)');
+    expect(box.textContent).toBe(payload);
+  });
+
+  it('cannot break out of the href attribute or inject handlers', () => {
+    const box = render('[x](https://a.pl/"onmouseover="alert(1)) i [y](https://a.pl/\'><img src=x onerror=alert(1)>)');
+    expect(box.querySelectorAll('img').length).toBe(0);
+    for (const a of Array.from(box.querySelectorAll('a'))) {
+      expect(linkAttrs(a)).toEqual(['href', 'rel', 'target']);
+      expect(a.getAttribute('href')).toMatch(/^https:\/\/a\.pl\//);
+      expect(a.getAttribute('href')).not.toMatch(/["'<> ]/);
+    }
+  });
+
+  it('escapes HTML in the link label', () => {
+    const box = render('[<img src=x onerror=alert(1)>](https://a.pl)');
+    expect(box.querySelectorAll('img').length).toBe(0);
+    expect(box.querySelector('a')?.textContent).toBe('<img src=x onerror=alert(1)>');
+  });
+
+  it('keeps links working inside lists, next to bold text and citations', () => {
+    const box = render('Dokumenty:\n- **Regulamin** [Regulamin studiów](https://www.agh.edu.pl/regulamin.pdf) [2]\n- formularz https://a.pl/f.pdf [3]');
+    expect(box.querySelectorAll('li').length).toBe(2);
+    expect(texts(box.querySelectorAll('a'))).toEqual(['Regulamin studiów', 'https://a.pl/f.pdf']);
+    expect(texts(box.querySelectorAll('.citation'))).toEqual(['[2]', '[3]']);
+    expect(box.querySelector('strong')?.textContent).toBe('Regulamin');
+  });
+
+  it('does not turn citation numbers or bold markers inside an address into formatting', () => {
+    const box = render('[strona](https://a.pl/x**y**/[1]/z)');
+    expect(box.querySelectorAll('strong, .citation').length).toBe(0);
+    expect(box.querySelector('a')?.getAttribute('href')).toBe('https://a.pl/x**y**/[1]/z');
+  });
+
+  it('shows a half-streamed markdown link as text until it is complete', () => {
+    const full = 'Info: [Niepełnoletni](https://rekrutacja.agh.edu.pl/x) koniec';
+    for (let i = 1; i <= full.length; i++) {
+      const box = render(full.slice(0, i));
+      for (const tag of tags(box)) expect(['P', 'UL', 'LI', 'STRONG', 'SPAN', 'BR', 'A']).toContain(tag);
+    }
+    expect(render(full).querySelector('a')?.textContent).toBe('Niepełnoletni');
   });
 });
 
@@ -176,13 +245,10 @@ describe('formatText: XSS safety', () => {
 
   it.each(payloads)('renders %s as harmless text', (payload, visible) => {
     const box = render(payload);
-    // only the formatting elements this function is meant to produce may exist
     for (const tag of tags(box)) expect(['P', 'UL', 'LI', 'STRONG', 'SPAN', 'BR']).toContain(tag);
-    // no inline event handlers or other attributes sneaked in
     for (const el of Array.from(box.querySelectorAll('*'))) {
       for (const attr of Array.from(el.attributes)) expect(['class', 'data-id']).toContain(attr.name);
     }
-    // ... and the text is shown literally to the reader
     expect(box.textContent).toContain(visible);
   });
 
