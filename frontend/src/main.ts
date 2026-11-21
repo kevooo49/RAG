@@ -3,8 +3,8 @@ import { createSourcesComponent } from './components/sources';
 import type { Message, ChatRequestPayload } from './types';
 import { formatText } from './utils/formatters';
 
-const DEV_MODE_SOURCES = true;
-const DEV_MODE_SWITCHER = true;
+const DEV_MODE_SOURCES = false;
+const DEV_MODE_SWITCHER = false;
 
 const form = document.getElementById('chat-form') as HTMLFormElement;
 const input = document.getElementById('message-input') as HTMLInputElement;

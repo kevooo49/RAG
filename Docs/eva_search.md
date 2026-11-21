@@ -3,7 +3,7 @@
 Skrypt porównuje wyszukiwanie wektorowe, BM25 z czterema analizatorami języka polskiego, hybrydę RRF i rozszerzanie zapytań (opcjonalnie także reranker) na próbce ewaluacyjnej. Dane: [`eva_datasets.md`](eva_datasets.md); wspólna metoda, metryki i statystyka: [`eva_framework.md`](eva_framework.md).
 
 Wyniki:
-* przebieg 1 (9 wariantów): `search_eva_stats/run_…` **[uzupełnić nazwę katalogu]**,
+* przebieg 1 (9 wariantów): `search_eva_stats/run_20261116_225919/`,
 * przebieg 2 (hybryda z `morfologik_stop`): `search_eva_stats/run_20261116_232902/`.
 
 ## 1. Metoda
