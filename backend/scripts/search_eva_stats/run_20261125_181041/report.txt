@@ -1,0 +1,100 @@
+==============================================================================================================
+SEARCH EVALUATION (evaluate_search.py)
+==============================================================================================================
+Questions: 860 | target documents: 299 | baseline: hybrid_stempel | CI: cluster bootstrap by document, 95% | p: paired bootstrap, Holm-corrected over systems (* < 0.05)
+File level: first relevant file (copies count) in top 10. Context level: CtxHit@5 = a chunk containing the evidence is among the 5 chunks given to the LLM.
+Sample: 2000 docs, 27674 chunks | embeddings: openai:text-embedding-3-small:native | expansion: gpt-4o-mini (production prompt) | ES: http://localhost:9200
+Latency: dense = numpy exact search (not Chroma HNSW); hybrid = max of the two legs (they run in parallel in production); LLM ms = expansion, first uncached call.
+
+System                              Hit@1  Hit@5       MRR@10 [95% CI]     CtxHit@5 [95% CI]   ms med  LLM ms
+--------------------------------------------------------------------------------------------------------------
+Hybrid (stempel) + rerank mmarco    0.806  0.937     0.863 [0.84-0.88]     0.828 [0.80-0.85]     1098       0
+Hybrid (stempel) + rerank pl-base   0.794  0.937     0.854 [0.83-0.88]     0.828 [0.80-0.86]     4687       0
+Hybrid RRF (stempel)                0.740  0.915     0.814 [0.79-0.84]     0.766 [0.73-0.80]       27       0
+
+Differences vs hybrid_stempel:
+System                                                           dMRR@10                             dCtxHit@5
+--------------------------------------------------------------------------------------------------------------
+Hybrid (stempel) + rerank mmarco           +0.050 [+0.03,+0.07] p=0.001*         +0.062 [+0.04,+0.09] p=0.001*
+Hybrid (stempel) + rerank pl-base          +0.040 [+0.02,+0.06] p=0.001*         +0.062 [+0.04,+0.09] p=0.001*
+Hybrid RRF (stempel)                                          (baseline)                            (baseline)
+
+MRR@10 by question type:
+System                                colloquial (291)       lexical (290)      semantic (279)
+Hybrid (stempel) + rerank mmarco                 0.850               0.905               0.834
+Hybrid (stempel) + rerank pl-base                0.828               0.908               0.824
+Hybrid RRF (stempel)                             0.793               0.868               0.778
+
+MRR@10 by document type:
+System                                  dokument (209)        strona (386)       sylabus (265)
+Hybrid (stempel) + rerank mmarco                 0.905               0.920               0.747
+Hybrid (stempel) + rerank pl-base                0.878               0.921               0.736
+Hybrid RRF (stempel)                             0.823               0.868               0.726
+
+MRR@10 by position in document (thirds):
+System                                       end (201)        middle (257)         start (402)
+Hybrid (stempel) + rerank mmarco                 0.821               0.826               0.908
+Hybrid (stempel) + rerank pl-base                0.789               0.822               0.906
+Hybrid RRF (stempel)                             0.784               0.766               0.859
+
+MRR@10 by generic (evidence in > 5 docs):
+System                                    generic (95)      specific (765)
+Hybrid (stempel) + rerank mmarco                 0.820               0.869
+Hybrid (stempel) + rerank pl-base                0.820               0.858
+Hybrid RRF (stempel)                             0.831               0.811
+
+Analyzer demo - tokens produced for:
+   "Studentki składały wnioski o stypendia rektora w dziekanatach wydziałów; terminy zaliczeń w sesji letniej."
+   stempel          student składać wnioskeć stypendium rektor dziekanat wydział terować zaliczyć sesja letni
+
+Questions where the best system (Hybrid (stempel) + rerank mmarco) misses the top 5 (54), first 25:
+ - [semantic] Jakie podejście wykorzystuje się przy rozwijaniu i testowaniu rozwiązań w projekcie, w szczególności dotyczących oceny jakości danych i ich reprodukowalności?
+     expected: pl__projects__international-projects__eosc-data-commons_1124ea93.md (+0 copies) | got: Data Science.md, Komputerowe metody obliczeniowe i analizy danych.md, studia__jakosc-ksztalcenia_505c4cd9.md
+ - [semantic] Jakie warunki musi spełnić student, aby przystąpić do zdalnego egzaminu dyplomowego na AGH?
+     expected: Z_1_oswiadczenie_obrona_online_2021_2304a252.md (+3 copies) | got: Regulamin_studiow_2023.md, dydaktycy__zdalne-ksztalcenie__warunki_14fad42c.md, Materiały bioaktywne w medycynie - projektowanie i zastosowanie.md
+ - [colloquial] Kiedy i gdzie jest obrona doktoratu Julii Inczak na AGH?
+     expected: d5875215b486911968cdd55216e31f4a_6a3e20021f317_f78f1be1.md (+0 copies) | got: Uchwaly_RD_29_stycznia_2024__1-8_034c3fc6.md, nauka__seminarium-wydzialowe__seminaria-lista__detail__s__publiczna-obrona-rozpr_b795ddd3.md, osoba__julia-cichon-11347.html_b860ae97.md
+ - [colloquial] Kto ogarnia dyplomy na informatyce na AGH?
+     expected: pl__studenci__jakosc-ksztalcenia1_123ddf98.md (+0 copies) | got: oferta-studiow-podyplomowych__chmury-obliczeniowe-i-sieci-komputerowe_7357fff6.md, FAGH_sprawozdanie_roczne_2018_8380331e.md, Poswin_0874e79e.md
+ - [semantic] Jakie ogólne wymagania dotyczące wykształcenia i umiejętności musi spełnić kandydat, aby móc rozpocząć te studia podyplomowe?
+     expected: oferta-studiow-podyplomowych__chmury-obliczeniowe-i-sieci-komputerowe_7357fff6.md (+0 copies) | got: Poswin_0874e79e.md, Praca dyplomowa.md, Praca dyplomowa.md
+ - [semantic] Jakie praktyczne umiejętności i kompetencje można zdobyć kończąc program magisterski związany z energetyką odnawialną i transformacją energetyczną?
+     expected: kierunki-studiow__sustainable-energy-systems_4ca068c2.md (+0 copies) | got: Odnawialne źródła energii.md, Odnawialne źródła energii II.md, Podstawy polityki energetycznej i ekologicznej.md
+ - [colloquial] Co trzeba zrobić na ustnym z angielskiego B2 na AGH i na co patrzą przy ocenie?
+     expected: zarzadzenie-rektora-agh-35-2017_zalacznik_nr_1_30477acc.md (+0 copies) | got: Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Inżynierii Mechanicznej i Robotyki.md, Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Metali Nieżelaznych.md, Język angielski B2+ - obowiązkowy kurs języka specjalistycznego na studiach II stopnia dla studentów Wydziału Inżynierii....md
+ - [colloquial] Jakie jest główne zadanie URSS AGH?
+     expected: ksiega-znaku-urss-agh_zalcznik-do-uchwaly-3_2021_18e13041.md (+0 copies) | got: o-nas_fe495295.md, Zagraniczne_podroze_sluzbowe_prezentacja_CSM_27102025-1-skompresowany_af143447.md, ordynacja-wyborcza-samorzadu-studentow-agh-2026_b98a2c8f.md
+ - [semantic] Jak można się skontaktować z osobą pełniącą funkcję zastępcy przewodniczącego związku zawodowego na AGH?
+     expected: osoba__anna-mlynarczykowska-5949.html_de398d1a.md (+0 copies) | got: o-nas__sklad-urss_f125209b.md, wspolpraca__samorzad-studentow_25b270d7.md, kontakt_60c814d8.md
+ - [semantic] Gdzie należy się udać, jeśli ktoś chce spotkać się z osobą odpowiedzialną za sprawy kształcenia na wydziale informatyki AGH?
+     expected: osoba__jacek-kolodziej-5864.html_6f8ae046.md (+0 copies) | got: kontakt_60c814d8.md, pl__studenci__jakosc-ksztalcenia1_123ddf98.md, oferta-studiow-podyplomowych__chmury-obliczeniowe-i-sieci-komputerowe_7357fff6.md
+ - [colloquial] Gdzie znajdę prodziekana ds. kształcenia z WEiTI AGH?
+     expected: osoba__jacek-kolodziej-5864.html_6f8ae046.md (+0 copies) | got: kontakt_60c814d8.md, ProdziekanDs.Ksztalcenia_d27a39da.md, wydzial_29e92399.md
+ - [lexical] Jaki jest dokładny adres siedziby oraz numer telefonu Studenckiego Centrum Konstrukcyjnego AGH?
+     expected: osoba__mateusz-skrzynski-7610.html_13fe3fd5.md (+0 copies) | got: o-nas_fe495295.md, page__biuro-dziekana_8c7aee8c.md, kontakt_8ffe560b.md
+ - [colloquial] Gdzie znajdę prodziekana ds. kształcenia na WILiGZ i jaki jest do niego numer?
+     expected: osoba__romuald-ogrodnik-5456.html_71444385.md (+0 copies) | got: strefa-studenta__jakosc-ksztalcenia_d64a60aa.md, wydzial_1aeac9ab.md, ProdziekanDs.Ksztalcenia_d27a39da.md
+ - [colloquial] Jakie są ograniczenia i błędy w zdalnym teledetekcji satelitarnej?
+     expected: PL_EN_Topics_for_Diploma_Exam_WTK_38d1bff0.md (+0 copies) | got: Technologie satelitarne i przetwarzanie danych satelitarnych.md, Teledetekcja z elementami cyfrowego przetwarzania sygnału.md, Integracja technologii BIM i GIS.md
+ - [colloquial] Jak na AGH sprawdzają, czy zajęcia są ok?
+     expected: pl__studia__jakosc-ksztalcenia_951134b6.md (+0 copies) | got: Podstawy systemu Linux.md, Narzędzia controllingu wspierające szczupłe zarządzanie.md, Ekologiczne aspekty życia człowieka.md
+ - [semantic] Co powinien zrobić student, jeśli opuścił ćwiczenia laboratoryjne lub seminarium z ważnego powodu?
+     expected: Nanomedicine.md (+5 copies) | got: Odnawialne źródła energii.md, Zrównoważony rozwój przemysłu.md, Podstawy chemii medycznej.md
+ - [semantic] Jakie są główne typy aktywności i ile czasu średnio student powinien na nie poświęcić, żeby zaliczyć kurs związany z transformacją i wykorzystaniem energii?
+     expected: Physics of energy transformation and use.md (+5 copies) | got: Procesy energetyczne.md, Efektywność energetyczna w biznesie.md, Podstawy rynku energii z uwzględnieniem odnawialnych źródeł energii.md
+ - [semantic] Jakie aktywności są przewidziane dla studentów w ramach realizacji przedmiotu Statystyka oraz ile czasu należy średnio na nie poświęcić?
+     expected: Statystyka.md (+2 copies) | got: Statistical Learning w praktyce.md, Statystyka opisowa.md, Statystyka opisowa.md
+ - [colloquial] Jak zaliczam laby z tego przedmiotu Statystyka?
+     expected: Statystyka.md (+4 copies) | got: Statystyka opisowa.md, Statystyka opisowa.md, Wizualizacja i grafika komputerowa.md
+ - [lexical] Jaki jest sposób nadrobienia nieobecności na ćwiczeniach projektowych z przedmiotu DGEIS.Ii20.06401.21?
+     expected: Use of Infrared thermography (IRT) in monitoring thermal hazards.md (+3 copies) | got: Applied Geomechanics.md, Analiza cyklu życia i śladu środowiskowego.md, Problemy trwałości narzędzi i konstrukcji.md
+ - [semantic] W jaki sposób student może nadrobić zaległości wynikające z usprawiedliwionej nieobecności na zajęciach seminaryjnych tego modułu?
+     expected: Elementy procesu inwestycyjnego.md (+7 copies) | got: Programowanie strukturalne i obiektowe.md, Normalizacja, audyt, certyfikacja, akredytacja i systemy zgodności.md, Non-destructive testing.md
+ - [colloquial] O czym jest ten przedmiot? Jakie tematy tu robimy?
+     expected: Fizyka i chemia środowiska.md (+3 copies) | got: Komputerowe projektowanie wyrobów ceramicznych (RhinoCeros 3D).md, Materiałoznawstwo.md, Programowanie obiektowe.md
+ - [semantic] Jakie są wymagania dotyczące obecności na wykładach i ćwiczeniach na przedmiocie logika na studiach licencjackich na Wydziale Humanistycznym AGH?
+     expected: Logika.md (+3 copies) | got: Logika.md, Logika.md, Matematyka I.md
+ - [lexical] Podaj pełny tytuł i autorów trzeciej pozycji obowiązkowej literatury do Analizy 1 na kierunku Cyberbezpieczeństwo.
+     expected: Analiza 1.md (+1 copies) | got: Kryptografia i cyberbezpieczeństwo.md, Sprzętowe aspekty cyberbezpieczeństwa.md, Administracja sieciami komputerowymi i cyberbezpieczeństwo.md
+ - [colloquial] Ile muszę być obecny na ćwiczeniach audytoryjnych z wymiany ciepła, żeby móc iść na poprawkę?
+     expected: Wymiana ciepła.md (+0 copies) | got: Wymiana ciepła.md, Wymiana ciepła.md, Normalizacja, audyt, certyfikacja, akredytacja i systemy zgodności.md

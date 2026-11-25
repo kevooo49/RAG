@@ -7,7 +7,8 @@ What is compared (keys for --only / --baseline):
     bm25_<analyzer>              Elasticsearch BM25 only, analyzer = standard | stempel | morfologik | morfologik_stop
     hybrid_<analyzer>            RRF(dense, BM25) - production fusion (pool 40 + 40, k=60)
     hybrid_<analyzer>_exp        the same on the query rewritten by the PRODUCTION expansion prompt
-    hybrid_<analyzer>_exp_rerank + cross-encoder reranking of the top 30 (only with --rerank)
+    hybrid_<analyzer>_rerank_<r>  hybrid (no expansion, = production) + cross-encoder <r> reranking the top 30
+                                  (only with --rerank; rerankers in RERANKERS, default mmarco and pl-base)
 
 `hybrid_stempel_exp` is what production runs today (default baseline).
 
@@ -29,6 +30,8 @@ Usage (from backend/scripts; Elasticsearch must be running, OPENAI_API_KEY in ba
     python evaluate_search.py                                # everything except the reranker
     python evaluate_search.py --only bm25_stempel,bm25_morfologik,hybrid_stempel,hybrid_morfologik
     python evaluate_search.py --rerank --exclude-generic
+    python evaluate_search.py --rerank --analyzers stempel --hybrid-analyzers stempel \
+        --only hybrid_stempel,hybrid_stempel_rerank_mmarco,hybrid_stempel_rerank_pl-base --baseline hybrid_stempel
 Costs: chunk embeddings once (~$0.2 for 3-small on 2000 files, then cached) + 1 expansion call per question.
 """
 from __future__ import annotations
@@ -45,7 +48,11 @@ import numpy as np
 import eval_common as ec
 
 OUT_ROOT = ec.SCRIPT_DIR / "search_eva_stats"
-RERANKER_MODEL = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+RERANKERS = {   # short name -> cross-encoder (sentence-transformers CrossEncoder)
+    "mmarco": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",   # multilingual MiniLM, trained on translated MS MARCO
+    "pl-base": "sdadas/polish-reranker-base-ranknet",         # Polish RoBERTa-base (124M), RankNet distillation
+    "pl-large": "sdadas/polish-reranker-large-ranknet",       # Polish RoBERTa-large (435M), needs more GPU memory
+}
 RERANK_POOL = 30
 DEMO_TEXT = "Studentki składały wnioski o stypendia rektora w dziekanatach wydziałów; terminy zaliczeń w sesji letniej."
 
@@ -79,7 +86,7 @@ def timed(fn, *a):
     return r, (time.perf_counter() - t0) * 1000
 
 
-def make_systems(analyzers: List[str], hybrid_analyzers: List[str], with_rerank: bool) -> List[System]:
+def make_systems(analyzers: List[str], hybrid_analyzers: List[str], rerankers: List[str]) -> List[System]:
     S = [System("vector", "Vector (dense)",
                 lambda c, q: (*timed(c.dense.search, c.qvec(q.text), ec.CHUNK_POOL * 2), 0.0))]
     for a in analyzers:
@@ -99,17 +106,16 @@ def make_systems(analyzers: List[str], hybrid_analyzers: List[str], with_rerank:
             return (*hybrid(c, text, a), llm_ms)
         S.append(System(f"hybrid_{a}_exp", f"Hybrid ({a}) + Expansion", exp))
 
-        if with_rerank:
-            def rr(c, q, a=a):
-                text, llm_ms = c.expanded(q)
-                fused, ms = hybrid(c, text, a)
+        for r in rerankers:
+            def rr(c, q, a=a, r=r):
+                fused, ms = hybrid(c, q.text, a)              # production retrieval: no query expansion
                 cands = fused[:RERANK_POOL]
                 t0 = time.perf_counter()
-                scores = c.reranker.predict([[q.text, c.text[i]] for i in cands], batch_size=16,
-                                            show_progress_bar=False)
+                scores = c.reranker[r].predict([[q.text, c.text[i]] for i in cands], batch_size=16,
+                                               show_progress_bar=False)
                 order = [cands[i] for i in np.argsort(-np.asarray(scores), kind="stable")]
-                return order + fused[RERANK_POOL:], ms + (time.perf_counter() - t0) * 1000, llm_ms
-            S.append(System(f"hybrid_{a}_exp_rerank", f"Hybrid ({a}) + Exp + Re-Rank", rr))
+                return order + fused[RERANK_POOL:], ms + (time.perf_counter() - t0) * 1000, 0.0
+            S.append(System(f"hybrid_{a}_rerank_{r}", f"Hybrid ({a}) + rerank {r}", rr))
     return S
 
 
@@ -122,7 +128,9 @@ def main():
                     help="analyzers used inside the hybrid variants")
     ap.add_argument("--only", default="", help="comma-separated system keys")
     ap.add_argument("--baseline", default="hybrid_stempel_exp")
-    ap.add_argument("--rerank", action="store_true", help="add cross-encoder variants (sentence-transformers)")
+    ap.add_argument("--rerank", nargs="?", const="mmarco,pl-base", default="",
+                    help=f"add cross-encoder variants; optional comma list of {', '.join(RERANKERS)} "
+                         f"(default: mmarco,pl-base)")
     ap.add_argument("--embed-model", default=ec.bd.settings.EMBED_MODEL)
     ap.add_argument("--es-url", default=ec.bd.settings.ES_URL)
     ap.add_argument("--es-url-morfologik", default="", help="separate ES for morfologik analyzers (optional)")
@@ -165,7 +173,11 @@ def main():
     analyzers = [x for x in analyzers if x in es_idx]
     hybrid_an = [x for x in hybrid_an if x in es_idx]
 
-    systems = make_systems(analyzers, hybrid_an, a.rerank)
+    rerankers = [r for r in a.rerank.split(",") if r]
+    unknown = [r for r in rerankers if r not in RERANKERS]
+    if unknown:
+        sys.exit(f"Unknown reranker(s) {', '.join(unknown)}; available: {', '.join(RERANKERS)}")
+    systems = make_systems(analyzers, hybrid_an, rerankers)
     if a.only:
         keep = set(a.only.split(","))
         systems = [s for s in systems if s.key in keep]
@@ -184,11 +196,15 @@ def main():
     mat = emb.encode([c.text_emb for c in sample.chunks], cache, "chunks", stats)
     dense = ec.DenseIndex([c.id for c in sample.chunks], mat)
 
-    expander = ec.QueryExpander() if any(k.endswith(("_exp", "_rerank")) for k in keys) else None
-    reranker = None
-    if a.rerank:
+    expander = ec.QueryExpander() if any(k.endswith("_exp") for k in keys) else None
+    reranker = {}
+    used = {k.rsplit("_rerank_", 1)[1] for k in keys if "_rerank_" in k}
+    if used:
         from sentence_transformers import CrossEncoder
-        reranker = CrossEncoder(RERANKER_MODEL, max_length=512)
+        for r in sorted(used):
+            reranker[r] = CrossEncoder(RERANKERS[r], max_length=512)     # GPU if torch sees CUDA
+            dev = getattr(reranker[r], "device", getattr(reranker[r], "_target_device", "?"))
+            print(f"   reranker {r}: {RERANKERS[r]} on {dev}")
 
     print("[4/5] Running queries")
     ctx = Ctx(sample, dense, es_idx, emb, cache, expander, reranker)

@@ -1,0 +1,181 @@
+{
+ "n_questions": 860,
+ "n_docs": 299,
+ "baseline": "hybrid_stempel",
+ "systems": {
+  "hybrid_stempel": {
+   "Hit@1": {
+    "mean": 0.7395348837209302,
+    "lo": 0.7047808064910043,
+    "hi": 0.7721518987341772
+   },
+   "Hit@5": {
+    "mean": 0.9151162790697674,
+    "lo": 0.895782745501369,
+    "hi": 0.9331790121374908
+   },
+   "MRR@10": {
+    "mean": 0.8135852713178295,
+    "lo": 0.7871418818633634,
+    "hi": 0.837553884978516
+   },
+   "nDCG@10": {
+    "mean": 0.8186927801771674,
+    "lo": 0.7964904999896057,
+    "hi": 0.8407360445393735
+   },
+   "CtxHit@5": {
+    "mean": 0.7662790697674419,
+    "lo": 0.7326368701550388,
+    "hi": 0.7953856956769518
+   },
+   "CtxPrec@5": {
+    "mean": 0.5144186046511628,
+    "lo": 0.48494677380491497,
+    "hi": 0.5427611835273543
+   },
+   "retrieval_ms_median": 26.87670011073351,
+   "retrieval_ms_p95": 81.20631997007871,
+   "llm_ms_mean": 0.0
+  },
+  "hybrid_stempel_rerank_mmarco": {
+   "Hit@1": {
+    "mean": 0.8058139534883721,
+    "lo": 0.7775170030818931,
+    "hi": 0.8343153622227686
+   },
+   "Hit@5": {
+    "mean": 0.9372093023255814,
+    "lo": 0.9201865708137715,
+    "hi": 0.9539170506912442
+   },
+   "MRR@10": {
+    "mean": 0.8631630675526024,
+    "lo": 0.8425371680299446,
+    "hi": 0.8834136170793818
+   },
+   "nDCG@10": {
+    "mean": 0.8623640212799327,
+    "lo": 0.8424547282105532,
+    "hi": 0.8820918213030887
+   },
+   "CtxHit@5": {
+    "mean": 0.827906976744186,
+    "lo": 0.7978922950907723,
+    "hi": 0.8549921937680248
+   },
+   "CtxPrec@5": {
+    "mean": 0.5274418604651163,
+    "lo": 0.5003432387868155,
+    "hi": 0.5543144991582492
+   },
+   "retrieval_ms_median": 1097.7961500175297,
+   "retrieval_ms_p95": 1739.525404945016,
+   "llm_ms_mean": 0.0,
+   "d_MRR@10": {
+    "diff": 0.04957779623477298,
+    "lo": 0.030018932341236763,
+    "hi": 0.06965804987300765,
+    "p": 0.0005,
+    "p_holm": 0.001
+   },
+   "d_CtxHit@5": {
+    "diff": 0.06162790697674419,
+    "lo": 0.03738099906324205,
+    "hi": 0.08574987968910049,
+    "p": 0.0005,
+    "p_holm": 0.001
+   }
+  },
+  "hybrid_stempel_rerank_pl-base": {
+   "Hit@1": {
+    "mean": 0.7941860465116279,
+    "lo": 0.7617357180465973,
+    "hi": 0.8254372227449926
+   },
+   "Hit@5": {
+    "mean": 0.9372093023255814,
+    "lo": 0.9195388886653523,
+    "hi": 0.9527104959630911
+   },
+   "MRR@10": {
+    "mean": 0.8536254152823921,
+    "lo": 0.8296735564715988,
+    "hi": 0.8754749353405356
+   },
+   "nDCG@10": {
+    "mean": 0.8553064999718792,
+    "lo": 0.8338747878488711,
+    "hi": 0.8759779427621607
+   },
+   "CtxHit@5": {
+    "mean": 0.827906976744186,
+    "lo": 0.797700817221447,
+    "hi": 0.8564762143999308
+   },
+   "CtxPrec@5": {
+    "mean": 0.5344186046511629,
+    "lo": 0.5070625724217845,
+    "hi": 0.5621529372496663
+   },
+   "retrieval_ms_median": 4687.480549910106,
+   "retrieval_ms_p95": 6726.388840214348,
+   "llm_ms_mean": 0.0,
+   "d_MRR@10": {
+    "diff": 0.04004014396456257,
+    "lo": 0.02037324067258278,
+    "hi": 0.05936263788332754,
+    "p": 0.0005,
+    "p_holm": 0.001
+   },
+   "d_CtxHit@5": {
+    "diff": 0.06162790697674419,
+    "lo": 0.03716178928923889,
+    "hi": 0.08868144690781797,
+    "p": 0.0005,
+    "p_holm": 0.001
+   }
+  }
+ },
+ "names": {
+  "hybrid_stempel": "Hybrid RRF (stempel)",
+  "hybrid_stempel_rerank_mmarco": "Hybrid (stempel) + rerank mmarco",
+  "hybrid_stempel_rerank_pl-base": "Hybrid (stempel) + rerank pl-base"
+ },
+ "analyzer_demo": {
+  "stempel": [
+   "student",
+   "składać",
+   "wnioskeć",
+   "stypendium",
+   "rektor",
+   "dziekanat",
+   "wydział",
+   "terować",
+   "zaliczyć",
+   "sesja",
+   "letni"
+  ]
+ },
+ "skipped": {},
+ "embedding_stats": {
+  "new_texts": 0,
+  "encode_s": 8.299946784973145e-06
+ },
+ "params": {
+  "questions": "C:\\Users\\micro\\Desktop\\Bachelors\\RAG\\backend\\scripts\\eval_questions.json",
+  "analyzers": "stempel",
+  "hybrid_analyzers": "stempel",
+  "only": "hybrid_stempel,hybrid_stempel_rerank_mmarco,hybrid_stempel_rerank_pl-base",
+  "baseline": "hybrid_stempel",
+  "rerank": "mmarco,pl-base",
+  "embed_model": "text-embedding-3-small",
+  "es_url": "http://localhost:9200",
+  "es_url_morfologik": "",
+  "rebuild_es": "False",
+  "exclude_generic": "False",
+  "types": "",
+  "limit": "0",
+  "n_boot": "2000"
+ }
+}
